@@ -452,16 +452,16 @@ record MarketSnapshot(
 ```
 enum AppConditionKind {
     // 저장되는 것 (Conditions 사전에 들어간다)
-    FetchFailed, LeagueUnresolved, CommitRejected,
+    LeagueUnresolved, CommitRejected,
     SettingsWriteFailed, SettingsCorrupt, SettingsReadOnly, SettingsUnreadable,
     TrayUnavailable, LoggingUnavailable, ViewModelRefreshFailing,
     // 저장되지 않는 것 (표시 시점 파생 — Store 는 이 멤버를 쓰지 않는다)
-    RatePending, RateInherited, PollingStopped, ItemUnresolved, ItemDropped }
+    FetchFailed, RatePending, RateInherited, PollingStopped, ItemUnresolved, ItemDropped }
 
 record ConditionState(bool Active, DateTimeOffset Since, string? Detail)
 ```
 
-- **파생 다섯은 `Conditions`에 절대 들어가지 않는다.** 열거 멤버로 남기는 것은 S3의 배너·툴팁 집계기가 저장된 것과 파생된 것을 같은 축으로 다루기 위함이며, `Store`가 이 멤버로 `SetCondition`을 받으면 **거부한다**(Release에서도).
+- **파생 여섯은 `Conditions`에 절대 들어가지 않는다.** 【S4 §19.8 개정】 `FetchFailed`가 저장 그룹에서 파생 그룹으로 옮겨졌다 — 저장 그룹에 선언돼 있었으나 **생산자도 소비자도 없었고**, 실제 표시는 §10.5가 `CategoryStatuses`에서 파생하고 있었다. `snapshot.Conditions[FetchFailed]`는 애초에 영원히 부재였다. 열거 멤버로 남기는 것은 S3의 배너·툴팁 집계기가 저장된 것과 파생된 것을 같은 축으로 다루기 위함이며, `Store`가 이 멤버로 `SetCondition`을 받으면 **거부한다**(Release에서도).
 - `RatePending`이 파생으로 이동한 이유는 §10.5에, `SettingsUnreadable`의 신설 이유는 §8.7에 있다.
 
 **최상위 불변식**
@@ -492,7 +492,7 @@ INV-8  BeginNewLeague 는 DataLeague · DataEpoch · LeagueResolution 셋을
 
 ```
 enum FailureKind { Network, Timeout, HttpStatus, RateLimited, Deserialization,
-                   ElementFault, EmptyLines, NoPricedLines, FieldMissingRatio,
+                   EmptyLines, NoPricedLines, FieldMissingRatio,
                    PrimaryCurrencyMismatch, DivineLineMissing, MedianJump,
                    LeagueListInvalid, MappingFault }
 
@@ -1264,7 +1264,7 @@ readonly record struct DataTag(string League, int DataEpoch)
 | `SetLeagueUnresolved(string reasonCode)` | `Polling` | 아니오 | `LeagueResolution`만 후퇴. **데이터는 그대로**(INV-5) |
 | `RecordHeartbeatAttempt` / `…Outcome` / `RecordLoopExit` | `Polling` | **아니오** | 하트비트 |
 | `SetLastError(ErrorRecord)` | `Polling` · `Settings`(포트) · `Market` 경유 | 아니오 | |
-| `SetCondition(kind, active, detail)` | `Polling` · `Settings`(포트) · **`Shell`**(포트) | 아니오 | `Conditions`. **파생 다섯(§2.11)은 거부** |
+| `SetCondition(kind, active, detail)` | `Polling` · `Settings`(포트) · **`Shell`**(포트) | 아니오 | `Conditions`. **파생 여섯(§2.11)은 거부** |
 
 **검증하지 않는 것들의 근거가 검증하는 것들보다 중요하다.**
 
