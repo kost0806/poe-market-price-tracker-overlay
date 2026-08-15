@@ -4,7 +4,7 @@
 |---|---|
 | 중단일 | **2026-08-15** |
 | 진행률 | 약 **88%** — S1·S2 완료, S3 제2판 완료·검증 통과, S3 마감 1회와 동결 문서 개정, 그리고 S4가 남았다 |
-| **커밋 상태** | **전부 미커밋.** 사용자가 커밋을 요청한 적이 없다 |
+| **커밋 상태** | `d7a2e3f` — 브랜치 **`docs/design-s1-s3`**. main 병합·푸시는 하지 않았다 |
 
 ---
 
@@ -115,12 +115,14 @@ S3 제2판 검증 결과: 35항목 중 **33 CLOSED / 2 PAPER / REGRESSED 0**, �
 
 ---
 
-## 6. 미커밋 파일
+## 6. 커밋 상태
+
+`d7a2e3f` — **브랜치 `docs/design-s1-s3`**, 9개 파일 5,124줄. `docs/REQUIREMENTS.md` 수정분과 `docs/design/` 전체(`_wip/` 포함)가 들어 있다.
+
+**main 병합과 푸시는 하지 않았다.** 이전 문서 커밋들(`eae5225`·`a2b7241`)은 main으로 갔으므로 관례를 맞추려면:
 
 ```
- M docs/REQUIREMENTS.md
-?? docs/design/          (00-api-contract.md · 00-shell-measurements.md ·
-                          01-hld.md · 02-lld-core.md · 03-lld-shell.md · _wip/)
+git checkout main && git merge --ff-only docs/design-s1-s3
 ```
 
-`docs/design/_wip/`는 작업 산출물이다 — 커밋 여부는 판단에 맡긴다.
+> 이 문서는 커밋 **직전**에 작성돼 `d7a2e3f`에는 「전부 미커밋」이라 적힌 낡은 판이 담겼다. 이 절이 그 정정이다.
