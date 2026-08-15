@@ -8,10 +8,4 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="OxyPlot.Wpf" Version="2.2.0" />
-    <!-- AngleSharp: 서비스 로직 구현 시 HTML 파싱이 필요하면 아래 주석을 해제하세요 -->
-    <!-- <PackageReference Include="AngleSharp" Version="1.2.0" /> -->
-  </ItemGroup>
-
 </Project>

@@ -1,5 +1,4 @@
 using System.Windows;
-using PoeOverlay.Services;
 using PoeOverlay.ViewModels;
 
 namespace PoeOverlay;
@@ -10,15 +9,9 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
-        // ── 서비스 등록 ──────────────────────────────────────
-        // TODO: Sample 구현을 실제 구현으로 교체하세요.
-        //   예) IPoeTradeService  → PoeNinjaPriceService (직접 구현)
-        //       IPriceHistoryService → SqlitePriceHistoryService (직접 구현)
-        IPoeTradeService tradeService = new SamplePoeTradeService();
-        IPriceHistoryService historyService = new SamplePriceHistoryService(tradeService);
-
         // ── ViewModel 생성 ───────────────────────────────────
-        var viewModel = new MainViewModel(tradeService, historyService);
+        // TODO: 설계문서 확정 후 poe.ninja 시세 서비스와 폴링 호스트를 여기서 구성합니다.
+        var viewModel = new MainViewModel();
 
         // ── Window 생성 및 표시 ──────────────────────────────
         var mainWindow = new MainWindow(viewModel);

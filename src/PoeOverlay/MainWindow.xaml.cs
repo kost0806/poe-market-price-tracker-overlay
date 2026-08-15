@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using PoeOverlay.ViewModels;
@@ -18,12 +19,6 @@ public partial class MainWindow : Window
         InitializeComponent();
         _viewModel = viewModel;
         DataContext = _viewModel;
-        Loaded += MainWindow_Loaded;
-    }
-
-    private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
-    {
-        await _viewModel.SearchAsync();
     }
 
     // ── 순수 UI 이벤트 핸들러 ────────────────────────────────
@@ -45,20 +40,4 @@ public partial class MainWindow : Window
     }
 
     private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
-
-    private async void SearchButton_Click(object sender, RoutedEventArgs e)
-    {
-        await _viewModel.SearchAsync();
-    }
-
-    private async void SearchBox_KeyDown(object sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Enter)
-            await _viewModel.SearchAsync();
-    }
-
-    private async void RefreshButton_Click(object sender, RoutedEventArgs e)
-    {
-        await _viewModel.RefreshAsync();
-    }
 }
