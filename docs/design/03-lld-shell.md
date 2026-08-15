@@ -4,7 +4,7 @@
 |---|---|
 | 문서 상태 | **제4판 — 제3판 리뷰 3종(csharp-reviewer 실측 프로브 3개 · silent-failure-hunter · 검증/개정목록 감사) 결과 마감. 25/25 CLOSED·0 PAPER 결론 위에서, P3 ack 기제를 실측 반증에 따라 센티널 방식으로 교체하고 §13 개정 목록을 원문 대조로 재검증했다. 42/42 요구사항 SATISFIED 유지** |
 | 작성일 | 2026-08-15 |
-| 상위 문서 | `docs/design/02-lld-core.md` **제2판**(frozen) · `docs/design/01-hld.md` **개정 5판**(frozen, D1–D22) · `docs/design/00-shell-measurements.md`(측정 확정, 구속력 있음 — **§8/§9 신설로 확장**) · `docs/REQUIREMENTS.md` **개정 2판**(§2/§9 E1 근거 정정, FR-08-6 포함, §4/§9 필드명 정정) |
+| 상위 문서 | `docs/design/02-lld-core.md` **제3판**(frozen) · `docs/design/01-hld.md` **개정 6판**(frozen, D1–D22) · `docs/design/00-shell-measurements.md`(측정 확정, 구속력 있음 — **§8/§9 신설로 확장**) · `docs/REQUIREMENTS.md` **개정 2판**(§2/§9 E1 근거 정정, FR-08-6 포함, §4/§9 필드명 정정) |
 | 범위 | `src/PoeOverlay`(`net8.0-windows`)의 `Shell` — 오버레이 창·설정 창·트레이 아이콘·Win32 interop·컴포지션 루트. `src/PoeOverlay.Core/Presentation`(`net8.0`)의 `SnapshotFanout`·뷰모델 셋·`IOverlayModeService`·`IUiDispatcher`·`IUiTicker` 구현 배선 |
 | **범위 밖** | 메서드 시그니처·JSON 속성명·오류 코드 문자열·테스트 프로젝트 배치·XAML 마크업. **→ S4** |
 | 추상 수준 | 타입·관계·불변식·상태기계·알고리즘·스레딩 계약. S2와 동일 |

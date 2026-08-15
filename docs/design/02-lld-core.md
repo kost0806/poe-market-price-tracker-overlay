@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| 문서 상태 | **제2판 — 3개 검토(조용한 실패 사냥 · 요구사항 추적 · .NET 타입 설계 프로브 8개 빌드·실행) 반영 완료** |
+| 문서 상태 | **제3판 — 3개 검토(조용한 실패 사냥 · 요구사항 추적 · .NET 타입 설계 프로브 8개 빌드·실행) 반영 완료. S3 `03-lld-shell.md` 제4판 §13 검증 개정 목록(행 28/35/39/41) 반영** |
 | 작성일 | 2026-08-15 |
-| 상위 문서 | `docs/design/01-hld.md` **개정 5판** (입력 명세, D1–D22 확정) · `docs/design/00-api-contract.md` (**데이터 계약, 구속력 있음**) · `docs/REQUIREMENTS.md` 개정 2판 |
+| 상위 문서 | `docs/design/01-hld.md` **개정 6판** (입력 명세, D1–D22 확정) · `docs/design/00-api-contract.md` (**데이터 계약, 구속력 있음**) · `docs/design/00-shell-measurements.md` (**Win32·렌더링 실측, 구속력 있음**) · `docs/REQUIREMENTS.md` 개정 2판 |
 | 범위 | `src/PoeOverlay.Core` (`net8.0`) 의 8개 모듈 — `Domain` · `Localization` · `Pricing` · `Market` · `Store` · `Polling` · `Settings` · `Diagnostics` |
 | **범위 밖** | `Shell` 전부(창·트레이·Win32 interop·오버레이 높이/클리핑/기하)와 `Presentation`의 뷰모델 셋·`SnapshotFanout`·`IOverlayModeService`. **→ S3.** 이들이 소비하는 것은 §10에서 *경계의 모양*까지만 정의하고 멈춘다 |
 | 추상 수준 | 타입·관계·불변식·상태기계·알고리즘. **메서드 시그니처·JSON 속성명·오류 코드 문자열·테스트 프로젝트 배치는 S4** |
@@ -53,6 +53,17 @@
 | B9 | **지속적 커밋 거부가 사용자에게 도달하지 않는다** — 화면이 무기한 정지하고 모든 지표가 정상을 가리킨다 | `CommitRejected` 조건 신설 + `RejectedCommitCount` 소비자 등록 + `settings.League` 정규화 (§6.4/§7.3/§10.5) |
 
 **정정 17건**은 각 절에 반영했고, §12는 그대로 유지·확장했다.
+
+### 0.2 제3판 — S3(`03-lld-shell.md` 제4판) §13의 검증된 42행 개정 목록을 반영
+
+S3 제4판 §13이 원문 대조로 재검증한 42개 항목 가운데 이 문서(S2)를 대상으로 하는 개정 요구를 반영했다. 실패로 확인된 행은 없었다.
+
+- **S3 §8.1/§10.1이 요구한 것(P4, S3 §13-28)** — §2.11의 `AppConditionKind` 저장 그룹에 `ViewModelRefreshFailing`을 신설했다(`LoggingUnavailable` 다음). 이 멤버 없이는 S3의 `Store` 조건 저장 시도가 런타임에 거부되고 D-PS10이 죽은 코드가 된다 — **이 개정이 S3 설계 전체를 구현 가능하게 만드는 단일 변경이다.**
+- **S3 §1.4의 CA2007 면제 확장(D-SH1, S3 §13-39)** — §1.4 D-C3의 문서화된 예외를 `Presentation/` 폴더 하나에서 `Presentation/` + `Shell/` 프로젝트 전체(단 `Interop/`의 순수 I/O 지점은 개별 재활성)로 넓혔다.
+- **S3 §8.4의 P1 논증(M8, S3 §13-41)** — §6.3에 "모든 `Store` 명령 적용은 예외 없이 `SnapshotChanged`를 발신한다"는 산문을 mermaid 간선 `AP → EV`의 귀결로 명시하고, §11.8에 회귀 테스트 항목(S16)을 추가했다.
+- **§12-5 처리 완료로 등재(S3 §13-35)** — 인스턴스 신호 큐잉 주장의 범위를 좁히는 처방이 HLD D18-d 채널 행 개정(`SendMessageTimeout` 채택)으로 반영됐다.
+
+세부 근거와 원문 대조는 `03-lld-shell.md` §13을 참조.
 
 ---
 
@@ -116,8 +127,8 @@ Domain/Ports/
 
 - **`Core` 내부의 모든 `await`에 `ConfigureAwait(false)`.** 근거: `host.Start()`가 동기화 컨텍스트 없는 스레드에서 호출되지만(HLD §3.5), 사용자 개시 조회는 UI 컨텍스트에서 시작되므로 `Market`·`Store`·`Settings` 코드가 UI 스레드로 재개될 수 있다.
 - **`await foreach`와 `await using`도 포함한다** — `.ConfigureAwait(false)`를 명시적으로 붙인다. 【측정】 **CA2007은 이 둘을 잡지 않는다.** 하필 그 둘이 §6.3의 소비 루프와 §8.5의 원자적 쓰기, 즉 §1.4의 근거가 가장 강한 두 자리다.
-- **문서화된 예외는 하나** — `Presentation` 폴더의 async 명령(S3).
-- **강제 수단 【신규 D-C3】**: `Directory.Build.props`에서 **`CA2007`을 오류로 승격**하고, `Presentation/`에만 `.editorconfig`로 `severity = none`을 **사유 주석과 함께** 둔다. 【측정】 폴더 범위 면제는 설계대로 동작한다. **CA2007·CA1031은 기본 비활성이므로 `.editorconfig`의 severity 지정이 곧 활성화**다 — "이미 켜져 있다"고 가정하면 아무것도 검사되지 않는다.
+- **문서화된 예외는 둘이다** — `Presentation` 폴더의 async 명령(S3, D-C3)과 `Shell/` 프로젝트 전체(S3, D-SH1 — UI 스레드 재개가 필요한 이벤트 핸들러 전반).
+- **강제 수단 【신규 D-C3】**: `Directory.Build.props`에서 **`CA2007`을 오류로 승격**하고, `Presentation/`과 `Shell/`(단 `Interop/`의 순수 I/O 지점은 개별 `#pragma warning restore CA2007`로 재활성, S3 §1.4)에 `severity = none`을 **사유 주석과 함께** 둔다. 【측정】 폴더 범위 면제는 설계대로 동작한다. **CA2007·CA1031은 기본 비활성이므로 `.editorconfig`의 severity 지정이 곧 활성화**다 — "이미 켜져 있다"고 가정하면 아무것도 검사되지 않는다.
 - `OperationCanceledException`은 **오류가 아니라 제어 흐름**이다. 실패값으로 변환하지 않고 그대로 전파한다.
 
 ### 1.5 실패 표현 — 예외 대신 값
@@ -433,7 +444,7 @@ enum AppConditionKind {
     // 저장되는 것 (Conditions 사전에 들어간다)
     FetchFailed, LeagueUnresolved, CommitRejected,
     SettingsWriteFailed, SettingsCorrupt, SettingsReadOnly, SettingsUnreadable,
-    TrayUnavailable, LoggingUnavailable,
+    TrayUnavailable, LoggingUnavailable, ViewModelRefreshFailing,
     // 저장되지 않는 것 (표시 시점 파생 — Store 는 이 멤버를 쓰지 않는다)
     RatePending, RateInherited, PollingStopped, ItemUnresolved, ItemDropped }
 
@@ -1290,6 +1301,8 @@ ConsumeAsync(lifetimeToken):                  // 취소는 하드 타임아웃�
 | **명령 하나 = 스냅샷 하나 = `Version` +1** | 병합 최적화를 하지 않는다. 게시 비용은 참조 교체 + 이벤트 하나이고 팬아웃이 이미 UI post를 병합한다. 병합하면 `Version`이 타이밍 의존이 되어 §2.11이 그 필드를 둔 이유가 사라진다 |
 | 핸들러 안에서 `Post`하는 것 | 채널이 있으므로 **교착이 아니다.** 그래도 §3.4의 규약은 유지한다 — 인과가 흐려지는 문제다 |
 
+**모든 `Store` 명령 적용(`AP`)은 새 스냅샷을 낳고 예외 없이 `SnapshotChanged`(`EV`)를 발신한다** — 병합 최적화를 하지 않는다는 결정(본 절)의 직접적 귀결이다. `Set`/`Report`도 예외가 아니다(S3 §8.4 P1 논증이 기대는 전제, S3 §13-41).
+
 ### 6.4 검증 — 거부하고, 기록하고, **누적을 본다**
 
 ```
@@ -2060,6 +2073,7 @@ IUiTicker { event EventHandler Tick;  void Start(TimeSpan period);  void Stop();
 | S13 | `ExtraMatch`가 던진다 | 그 항목만 불일치, 검색 전체는 성공, Warning 1회 |
 | **S14** | 관심목록 편집(`roundGeneration`++) 후 검색 | **결과 유지** — C2 회귀 |
 | S15 | 진행 중 사용자 조회 + 항목 추가 | 그 조회의 커밋이 **거부되지 않는다** |
+| **S16** | 임의의 `Store` 명령(`SetCondition`/`SetLastError` 포함) 적용 | **`SnapshotChanged`가 정확히 1회 발신된다** — §6.3의 `AP → EV` 간선이 예외 없이 성립함을 확인(S3 §13-41, §8.4 P1의 전제) |
 
 ### 11.9 `Polling`
 
@@ -2146,7 +2160,7 @@ IUiTicker { event EventHandler Tick;  void Start(TimeSpan period);  void Stop();
 | 2 | `DispatcherTimer`의 TFM 문제 | **해소.** `IUiTicker` 신설(§10.8). 소유는 `Presentation`, 구동은 `Shell` |
 | 3 | 엄격 역직렬화와 비율 검사의 순서 | **해소.** 누락 축은 §5.5.2로, **타입 축은 원소별 역직렬화로** 닫았다 【측정】 |
 | 4 | `volume` 보존 여부 | **해소 — 보존한다.** 단 `double?`로(§2.5) — 비널이면 결측이 조용히 `0`이 되고, 결측만으로 line을 버리면 표시하지도 않는 필드 때문에 가격을 버린다 |
-| 5 | 인스턴스 신호 큐잉 주장의 범위 | **좁혀야 한다.** 메시지 큐는 **수신기 창이 생성된 뒤**에만 받는다. §3.5에서 수신기는 8번에 생기므로 D18-d의 주장은 **"수신기 생성 이후, 펌프 시작 이전"**으로 한정해야 참이다 → S3 |
+| 5 | 인스턴스 신호 큐잉 주장의 범위 | **좁혀야 한다.** 메시지 큐는 **수신기 창이 생성된 뒤**에만 받는다. §3.5에서 수신기는 8번에 생기므로 D18-d의 주장은 **"수신기 생성 이후, 펌프 시작 이전"**으로 한정해야 참이다 → S3 (**처리 완료** — S3 §13-35, `SendMessageTimeout` 채택으로 HLD D18-d 채널 행 개정에 반영됨) |
 | 6 | 기하 검증 "완전 포함"의 과잉 | **완화 권고.** 창이 작업영역보다 크거나 두 모니터에 걸치면 **정당한 배치가 기본 위치로 되돌려진다.** "최소 가시 면적"으로 → S3 |
 | 7 | `TrayViewModel`·`opacity`의 기록자 | **모순 1건 포함.** D10은 `window.*`의 단일 기록자를 `Shell`로 못박았는데 `opacity`는 `window.*` 안이면서 "값 변경은 설정 창"이다. **`opacity`는 `SettingsViewModel`이 쓰고 `Shell`이 읽는다** — 픽셀이 아니라 스칼라이므로 예외가 정당하다. 명문화 필요 → S3 |
 | 8 | 이동 모드 워치독 타이머의 §3.3 등재 | **조건부 행으로 등재.** 유휴 2개 주장은 유지된다 — 워치독은 이동 모드 중에만 존재한다 → S3 |
