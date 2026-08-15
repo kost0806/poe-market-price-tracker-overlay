@@ -2,8 +2,8 @@
 
 | | |
 |---|---|
-| 문서 상태 | **초판** |
-| 작성일 | 2026-08-16 |
+| 문서 상태 | **제2판** |
+| 작성일 | 2026-08-16 (제2판) |
 | 상위 문서 | `docs/design/03-lld-shell.md` 제5판(frozen) · `docs/design/02-lld-core.md` 제4판(frozen) · `docs/design/01-hld.md` 개정 7판(frozen, D1–D22) · `docs/design/00-shell-measurements.md`(측정 확정, 구속력 있음) · `docs/design/00-api-contract.md`(측정 확정, 구속력 있음) · `docs/REQUIREMENTS.md` 개정 2판 |
 | 범위 | S2/S3가 유예한 전부 — 메서드 시그니처, JSON 속성명, 오류 코드 문자열, 지역화 키 카탈로그, 프로젝트·테스트 배치, 구체 상수. 새 설계 결정은 만들지 않는다 |
 | 범위 밖 | 메서드 본문(짧은 의사코드로 시그니처가 모호할 때만 예외), XAML 마크업 자체, 오버레이 색상 팔레트 전체(컬러키 값 하나만 확정) |
@@ -15,7 +15,11 @@
 
 ### 0.1 초판
 
-S2 제4판·S3 제5판을 전수 스윕해 "S4로 유예" 표시가 붙은 항목과, 표시는 없으나 시그니처·속성명·상수가 실제로 비어 있는 자리를 모두 채웠다. 상위 문서가 세운 타입·인터페이스·상태기계·불변식은 하나도 바꾸지 않았다 — 이 판이 발견한 결함(§19)은 전부 "상위 문서가 결정하지 않은 자리"이지 "상위 문서가 틀리게 결정한 자리"가 아니다. 유일한 예외는 §19.1(Settings 쓰기 경로의 타입 불일치)로, 이는 S2 §8.4의 문장이 문자 그대로는 컴파일되지 않는다는 발견이며 이 문서가 스스로 보강했다.
+S2 제4판·S3 제5판을 전수 스윕해 "S4로 유예" 표시가 붙은 항목과, 표시는 없으나 시그니처·속성명·상수가 실제로 비어 있는 자리를 모두 채웠다. 상위 문서가 세운 타입·인터페이스·상태기계·불변식은 하나도 바꾸지 않았다 — 이 판이 발견한 결함(§19)은 전부 "상위 문서가 결정하지 않은 자리"이지 "상위 문서가 틀리게 결정한 자리"가 아니다. 유일한 예외는 §19.1(Settings 쓰기 경로의 타입 불일치)로, 이는 S2 §8.4의 문장을 문자 그대로 따르면 **컴파일은 되지만 계약과 다른 잘못된 JSON을 낸다**는 발견이며(F1 정정 — 컴파일 실패가 아니다) 이 문서가 스스로 보강했다.
+
+### 0.2 제2판 — 마감 지시서 반영
+
+리뷰 3종(csharp-reviewer 프로브 빌드·silent-failure-hunter·완성도 감사)을 호출자가 판정해 통합한 마감 지시서(`_wip/s4-punchlist.md`)를 전수 반영했다 — 지적 24건 중 기각 0건. 핵심은 컴파일 차단 넷(§A, `partial` 접근 한정자 충돌 CS0262·`SettingsWriteDto` 계열 CS8618·Shell 타입 오류 셋·`InstanceSignal.TrySend`의 PID 모순)과 값이 비어 있던 상수 일곱(§C)이다. 이 판이 뒤집은 상위 결정은 없다 — §19.2(`FailureKind.ElementFault`)에 이어 §19.8(`AppConditionKind.FetchFailed`)이 이번 판이 새로 발견한 두 번째 S2 개정 요구다. 절 번호는 초판 그대로 유지했다 — 신규 내용은 각 절의 기존 하위 절 뒤에 덧붙이거나(예: §15.9/§15.10, §16.9), 표에 행을 추가하는 방식으로만 실었다.
 
 ---
 
@@ -33,6 +37,7 @@ S2 제4판·S3 제5판을 전수 스윕해 "S4로 유예" 표시가 붙은 항�
 | async 메서드 이름 | 신규 D-DL2 | Async 접미사. IHostedService.StartAsync/StopAsync 등 BCL 계약이 강제하는 이름은 그대로 |
 | 컬렉션 반환 | S2 1.6 | IReadOnlyList/IReadOnlyDictionary. 절대 null 아님 |
 | 네임스페이스 = 폴더 | S2 1.1, S3 1.1 | 아래 2절의 물리 배치와 1대1 |
+| `partial` 선언 헤더 일치 | 신규 D-DL0 | 한 타입이 여러 절에 나뉘어 실리면(§2.1의 규칙) 모든 부분 선언에 `partial`을 붙이고 접근 한정자(`public`/`internal`)·`sealed`를 전부 동일하게 명시한다 — 기반 타입·인터페이스 목록은 한 곳에서만 선언하면 된다 |
 
 ---
 
@@ -183,6 +188,8 @@ tests/
 
 폴더 = 네임스페이스는 S2/S3의 규약 그대로다. S2 10.6은 ISearchSource를 "S3가 소비하는 경계"로 Store 절에서 소개했지만 실제 소유 모듈을 명시하지 않았다 — 이 문서가 확정한다: ISearchSource는 PoeOverlay.Core.Store 네임스페이스에 선언하고 Store가 구현한다(3.1절 6번 행, "다섯 얼굴"의 다섯 번째와 일치).
 
+**신규 D-DL0.** `Store`·`PollingService`·`SettingsStore`·`SnapshotFanout` 넷은 이 문서 여러 절에 걸쳐 선언이 나뉜다(예: `Store`는 8.3/8.4/8.5절). C#의 `partial` 규칙상 한 부분이라도 `partial`을 빠뜨리거나 접근 한정자가 다르면 CS0262다 — 이 문서는 넷 모두를 `public sealed partial`로 통일한다(멤버 개별 접근 한정자는 각 절이 명시한 대로 `private`/`internal`일 수 있다 — 통일되는 것은 **클래스 헤더**뿐이다). 아래 각 절의 코드 블록은 이미 이 규칙을 반영했다.
+
 ### 2.2 Directory.Build.props
 
 ```xml
@@ -207,6 +214,15 @@ dotnet_diagnostic.CA1031.severity = warning
 ```
 
 NoWarn의 WFAC010은 net8.0(비 Windows) 프로젝트에는 의미가 없는 경고이지만, Directory.Build.props가 두 TFM에 공통 적용되므로 여기 둔다 — PoeOverlay.Core에서는 무해하게 무시된다.
+
+신규 D-DL0-1. `src/PoeOverlay.Core/PoeOverlay.Core.csproj`에 다음을 둔다.
+
+```xml
+<ItemGroup>
+  <InternalsVisibleTo Include="PoeOverlay.Core.Tests" />
+</ItemGroup>
+```
+16절의 다수 테스트가 `internal` 와이어 DTO(7.1절)·`JsonSerializerContext`(7.2절)·설정 쓰기 DTO(10.7절)를 직접 참조하고, 16.3절(M7)이 요구하는 조인 계수 훅(15.10절 아래 §16.3 보강 참조)도 `internal`이다 — 이것 없이는 테스트 프로젝트 자체가 컴파일되지 않는다.
 
 ### 2.3 CA2007 면제 스코프 — .editorconfig 배치
 
@@ -274,7 +290,8 @@ public enum HeightMode { Auto, Explicit }
 public enum AppConditionKind
 {
     // 저장되는 것 — Store.SetCondition이 받아들인다 (6.4절)
-    FetchFailed, LeagueUnresolved, CommitRejected,
+    FetchFailed,   // 고아 — 생산자·소비자 없음. §19.8, S2 개정 요청 중. 값 재배열 금지이므로 자리는 그대로 둔다
+    LeagueUnresolved, CommitRejected,
     SettingsWriteFailed, SettingsCorrupt, SettingsReadOnly, SettingsUnreadable,
     TrayUnavailable, LoggingUnavailable, ViewModelRefreshFailing,
     // 저장되지 않는 것 — 표시 시점 파생. Store는 이 멤버로 SetCondition을 받으면 거부한다
@@ -476,6 +493,8 @@ public sealed class RollingFileSink : IAsyncDisposable
 }
 ```
 버퍼 상한·롤 규칙·보존 기간은 15절 상수표. 포화 시 유실 통지는 다음 항목이 아니라 그 항목 자신으로 즉시 큐잉한다(S2 D-DG1) — Enqueue 내부에서 상한 초과를 감지하면 가장 오래된 항목을 버리고 유실 전용 LogEntry(Code="LogBufferOverflow")를 상한을 무시하고 큐에 넣는다.
+
+**D2 — 유실 항목의 레벨과 세션 1회 조건.** 초판은 이 `LogEntry`의 `LogLevel`을 명시하지 않았다 — Warning 미만이면 §4.2의 `RecentErrorRing`(Warning 이상만 담는다)에도 실리지 않아, 로그가 가장 필요한 실패 폭풍 순간에 진단 흔적이 조각나도 배너도 트레이 색도 바뀌지 않는다(S2 §9.6 "로깅 실패는 사용자가 알아야 할 가장 중요한 것"). **결정**: 유실 통지 `LogEntry`의 `LogLevel`은 **`LogLevel.Warning`**으로 고정한다(파일 자체가 쓰이는 중이므로 `LoggingUnavailable`은 아니다 — 로거는 돌고 있고 버릴 뿐이다). 세션 중 첫 유실 시에만 `SessionSuppressionRegistry`의 `loc.*`/`market.*`/`settings.*` 채널과 같은 패턴으로 `diagnostics.bufferOverflow` 채널(14.8절에 행 추가)을 `ShouldReport`로 검사해 최근 오류 링 노출을 세션당 1회로 억제한다 — 이후의 `LogBufferOverflow` 항목은 계속 큐잉되고 파일에는 전부 남지만, `RecentErrorRing` 스냅샷을 반복 오염시키지 않는다.
 
 ### 4.4 RecentErrorRing
 
@@ -754,6 +773,8 @@ public sealed class MarketClient : IMarketClient
         string league, ExchangeCategory category, RequestPriority priority, CancellationToken ct);
 
     public Task<MarketResult<LeagueList>> FetchLeaguesAsync(RequestPriority priority, CancellationToken ct);
+
+    internal int JoinDictionaryBuildCount { get; private set; }   // E1, 신규 — 테스트 전용 계수 훅. 조인용 사전을 구성할 때마다 증가
 }
 ```
 `FetchCategoryAsync`/`FetchLeaguesAsync`가 D-MK4(5.10절)의 경계 catch를 소유한다 — 이 두 메서드가 곧 "카테고리·리그 진입점"이다. `FetchedAt`은 내부에서 `timeProvider.GetUtcNow()`를 매핑 완료 시점에 1회 호출한다(S2 5.1).
@@ -769,6 +790,15 @@ public sealed class NinjaGateway
 }
 ```
 동시성 상한·최소 간격·우선순위 큐·기아 방지 승격은 15절 상수를 그대로 쓴다. `send`는 호출자(MarketClient)가 만든 `HttpClient.SendAsync` 델리게이트다 — `NinjaGateway`는 HTTP를 직접 모른다(S2 5.7 "입장 제어만 하고 HTTP를 부르지 않는다").
+
+**신규 D-DL23 (§C) — 엔드포인트 URL 템플릿과 카테고리 질의 토큰.** `00-api-contract.md` §1【측정】이 실측한 그대로 두 템플릿을 확정한다(15.3절에도 상수로 싣는다).
+
+| 호출 | URL 템플릿 |
+|---|---|
+| 리그 목록 | `GET https://poe.ninja/poe1/api/economy/leagues` |
+| 카테고리 개요 | `GET https://poe.ninja/poe1/api/economy/exchange/current/overview?league={league}&type={category}` |
+
+`{category}`는 `ExchangeCategory` 값의 `.ToString()`이다 — S2 §2.2 "열거 멤버 이름이 곧 `type=` 질의 문자열이다. 별도 매핑표를 두지 않는다"를 그대로 따른다(예: `ExchangeCategory.DivinationCard.ToString() == "DivinationCard"`). 초판은 이 규칙을 10.2절(설정 파일 맥락)에서만 언급해 `MarketClient`가 실제로 이 문자열을 만드는 자리(여기)에는 재기술되지 않았다 — 이 문단이 그 자리를 채운다. 새 매핑표를 만들지 않는 것 자체가 S2의 결정이므로 이 문서는 그 결정을 뒤집지 않는다.
 
 
 ## 8. Store — 시그니처 확정
@@ -826,7 +856,7 @@ public abstract record StoreCommand
 ### 8.3 Store
 
 ```
-public sealed class Store : IHostedService, IMarketSnapshotSource, IConditionSink, IErrorSink, ISearchSource
+public sealed partial class Store : IHostedService, IMarketSnapshotSource, IConditionSink, IErrorSink, ISearchSource
 {
     public Store(TimeProvider timeProvider, ILogger<Store> logger);
 
@@ -866,7 +896,7 @@ public sealed partial class Store
 ### 8.5 내부 시그니처 — 소비 루프, 검증, 적용
 
 ```
-internal sealed partial class Store
+public sealed partial class Store
 {
     private async Task ConsumeAsync(CancellationToken lifetimeToken);         // 8.1절 의사코드(S2 6.3) 그대로
     private void Apply(StoreCommand command);
@@ -886,7 +916,7 @@ internal sealed partial class Store
 ```
 public enum PollingTriggerKind { Scheduled, Repoll }
 
-public sealed class PollingService : BackgroundService
+public sealed partial class PollingService : BackgroundService
 {
     public PollingService(
         IMarketClient market, Store store, ISettingsSource settings,
@@ -895,16 +925,17 @@ public sealed class PollingService : BackgroundService
     protected override Task ExecuteAsync(CancellationToken stoppingToken);
 }
 ```
-`ExecuteAsync`가 최외곽 `finally`(D20)와 라운드별 `try/catch`(§9.5 허용 목록 1번)를 함께 갖는다 — 시그니처는 `BackgroundService`가 강제하는 형태뿐이며 본문은 S2 7.2/7.9의 의사코드 그대로다.
+`ExecuteAsync`가 최외곽 `finally`(D20)와 라운드별 `try/catch`(§9.5 허용 목록 1번)를 함께 갖는다 — 시그니처는 `BackgroundService`가 강제하는 형태뿐이며 본문은 S2 7.2/7.9의 의사코드 그대로다. **B4 — 첫 라운드 기동.** `ExecuteAsync`는 트리거 채널을 소비하는 루프(§7.2, S2)에 들어가기 전에 `await RunRoundAsync(RoundTrigger.Startup, stoppingToken)`을 정확히 1회 호출한다 — 그러지 않으면 첫 라운드는 `PeriodicTimer`의 첫 틱(5~60분)까지 시작되지 않는데, HLD §4.1("기동 → 리그 확정 → 첫 라운드 → 렌더")과 "`Loading`은 흡수 상태가 아니다"(첫 라운드가 성공·실패와 무관하게 반드시 전이시킨다)는 즉시 첫 라운드를 전제한다. S2 §7.2의 채널 스캐폴드 자체는 바꾸지 않는다 — 이 호출은 루프 밖에서 한 번 더 있을 뿐이다.
 
 ### 9.2 내부 시그니처 — 라운드 알고리즘
 
 ```
-internal sealed partial class PollingService
+public sealed partial class PollingService
 {
-    private readonly Channel<PollingTriggerKind> triggers;      // 7.2절, D-PL2
+    private readonly Channel<PollingTriggerKind> triggers;      // 7.2절, D-PL2. 전송 값은 Scheduled/Repoll 둘뿐 — S2 그대로
+    private volatile bool pendingLeagueChangeTrigger;           // B4, 신규 — OnSettingsChanged가 세운다(§9.3)
 
-    private async Task RunRoundAsync(PollingTriggerKind trigger, CancellationToken ct);
+    private async Task RunRoundAsync(RoundTrigger trigger, CancellationToken ct);
     private async Task<RoundOutcome> ExecuteRoundStepsAsync(RoundContext ctx, AppSettings settings, CancellationToken ct);
 
     private static IReadOnlyList<ExchangeCategory> ResolveCategorySet(
@@ -928,13 +959,14 @@ internal sealed partial class PollingService
 ### 9.3 재폴링 디바운스
 
 ```
-internal sealed partial class PollingService
+public sealed partial class PollingService
 {
     private void OnSettingsChanged(AppSettings oldSettings, AppSettings newSettings);
     private static bool RequiresImmediateRepoll(AppSettings oldSettings, AppSettings newSettings,
         IReadOnlyDictionary<ExchangeCategory, CategorySnapshot> currentCategories);
 }
 ```
+**B4 — `RoundTrigger`(Domain, `Startup`·`Scheduled`·`Repoll`·`LeagueChanged`)와 `PollingTriggerKind`(§9.1, `Scheduled`·`Repoll`뿐)가 사상 없이 공존하고 `RoundTrigger`에 소비자가 없다는 지적을 채널을 늘리지 않고 닫는다.** `triggers` 채널은 S2 §7.2가 정의한 그대로 `PollingTriggerKind` 두 값만 나른다 — 전송 계층은 바꾸지 않는다. `RunRoundAsync`의 매개변수 타입만 `RoundTrigger`(상위 개념)로 바꾸고, `PollingService`가 채널에서 값을 뽑을 때 다음 규칙으로 승격한다: `Scheduled → RoundTrigger.Scheduled`. `Repoll`이면 `pendingLeagueChangeTrigger`를 확인-후-소비(atomic)한다 — 서 있으면 `RoundTrigger.LeagueChanged`, 아니면 `RoundTrigger.Repoll`. 첫 라운드는 §9.1이 채널 밖에서 `RoundTrigger.Startup`으로 직접 호출한다. `OnSettingsChanged`는 `oldSettings.League?.Trim() != newSettings.League?.Trim()`이면(S2 §7.3의 `Trim()` 정규화와 동일 비교) `pendingLeagueChangeTrigger = true`로 세운 뒤 `Repoll`을 채널에 쓴다. `RunRoundAsync`는 받은 `trigger`를 라운드 시작 Information 로그 줄의 `Message`(자유 텍스트, §4.1)에 싣는다 — `LogEntry`의 스키마는 바꾸지 않는다. 이로써 `RoundTrigger`의 네 멤버 모두 실제로 읽히고 갈라진다.
 디바운스 창·최소 간격 상수는 15절.
 
 
@@ -1016,7 +1048,7 @@ Defaulted.ReasonCode의 리터럴은 정상 경로 하나뿐이다: NoFile (파�
 ### 10.5 SettingsStore
 
 ```
-public sealed class SettingsStore : ISettingsSource, IHostedLifecycleService
+public sealed partial class SettingsStore : ISettingsSource, IHostedLifecycleService
 {
     public SettingsStore(string directory, TimeProvider timeProvider,
         IConditionSink conditionSink, IErrorSink errorSink, ILogger<SettingsStore> logger);
@@ -1041,7 +1073,7 @@ directory는 APPDATA PoeOverlay 경로를 Composition이 조립해 주입한다(
 ### 10.6 읽기 경로 — SettingsLoadResult 판독
 
 ```
-internal sealed partial class SettingsStore
+public sealed partial class SettingsStore
 {
     private static SettingsLoadResult Load(string path);
     private static AppSettings ParseAndValidate(JsonDocument doc, out IReadOnlyList<string> corrections);
@@ -1060,10 +1092,10 @@ internal sealed class SettingsWriteDto
     public int SchemaVersion { get; init; }
     public string? League { get; init; }
     public int RefreshIntervalMinutes { get; init; }
-    public string Language { get; init; }
-    public string DefaultDisplayCurrency { get; init; }
-    public WindowWriteDto Window { get; init; }
-    public WatchlistEntryWriteDto[] Watchlist { get; init; }
+    public required string Language { get; init; }
+    public required string DefaultDisplayCurrency { get; init; }
+    public required WindowWriteDto Window { get; init; }
+    public required WatchlistEntryWriteDto[] Watchlist { get; init; }
     public bool FirstRunAcknowledged { get; init; }
 }
 internal sealed class WindowWriteDto
@@ -1072,13 +1104,13 @@ internal sealed class WindowWriteDto
     public double Y { get; init; }
     public double Width { get; init; }
     public double Height { get; init; }
-    public string HeightMode { get; init; }
+    public required string HeightMode { get; init; }
     public double Opacity { get; init; }
 }
 internal sealed class WatchlistEntryWriteDto
 {
-    public string Id { get; init; }
-    public string Category { get; init; }
+    public required string Id { get; init; }
+    public required string Category { get; init; }
     public string? DisplayCurrency { get; init; }
 }
 
@@ -1088,6 +1120,8 @@ internal static class SettingsWriteDtoMapper
 }
 ```
 각 프로퍼티에는 10.2절 표의 JSON 이름을 JsonPropertyName 특성으로 붙인다(위 목록에서는 시그니처만 보이려 생략했다). ToWriteDto의 enum 문자열화 규칙: DisplayCurrency와 HeightMode는 소문자(auto/chaos/divine, auto/explicit). WatchlistEntry.Category는 CategoryRef.Raw를 그대로 쓴다(정규화하지 않는다, S2 2.2) — Known이 null이어도 Raw가 원문 문자열이므로 미지 카테고리도 그대로 왕복한다.
+
+**A2 — CS8618 수정과 동형 결함 스윕.** `Language`·`DefaultDisplayCurrency`·`Window`·`Watchlist`·`WindowWriteDto.HeightMode`·`WatchlistEntryWriteDto.Id`·`.Category` 일곱 곳에 `required`를 붙였다(생성자를 두지 않은 것은 그대로 유지 — 매퍼가 객체 이니셜라이저로만 생성하므로 `required`가 더 짧다). 이 문서가 선언한 `{ get; init; }` 전체를 다시 훑었다 — `DiagnosticsStartupState`(4.6절, `bool`/`string?`뿐)와 7.1절의 와이어 DTO 여섯 개(`NinjaOverviewDto` 등, 전 필드가 `?`)는 전부 널러블이거나 값 타입이라 같은 결함이 없다. 이 셋(`SettingsWriteDto`/`WindowWriteDto`/`WatchlistEntryWriteDto`) 밖에서 CS8618을 낼 수 있는 비널 참조형 `{ get; init; }`은 이 문서에 더 없다.
 
 ### 10.8 SettingsJsonContext
 
@@ -1101,13 +1135,13 @@ internal sealed partial class SettingsJsonContext : JsonSerializerContext { }
 ### 10.9 원자적 쓰기
 
 ```
-internal sealed partial class SettingsStore
+public sealed partial class SettingsStore
 {
     private async Task WriteAtomicAsync(AppSettings settings, CancellationToken ct);
     private async Task<bool> TryWriteOnceAsync(string tmpPath, string finalPath, string backupPath, SettingsWriteDto dto, CancellationToken ct);
 }
 ```
-재시도 횟수와 간격은 15절. await using을 쓰는 파일 스트림 지점은 ConfigureAwait(false)를 명시한다(S2 8.5 — CA2007이 await using을 잡지 않으므로 반드시 손으로 붙인다).
+재시도 횟수와 간격은 15절. await using을 쓰는 파일 스트림 지점은 ConfigureAwait(false)를 명시한다(S2 8.5). **F2 정정 — 근거가 거꾸로였다.** 초판은 "CA2007이 `await using`을 잡지 않으므로"라 적었으나 【측정】 `await using`은 CA2007이 실제로 잡는다 — 분석기가 잡지 **않는** 것은 `await foreach` 하나뿐이다. 결론(수동 부착)은 유지한다 — `await using`은 분석기가 강제하므로 손으로 붙이지 않으면 애초에 빌드가 경고/오류로 막는다. 다만 `await foreach`의 `ConfigureAwait(false)` 준수는 분석기가 강제하지 않으므로 **리뷰에서 사람이 잡아야 한다** — 이 설계에서 그 형태를 쓰는 자리는 정확히 둘, `Store.ConsumeAsync`(§8.5의 소비 루프)와 `RollingFileSink`의 채널 소비 루프(§4.3)다.
 
 
 ## 11. Presentation — 시그니처 확정
@@ -1143,7 +1177,7 @@ public interface IRefreshable
     void Refresh(MarketSnapshot snapshot, DateTimeOffset now);
 }
 
-public sealed class SnapshotFanout
+public sealed partial class SnapshotFanout
 {
     public SnapshotFanout(
         IMarketSnapshotSource snapshotSource, IUiDispatcher uiDispatcher, IUiTicker uiTicker,
@@ -1157,7 +1191,7 @@ public sealed class SnapshotFanout
 내부적으로 postPending 플래그(Interlocked), 구독자 목록(패스 시작 시점 스냅샷 순회), deferred 버퍼(§8.1/§8.4)를 갖는다. 시그니처는 공개 표면뿐이다 — Republish/OnSnapshotChanged는 private.
 
 ```
-internal sealed partial class SnapshotFanout
+public sealed partial class SnapshotFanout
 {
     private void OnSnapshotChanged(object? sender, EventArgs e);
     private void OnTick(object? sender, EventArgs e);
@@ -1203,12 +1237,15 @@ ObservableObject는 CommunityToolkit.Mvvm(REQUIREMENTS 7절 지정). CA2007 면�
 ### 11.5 SettingsViewModel
 
 ```
+public delegate void FetchedListingSink(string league, int dataEpoch, ExchangeCategory category, CategorySnapshot snapshot);   // B2, 신규
+
 public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, IDisposable
 {
     public SettingsViewModel(
         ISearchSource searchSource, IMarketClient marketClient, ISettingsSource settingsSource,
         ILocalizer localizer, IOverlayModeService moveMode, IOverlayGeometryService geometry,
         RecentErrorRing errorRing, TimeProvider timeProvider, CancellationToken windowScopeToken,
+        FetchedListingSink setFetchedListing, Func<CancellationToken, Task<bool>> retryTrayRegistration,
         ILogger<SettingsViewModel> logger);
 
     public string SearchQuery { get; set; }
@@ -1239,7 +1276,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
     public void Dispose();                                        // detach + 자원 정리(S3 5.3)
 }
 ```
-Refresh 내부 순서: 배너 계산(먼저, 독립 구간, S3 7.6) → 검색 결과 재계산 → 관심목록 행 갱신 → 리그 목록 갱신. RetryTrayRegistrationCommand는 Presentation이 트레이를 직접 모르므로(S2 1.2) TrayIconHost가 노출하는 위임(§12.5의 IUiDispatcher 경유 콜백)을 생성자에서 주입받아 호출한다 — 정확한 주입 형태는 §19.2 갭으로 남긴다.
+Refresh 내부 순서: 배너 계산(먼저, 독립 구간, S3 7.6) → 검색 결과 재계산 → 관심목록 행 갱신 → 리그 목록 갱신.
+
+**B2 — 세 가지 결함을 함께 닫는다.** ① `windowScopeToken`을 공급할 팩터리가 없었다 — §12.4가 `SettingsWindowFactory`를 그 공급자로 확정했다. ② §19.4가 산문으로만 적었던 `retryTrayRegistration` 매개변수가 실제 생성자 목록에 없었다 — 위 시그니처에 추가했다. `RetryTrayRegistrationCommand`는 이 델리게이트를 그대로 호출한다: Composition의 `ServiceRegistration`이 `sp => sp.GetRequiredService<TrayIconHost>().TryReregisterAsync`를 바인딩한다(§19.4, D-SH12). ③ §8.4가 "SettingsViewModel이 `Store.SetFetchedListing`을 부른다"고 적었지만 생성자에 `Store`도 그것을 노출하는 인터페이스도 없었다 — `Store`에 6번째 얼굴을 추가하는 대신(S3 §3.1이 다섯 얼굴로 동결했으므로 늘리면 S3 개정이 필요해진다), `retryTrayRegistration`과 같은 델리게이트 패턴을 재사용한다: `FetchedListingSink`(위)를 새로 선언하고, Composition이 `sp => (league, epoch, category, snapshot) => sp.GetRequiredService<Store>().SetFetchedListing(new DataTag(league, epoch), category, snapshot)`를 바인딩한다. `SettingsViewModel`은 `Store`도 `DataTag`도 모른 채(D-C5와 동형의 격리) §8.4의 오버로드를 호출할 수 있다.
 
 ### 11.6 TrayViewModel
 
@@ -1285,9 +1324,9 @@ public interface IOverlayGeometryService
 ```
 internal static class UiStateTemplates
 {
-    public const string RatePendingWithDuration = "rate pending {0}m";
-    public const string PollingStoppedStale = "polling delayed. last attempt {0}m ago";
-    public const string PollingStoppedExited = "polling stopped. restart the app";
+    public const string RatePendingWithDuration = "rate pending for {0}";       // D1 정정 — {0}은 이미 서식된 기간 문자열(예: "3m")
+    public const string PollingStoppedStale = "updates are delayed. last attempt {0}";  // D1 정정 — {0}은 이미 서식된 상대 시각(예: "3m ago")
+    public const string PollingStoppedExited = "updates have stopped. restart the app"; // D1 정정
     public const string CommitRejectedBanner = "prices are not updating. check the league setting";
     public const string RateInheritedFooter = "rate carried over";
     public const string ItemDroppedRow = "price unavailable \u2014 item still exists";
@@ -1302,8 +1341,17 @@ internal static class DerivedConditions
     public static bool IsRowStale(DateTimeOffset fetchedAt, DateTimeOffset now, int refreshIntervalMinutes);
     public static RowKind ClassifyRow(bool hasSnapshotEntry, bool consecutiveFailuresPositive, bool isInSkippedIds);
 }
+
+internal static class UiStateFormat
+{
+    public static string Ui(ITemplateSource templates, string key, string fallbackConst, params string[] args);
+}
 ```
-DerivedConditions의 네 함수는 전부 순수 함수다(now가 인자, TimeProvider 없음 — S2 1.3의 Pricing 패턴을 그대로 상속). S3 9.2가 요구하는 "한 Republish 패스 안에서 now를 두 번 얻지 않는다"를 시그니처가 강제한다. UiStateTemplates의 정확한 영문·인자 개수는 14.4절 지역화 키 카탈로그와 문자 단위로 일치해야 한다(S3 9.3, S2 4.6.3과 동형의 테스트로 강제 — 16.6절).
+DerivedConditions의 네 함수는 전부 순수 함수다(now가 인자, TimeProvider 없음 — S2 1.3의 Pricing 패턴을 그대로 상속). S3 9.2가 요구하는 "한 Republish 패스 안에서 now를 두 번 얻지 않는다"를 시그니처가 강제한다. UiStateTemplates의 정확한 영문·인자 개수는 14.3절 지역화 키 카탈로그와 문자 단위로 일치해야 한다(S3 9.3, S2 4.6.3과 동형의 테스트로 강제 — 16.2절).
+
+**G1 — `Ui(key, fallbackConst, args)` 3층 헬퍼(S3 §9.3 discharge).** 초판은 S2 §4.6.2의 3층 폴백(① `TryGetTemplate` 실패 시 상수 폴백 ② 센티널 검증 ③ `FormatException` 시 상수 폴백 재시도)을 Presentation이 상속한다고 §9.3(S3)에서 결정만 하고, 그 헬퍼의 실제 시그니처를 이 문서에 옮기지 않았다 — `PricingEngine.Tmpl`(§6.3, private, Pricing 전용)만 있었다. `UiStateFormat.Ui`가 그 짝이다 — `PricingEngine.Tmpl`과 정확히 동형이되 Presentation(`OverlayViewModel`/`TrayViewModel`/`SettingsViewModel`)이 부를 수 있도록 `internal static`으로 둔다(`ITemplateSource`는 `ILocalizer`가 구현하므로 그 인터페이스만 참조 — D-L4와 같은 경계).
+
+**D1 정정.** 초판은 §11.8과 §14.3에 같은 세 키에 대해 서로 다른 영문·인자 모양을 실었다 — 특히 `PollingStoppedStale`은 인자 모양까지 달라서, §18.4가 실제로 넘기는 `Pricing.Relative(...)`의 완성된 구절("3m ago")을 §11.8의 옛 상수("...last attempt {0}m ago")에 넣으면 **"last attempt 3m ago ago"**가 렌더된다 — §16.2의 문자 단위 일치 테스트는 문서에 답이 둘이므로 어느 쪽을 옮겨 적어도 통과해, 이 결함을 잡지 못한다. **§14.3을 정본으로 §11.8을 위와 같이 맞췄다** — 호출부(§18.4)의 인자 모양이 §14.3과 일치하기 때문이다. `RatePendingWithDuration`도 같은 이유로 "이미 서식된 기간 문자열"을 받는 §14.3 모양으로 맞췄다. `PollingStoppedExited`는 텍스트만 §14.4(자리표시자 없는 키 카탈로그, 정본)와 맞췄다 — 아래 14절 머리말의 규칙 정정도 함께 참조.
 
 
 ## 12. Shell — 시그니처 확정
@@ -1317,6 +1365,10 @@ internal static class Program
 {
     [STAThread]
     private static int Main(string[] args);
+
+    private static void RegisterFatalExceptionHandlers(Application app);   // B6 — AppDomain.UnhandledException + Application.DispatcherUnhandledException
+    private static void RunShutdownSequence(IHost host, TrayIconHost trayHost, SingleInstanceGuard guard,
+        MessageOnlyWindowHandle signalWindow, RollingFileSink logSink);    // B6 — S3 §3.3 a~f. 정상 종료·치명적 예외 종료가 이 메서드 하나를 공유한다
 }
 
 internal static class HostBuilderFactory
@@ -1332,6 +1384,8 @@ internal static class ServiceRegistration
 ```
 Main의 본문은 HLD 3.5의 1~12단계 그대로다(S4는 알고리즘을 바꾸지 않는다) — 이 절은 그 단계들이 호출하는 협력 타입들의 시그니처만 아래에서 확정한다. 등록 순서는 S3 3.1의 표(다섯 얼굴 Store 포함) 그대로.
 
+**B6 — 종료 순서·치명적 예외 핸들러의 소유 타입.** 초판은 S3 §3.3의 a~f 단계와 §10.2의 `DispatcherUnhandledException` 허용 목록을 수행할 타입을 지정하지 않았다(`App.xaml.cs`는 "리소스 딕셔너리 병합용 최소 코드비하인드"로만 기술돼 있었다). HLD §3.2가 `OnStartup`이 아니라 명시적 `[STAThread] Main`을 요구한 이상(디스패처 컨텍스트에서 `host.StartAsync`를 부르면 폴링이 UI 스레드로 올라오는 문제, HLD §3.2), 그 대칭으로 종료·치명적 예외도 `App.xaml.cs`가 아니라 `Program`이 소유한다 — `App.xaml.cs`는 계속 XAML 리소스 병합 전용으로 남는다. `Main`은 `app.Run()` 호출 전에 `RegisterFatalExceptionHandlers(app)`로 `AppDomain.CurrentDomain.UnhandledException`과 `app.DispatcherUnhandledException`을 함께 구독한다 — 둘의 폐기 경로(트레이 아이콘 폐기 포함)는 반드시 `RunShutdownSequence`의 c단계 하나로 합류해야 한다(S3 §3.3 "하나의 멱등 가드를 공유"). 이 문서는 그 멱등성을 새 가드 타입으로 만들지 않는다 — `TrayIconHost.Dispose()`(§12.4) 자체가 `Interlocked.Exchange`로 재진입에 안전한 표준 `IDisposable` 관용구를 따르는 것으로 충분하며, `RunShutdownSequence`가 정상 종료 경로와 두 예외 핸들러 경로 모두에서 **같은 인스턴스의 같은 메서드**를 호출하기만 하면 이중 호출도 안전하다.
+
 ### 12.2 부팅 초기 진단 보관 — DiagnosticsStartupState의 소비
 
 ```
@@ -1342,6 +1396,8 @@ internal static class Program
 }
 ```
 CollectBootDiagnostics는 1번(로거 오픈)과 5번(Settings 로드) 단계 사이 지역 변수로 결과를 들고 있다가, ReconcileBootDiagnostics가 Store.StartAsync 완료 직후 정확히 1회 호출된다(S3 3.1 P5, 3.2 M10). LoggingUnavailable은 errorSink.Report + conditionSink.Set(LoggingUnavailable, true, ...)로, flush 흔적 파일은 SettingsWriteFailed 재사용(errorSink.Report + conditionSink.Set(SettingsWriteFailed, true, "종료 시 flush 실패"))으로 반영한다. 흔적 파일은 이 호출이 실제로 나간 뒤에만 삭제한다(S3 3.2 M2 정정).
+
+**B3 — `SnapshotFanout.Attach`의 실제 호출부.** 초판은 §11.2/§8.0(S3)에서 attach 계약만 정의하고 §12 어디에서도 부르지 않았다. 9번(오버레이 창 생성) 직후, `Main`이 `fanout.Attach(overlayViewModel)`과 `fanout.Attach(trayViewModel)`을 정확히 1회씩 호출한다(S3 §3.1 9′행) — 대칭 해제는 §3.3-a③이 담당한다(이미 명시돼 있었다). `SettingsViewModel`의 attach/detach는 창별이므로 여기서 하지 않는다 — §12.4 `SettingsWindowFactory.GetOrCreate()`가 새 인스턴스를 만들 때 `fanout.Attach(viewModel)`을 호출하고, §5.3(S3) 5단계가 `Dispose()` 직전에 detach한다.
 
 ```
 internal static class BootFailureGuard
@@ -1354,13 +1410,31 @@ internal static class BootFailureGuard
 ### 12.3 Overlay — Interop, 모드 서비스, 기하 서비스
 
 ```
-internal static class Win32Constants { /* GWL_EXSTYLE, WS_EX_LAYERED, WS_EX_TRANSPARENT, WS_EX_NOACTIVATE 등 15절 상수표 참조 */ }
+internal static class Win32Constants
+{
+    public const int  GWL_EXSTYLE        = -20;                  // 신규, SDK 표준값
+    public const uint WS_EX_LAYERED      = 0x00080000;
+    public const uint WS_EX_TRANSPARENT  = 0x00000020;
+    public const uint WS_EX_NOACTIVATE   = 0x08000000;           // 측정 — 00-shell-measurements.md, GWL_EXSTYLE=0x08080028의 성분(LAYERED|TRANSPARENT|NOACTIVATE|TOPMOST)
+    public const uint LWA_COLORKEY       = 0x00000001;
+    public const uint LWA_ALPHA          = 0x00000002;
+    public static readonly IntPtr HWND_MESSAGE = new IntPtr(-3); // 신규, SDK 표준값
+    public const uint SMTO_ABORTIFHUNG   = 0x00000002;           // 신규, S3 §3.2 SendMessageTimeout
+}
 
 [Flags]
-internal enum ExtendedStyleBits : uint { /* Win32Constants와 1대1 */ }
-
-internal sealed class ExtendedStyleGate
+public enum ExtendedStyleBits : uint
 {
+    None        = 0,
+    Layered     = Win32Constants.WS_EX_LAYERED,
+    Transparent = Win32Constants.WS_EX_TRANSPARENT,
+    NoActivate  = Win32Constants.WS_EX_NOACTIVATE,
+}
+
+public sealed class ExtendedStyleGate
+{
+    public delegate ExtendedStyleGate Factory(IntPtr hwnd);      // A3 — public. OverlayWindow의 public 생성자가 이 델리게이트를 받으므로 internal이면 CS0051
+
     public ExtendedStyleGate(IntPtr hwnd);
     public ExtendedStyleBits Read();
     public void ApplyOr(ExtendedStyleBits mask);
@@ -1368,9 +1442,11 @@ internal sealed class ExtendedStyleGate
     public void SetLayered(uint colorKeyRgb, byte alpha, LwaFlags flags);
 }
 [Flags]
-internal enum LwaFlags { ColorKey = 1, Alpha = 2 }
+public enum LwaFlags { ColorKey = 1, Alpha = 2 }
 ```
 Shell 안 어디에서도 SetWindowLong/SetLayeredWindowAttributes를 직접 부르지 않는다(S3 4.1) — 이 게이트가 유일한 경로다.
+
+**A3 정정.** 초판은 `Win32Constants`·`ExtendedStyleBits`를 "15절 상수표 참조"로 본문을 비워 뒀는데 15절에는 Win32 수치가 하나도 없었다. 위 값은 이 문서가 지금 채운다(15.9절에도 동일 표를 둔다). `ExtendedStyleGate`·`ExtendedStyleBits`·`LwaFlags`·`Factory`를 `internal`에서 `public`으로 올린 이유는 아래 `OverlayWindow`의 public 생성자가 `Factory`를 매개변수로 받기 때문이다 — internal 델리게이트를 public 생성자 매개변수로 쓰면 CS0051이고(A3), 반대로 생성자를 internal로 내리면 기본 제공 DI 컨테이너가 non-public 생성자를 해석하지 못한다(Store/PollingService와 같은 이유로 public이 필요하다). 캡슐화 규칙("Shell 어디서도 SetWindowLong을 직접 부르지 않는다")은 C# 접근 한정자가 아니라 "이 게이트를 거치지 않은 P/Invoke 호출을 두지 않는다"는 절차 규약이므로 타입 자체의 공개 여부와 무관하다.
 
 ```
 internal sealed class OverlayModeService : IOverlayModeService
@@ -1382,8 +1458,16 @@ internal sealed class OverlayModeService : IOverlayModeService
     public void EnterMoveMode();
     public void ExitMoveMode(MoveModeExitReason reason);
     public event EventHandler? StateChanged;
-}
 
+    // B1 — OverlayWindow의 마우스 핸들러가 부르는 내부 훅. 캡처 개념은 Shell(View)만 알므로 Presentation의
+    // IOverlayModeService 표면에는 넣지 않는다(internal로 충분).
+    internal void NotifyDragActivity();       // 드래그·리사이즈 시작·진행마다 호출 — 내부 MoveModeWatchdog.Kick()으로 전달
+    internal void NotifyCaptureReleased();    // LostMouseCapture 시 호출 — "만료됨" 플래그가 서 있으면 그제서야 Exiting을 개시(§4.6.1)
+}
+```
+`OverlayModeService`는 생성자에서 자신이 소유하는 `MoveModeWatchdog` 인스턴스 하나를 내부에 구성한다 — `onIdleTimeout` 콜백은 이미 `IUiDispatcher.Post`를 거쳐 UI 스레드에서 실행되며(워치독 자신의 계약), 그 안에서 캡처 중이 아니면 즉시 `ExitMoveMode(MoveModeExitReason.WatchdogTimeout)`을 호출하고 캡처 중이면 private `bool expiredWhileCaptured` 플래그만 세운다(S3 §4.6.1). `NotifyCaptureReleased()`는 그 플래그를 소비해(세워져 있으면 지우고 `Exiting`을 개시) `LostMouseCapture`가 요구하는 지연 처리를 구현한다. `NotifyDragActivity()`는 드래그·리사이즈가 진행되는 동안 워치독의 `Kick()`을 그대로 전달할 뿐이다.
+
+```
 internal sealed class OverlayGeometryService : IOverlayGeometryService
 {
     public OverlayGeometryService(OverlayWindow window, ISettingsSource settings);
@@ -1399,17 +1483,22 @@ internal static class OverlayGeometryValidator
 
 internal sealed class MoveModeWatchdog : IDisposable
 {
-    public MoveModeWatchdog(IOverlayModeService modeService, IUiDispatcher dispatcher, TimeProvider timeProvider);
+    public MoveModeWatchdog(IUiDispatcher dispatcher, TimeProvider timeProvider, Action onIdleTimeout);
+    public void Kick();         // B1 — 활동 시 유휴 타이머 리셋(드래그·리사이즈 시작·진행 중 호출, §4.6.1)
     public void Dispose();      // TimeProvider.CreateTimer 인스턴스 폐기 (S3 3.3-a5)
 }
 
 internal sealed class DisplayChangeWatcher : IDisposable
 {
-    public DisplayChangeWatcher(IUiDispatcher dispatcher, OverlayGeometryValidator validatorHost, IOverlayModeService modeService);
+    public DisplayChangeWatcher(IUiDispatcher dispatcher, IOverlayModeService modeService);
     public void Dispose();
 }
 ```
-MoveModeWatchdog의 비활동 임계값은 15절 상수. DisplayChangeWatcher는 SystemEvents.DisplaySettingsChanged를 구독해 IUiDispatcher.Post로 마샬링한 뒤 재검증 루틴(S3 4.7)을 호출한다 — Active 상태 중 트리거가 오면 보류 플래그만 세운다(S3 4.7 N8-1).
+**B1 — MoveModeWatchdog의 재사용 경로.** 초판은 생성자와 `Dispose()`뿐이라 활동에 의한 리셋도, LostMouseCapture가 나중에 소비할 "만료됨" 플래그를 세울 방법도 없었다. `Kick()`을 추가하고, 소유·배선은 `OverlayModeService`가 맡는다(아래) — 워치독은 DI로 주입하지 않는다. 수명이 `OverlayModeService` 자신과 완전히 같고 다른 소비자가 없기 때문이다.
+
+**A3 — `OverlayGeometryValidator`는 정적 클래스이므로 매개변수 타입이 될 수 없다**(CS0723, "정적 타입의 변수를 선언할 수 없다"). `HasMinimumVisibleArea`/`ClampToDefault`가 상태 없는 순수 함수이므로 `DisplayChangeWatcher`는 그 정적 메서드를 직접 호출한다 — 주입할 인스턴스 자체가 없다.
+
+MoveModeWatchdog의 비활동 임계값은 15절 상수. DisplayChangeWatcher는 SystemEvents.DisplaySettingsChanged를 구독해 IUiDispatcher.Post로 마샬링한 뒤 재검증 루틴(S3 4.7, `OverlayGeometryValidator.HasMinimumVisibleArea`/`ClampToDefault`를 정적으로 직접 호출)을 실행한다 — Active 상태 중 트리거가 오면 보류 플래그만 세운다(S3 4.7 N8-1).
 
 
 ### 12.4 Tray
@@ -1445,11 +1534,13 @@ internal sealed class TrayIconHost : IDisposable
 }
 internal sealed class SettingsWindowFactory
 {
-    public SettingsWindowFactory(IServiceProvider serviceProvider, OverlayWindow overlayWindow);
+    public SettingsWindowFactory(IServiceProvider serviceProvider, OverlayWindow overlayWindow, SnapshotFanout fanout);
     public SettingsWindow GetOrCreate();                 // 이미 열려 있으면 Activate()만
 }
 ```
-TryRegister의 재시도 횟수·간격, TryReregisterAsync의 재시도 정책은 15절 상수. TrayIconHost가 클릭 라우팅(좌클릭/더블클릭 = 설정 창, 우클릭 = 메뉴)을 갖는다 — 클릭 핸들러는 이미 WPF UI 스레드에서 돈다(측정 4 D2)므로 Dispatcher.Invoke가 없다.
+TryRegister의 재시도 횟수·간격, TryReregisterAsync의 재시도 정책은 15절 상수. TrayIconHost가 클릭 라우팅(좌클릭/더블클릭 = 설정 창, 우클릭 = 메뉴)을 갖는다 — 클릭 핸들러는 이미 WPF UI 스레드에서 돈다(측정 4 D2)므로 Dispatcher.Invoke가 없다. `TrayIconHost.Dispose()`는 멱등이다(B6) — 정상 종료와 두 치명적 예외 핸들러(§12.1) 경로가 같은 인스턴스를 향해 두 번 이상 부를 수 있으므로, 내부적으로 `Interlocked.Exchange`로 재진입을 막는다.
+
+**B2 — `windowScopeToken`의 공급자.** `SettingsWindowFactory.GetOrCreate()`가 새 `SettingsWindow`/`SettingsViewModel`을 만들 때마다(이미 열려 있으면 재사용하므로 이 경로를 타지 않는다) 새 `CancellationTokenSource`를 만들어 `.Token`을 `SettingsViewModel` 생성자에 주입하고, 그 `Cts` 인스턴스는 factory가 창 인스턴스와 함께 들고 있는다. §5.3(S3) 1단계 직후(정확히는 2단계) 그 `Cts.Cancel()`이 불리고, 5단계에서 `SettingsViewModel.Dispose()` 직후 factory가 `Cts.Dispose()`한다 — 창이 다시 열리면 새 `Cts`를 새로 만든다(재사용하지 않는다).
 
 ### 12.5 Startup — 단일 인스턴스, 신호 채널
 
@@ -1462,19 +1553,40 @@ internal sealed class SingleInstanceGuard : IDisposable
     public void Dispose();
 }
 
+internal sealed class MessageOnlyWindowFactory
+{
+    public MessageOnlyWindowFactory();
+    public MessageOnlyWindowHandle Create(string className, string windowTitle, Func<uint, IntPtr, IntPtr, IntPtr?> wndProc);
+    // wndProc: (msg, wParam, lParam) -> 처리했으면 반환할 IntPtr, 아니면 null(DefWindowProc으로 위임)
+}
+internal sealed class MessageOnlyWindowHandle : IDisposable
+{
+    public IntPtr Hwnd { get; }
+    public void Dispose();      // DestroyWindow + UnregisterClass
+}
+
 internal sealed class InstanceSignal : IDisposable
 {
-    // 수신부 — 메시지 전용 창
-    public InstanceSignal(IUiDispatcher dispatcher, Action onSignalReceived);
+    // 수신부 — 메시지 전용 창. MessageOnlyWindowFactory로 만든다(B5)
+    public InstanceSignal(IUiDispatcher dispatcher, MessageOnlyWindowFactory windowFactory, Action onSignalReceived);
     public void StartReceiving();
     public void StopReceiving();
     public void Dispose();
 
-    // 발신부 — 정적 메서드, 두 번째 프로세스가 첫 프로세스를 향해 호출
-    public static InstanceSignalSendResult TrySend(int firstProcessId, TimeSpan perAttemptTimeout, int maxAttempts);
+    // 발신부 — 정적 메서드, 두 번째 프로세스가 첫 프로세스를 향해 호출. PID가 아니라 클래스 이름으로 찾는다(A4)
+    public static InstanceSignalSendResult TrySend(string className, TimeSpan perAttemptTimeout, int maxAttempts);
 }
 internal enum InstanceSignalSendResult { Acknowledged, NoResponse, WindowNotFound }
+
+internal static class FirstRunGate
+{
+    public static bool ShouldAutoShowSettings(AppSettings settings);   // B5 — !settings.FirstRunAcknowledged
+}
 ```
+**A4 정정.** 초판의 `TrySend(int firstProcessId, ...)`는 S3 §3.2와 모순됐다 — S3가 발견을 `FindWindowEx(HWND_MESSAGE, IntPtr.Zero, className, null)`(클래스 이름 기반)으로 확정했는데, 두 번째 인스턴스가 첫 인스턴스의 PID를 알아낼 방법 자체가 어디에도 없다. `firstProcessId` 매개변수를 없애고 `className`(15.6절 상수)으로 정렬했다.
+
+**B5 — `MessageOnlyWindowFactory`/`FirstRunGate` 시그니처.** 초판은 두 파일을 §2.1 배치에만 올려 두고 시그니처가 없었다. `MessageOnlyWindowFactory`는 `CreateWindowEx`/`RegisterClassEx`/`DefWindowProc` P/Invoke를 감싸는 `Interop/` 전용 헬퍼로, `ExtendedStyleGate`와 같은 패턴이다(Win32 메커니즘을 이 한 곳에만 둔다) — `InstanceSignal`이 그 위에서 메시지 라우팅만 담당한다. `FirstRunGate`는 순수 판정 함수 하나뿐이다 — 실제로 설정 창을 여는 동작(주체)은 §12.1의 `Program`이 부팅 순서 10번(트레이 아이콘) 직후, 11번(app.Run()) 직전에 `if (FirstRunGate.ShouldAutoShowSettings(settingsSource.Current)) settingsWindowFactory.GetOrCreate().Show();`를 호출하는 것으로 확정한다 — FR-08-6("첫 실행 시 설정 창 자동 표시")이 그동안 `SettingsViewModel.ShowFirstRunBanner`/`DismissFirstRunBannerCommand`(수동적 배너 표시)만 갖고 실제로 창을 여는 주체가 없었다.
+
 클래스 이름 문자열, 창 제목, RegisterWindowMessage 이름, 센티널 값은 15절 상수(신규 D-DL7~D-DL9). StartReceiving이 만드는 창은 HWND_MESSAGE 부모의 메시지 전용 창이며 오버레이 HWND와 별개다(D-SH4). 수신 핸들러는 처리 후 반환값에 센티널을 심고, TrySend는 SendMessageTimeout의 원시 성공 반환과 lpdwResult의 센티널 일치를 함께 검사해야만 Acknowledged를 반환한다(D-SH18).
 
 ### 12.6 OverlayWindow / SettingsWindow — 코드비하인드 표면
@@ -1607,7 +1719,7 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 
 신규 D-DL13. 이 절이 ui.* 키의 유일한 정본이다. S2 3.6/4.6.2/4.6.3(ui.price.*, ui.time.*)과 S3 9.3(ui.state.*, ui.tray.*)이 요구한 "문자 단위 일치"를 이 절 하나로 만족시킨다 — PriceTemplates(6.3절)와 UiStateTemplates(11.8절)의 값은 아래 표와 정확히 같아야 하며, 16.6절의 등가 테스트가 그것을 강제한다. 값은 전부 내장 en.json의 정본이다(1차 릴리스는 영문만 채운다, FR-07-3).
 
-값에 자리표시자가 있는 키만 컴파일 시점 상수(PriceTemplates/UiStateTemplates)를 갖는다(S2 4.6.4의 범위 확정 결정) — 자리표시자가 없는 키는 체인 다섯 번째 층(키 문자열 그대로)이 진단으로 충분하므로 상수를 두지 않는다.
+**D1 정정 — 상수 보유 규칙.** 초판은 "자리표시자가 있는 키만 컴파일 시점 상수를 갖는다"고 적어 놓고(S2 4.6.4의 범위 확정 결정), 실제로는 자리표시자가 없는 다섯 키(`PollingStoppedExited`·`CommitRejectedBanner`·`RateInheritedFooter`·`ItemDroppedRow`·`ItemUnresolvedRow`, §11.8·§18.3)에도 상수를 뒀다 — 문서가 스스로 세운 규칙을 어겼다. **정정된 규칙**: 값에 자리표시자가 있는 키는 예외 없이 컴파일 시점 상수를 갖는다(서식 인자 개수 불일치는 체인 5층 — 키 문자열 그대로 — 만으로는 잡히지 않으므로 §16.2의 문자 단위 테스트가 반드시 필요하다). 자리표시자가 없는 키 중에서도 **사용자가 반드시 봐야 하는 상태 배너·행 텍스트**(위 다섯 키가 정확히 이것이다 — 폴링 정지·거부·승계·미해결·드롭 표시)는 상수를 둔다. 트레이 메뉴 항목처럼 부차적인 나머지 무-자리표시자 키(14.6절 `ui.tray.*` 등)는 상수를 두지 않고 체인 5층으로 충분하다 — 이 문서는 규칙을 상수 목록에 맞춰 고쳤다(상수를 빼는 대신).
 
 ### 14.1 ui.price.*
 
@@ -1694,6 +1806,7 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | market.categoryMismatch | core.items[].category 불일치 |
 | settings.writeBlocked | 쓰기 차단 상태의 갱신 시도 |
 | store.extraMatchFault | ExtraMatch 예외 |
+| diagnostics.bufferOverflow | `RollingFileSink` 유실 통지의 `RecentErrorRing` 노출 억제(D2, 신규) |
 
 
 ## 15. 구체 상수 목록
@@ -1704,7 +1817,7 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 
 | 상수 | 값 | 출처 |
 |---|---|---|
-| 컬러키 RGB | R=255,G=0,B=255 (클래식 마젠타) | 신규 — 팔레트가 시세 표시에 쓰는 흰색/회색/상승녹색/하락적색 계열과 절대 겹치지 않는 값으로 선택(S3 4.0.1 함정 2) |
+| 컬러키 RGB | R=255,G=0,B=255 (클래식 마젠타) | 신규, **잠정으로 표기(F3)** — 팔레트가 시세 표시에 쓰는 흰색/회색/상승녹색/하락적색 계열과 절대 겹치지 않는 값으로 선택(S3 4.0.1 함정 2). **F3 정정**: 이 비충돌 주장은 §19.5가 팔레트 전체를 미루는 것과 같은 문서 안에서 성립할 수 없다 — 존재하지 않는 팔레트에 대해 비충돌은 논증되지 않는다. 마젠타는 통상적인 시세 팔레트(흰/회/녹/적)와 충돌할 가능성이 낮다는 상식적 근거로 잠정 채택하며, §19.5의 팔레트 확정 시 이 값도 함께 재검증한다 |
 | 컬러키 COLORREF 인코딩 | 0x00FF00FF (0x00BBGGRR 순서, R=B=255라 대칭) | 신규, Win32 SetLayeredWindowAttributes 규약 |
 | LWA_ALPHA 계산 | byte alpha = (byte)Math.Round(settings.Window.Opacity * 255) | 신규, S3 4.0 |
 | window.x/y 기본값 | 100 / 100 | HLD 7절 |
@@ -1712,6 +1825,8 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | window.width/height 클램프 | [240, 4000] | S2 8.2 |
 | window.opacity 기본값/클램프 | 0.87 / [0.2, 1.0] | HLD 7절 |
 | 최소 가시 면적 | 어느 한 작업영역과의 교집합이 (푸터 폭 x 푸터 높이) 이상 | S3 4.5 D-SH8 |
+| 푸터 폰트 크기(잠정) | 12px | 신규, 잠정 — `00-shell-measurements.md` §8이 측정한 10/11/12/14px 중 중간값. `HasMinimumVisibleArea(..., Size footerSize)`의 실입력이 지금 필요하므로 임시로 확정한다. **결정 주체·시점(G3)**: 구현 담당자가 실물 1차 사용성 확인(S3 §14 항목12가 요구하는 체감 판독성 검증) 직후 교체 — 팔레트 확정과 같은 실험에 묶는다, 별도 절차를 새로 만들지 않는다 |
+| 오버레이 색 팔레트(컬러키 제외) | 잠정 — 흰색 주 텍스트/회색 보조/상승 녹색/하락 적색(시스템 기본 계열, 정확한 헥스값 미정) | 신규, 잠정 — 팔레트 값 자체는 여전히 §19.5가 의도적으로 열어 둔 자리다. 이 행은 "값이 아예 없다"는 지적(G3)에 대해 실험 전까지 쓸 수 있는 자리표시자를 준 것이지, §19.5의 유예를 철회한 것이 아니다 |
 
 ### 15.2 폴링·주기
 
@@ -1742,6 +1857,9 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | 재시도 횟수/백오프 기준 | 3회, 지수 2초 기준 + 지터 | S2 5.8 |
 | Retry-After 클램프 | [0, 60초] | S2 5.8 |
 | MinPrice | 1e-9m | S2 4.2 D-PR8 |
+| User-Agent | `PoeOverlayPriceTracker/1.0` | 신규(§C) — S2 §5.8이 "식별 가능한 고정 문자열"만 요구했다. `IHttpClientFactory`의 명명 클라이언트 구성(Composition)에서 1회 설정 |
+| 리그 목록 엔드포인트 | `GET https://poe.ninja/poe1/api/economy/leagues` | 측정 — `00-api-contract.md` §1 |
+| 카테고리 개요 엔드포인트 | `GET https://poe.ninja/poe1/api/economy/exchange/current/overview?league={league}&type={category}` | 측정 — `00-api-contract.md` §1. `{category}` = `ExchangeCategory.ToString()`(7.4절 D-DL23, S2 §2.2) |
 
 ### 15.4 Diagnostics
 
@@ -1761,6 +1879,7 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | 디바운스 창 | 1초, 확인 | S2 8.6 |
 | 원자적 쓰기 재시도 횟수 | 3회 | S2 8.5 |
 | 재시도 백오프 간격 | 50ms, 100ms, 200ms(누적 지연) | 신규 — S2가 "짧은 백오프"로만 남긴 값을 확정 |
+| 종료 flush 실패 흔적 파일 이름 | `settings.flush-failure.trace` (로그 디렉터리, 4.6절 `DiagnosticsStartupState.SettingsFlushFailureTracePath`가 가리키는 파일) | 신규(§C) — S2 §8.6은 "종료 시 쓰고 기동 시 읽는다"고만 하고 경로 프로퍼티만 명명했다. 내용은 실패 시각(UTC ISO 8601) 한 줄 |
 
 ### 15.6 단일 인스턴스 신호 — 신규 확정
 
@@ -1790,6 +1909,29 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | ViewModelRefreshFailing 연속 실패 임계 N | 5 | 신규 — S3 10.1절 "N회(S4, 예 5회)"를 확정 |
 | SettingsViewModel 검색 디바운스 창 | 250ms, 확인 | S3 7.4 |
 | 트레이 표시 경로 반복 실패 승격 임계 | 3회 연속 실패 시 네이티브 MessageBox | S3 10.1(HLD D12) |
+| `SearchOptions.Limit` 상한 | 200 | S2 §6.7 |
+
+### 15.9 Win32 P/Invoke 상수 (A3, §C)
+
+12.3절 `Win32Constants`/`ExtendedStyleBits`/`LwaFlags`와 문자 단위로 일치한다 — 초판은 이 자리를 "15절 상수표 참조"로 비워 둔 채 15절에 값을 싣지 않았다(A3).
+
+| 상수 | 값 | 출처 |
+|---|---|---|
+| GWL_EXSTYLE | -20 | 신규, SDK 표준값 |
+| WS_EX_LAYERED | 0x00080000 | 측정 — `00-shell-measurements.md`, `GWL_EXSTYLE`=`0x08080028`의 성분 |
+| WS_EX_TRANSPARENT | 0x00000020 | 측정, 위와 동일 근거 |
+| WS_EX_NOACTIVATE | 0x08000000 | 측정, 위와 동일 근거 |
+| LWA_COLORKEY | 0x00000001 | 신규, SDK 표준값 |
+| LWA_ALPHA | 0x00000002 | 신규, SDK 표준값 |
+| HWND_MESSAGE | `new IntPtr(-3)` | 신규, SDK 표준값 |
+| SMTO_ABORTIFHUNG | 0x00000002 | 신규, SDK 표준값 — S3 §3.2가 요구한 플래그 |
+
+### 15.10 부팅 감시
+
+| 상수 | 값 | 출처 |
+|---|---|---|
+| BootWatchdog 타임아웃 | 15초 | 신규(§C) — §18.1이 본문에서 이미 확정한 값인데 §18.1 스스로 "15절에 추가"라 적어 놓고 추가하지 않았다. 이 행이 그 약속을 이행한다 |
+
 
 
 ## 16. 테스트 계획과 배치
@@ -1818,9 +1960,9 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 
 | 파일 | S2 절 | 커버 ID |
 |---|---|---|
-| Market/CategoryFetchTests.cs | 11.7 | M1~M6, M9~M11 (구조 검사 순서, 원소별 역직렬화) |
-| Market/JoinTests.cs | 11.7 | M6, M7(사전 1회 구축 계수 단언 포함) |
-| Market/DeserializationBoundaryTests.cs | 11.7 | **M12(신규 개별 파일 아님, 이 파일의 한 메서드) — {"core":null,...}가 Deserialization으로 귀결함을 단언. 2프라임 골격 널 검사 회귀** |
+| Market/CategoryFetchTests.cs | 11.7 | M1~M6, M9~M11, **M10Prime**(전 행이 문자열 값 -> ElementFaultRatio, E2) (구조 검사 순서, 원소별 역직렬화) |
+| Market/JoinTests.cs | 11.7 | M6, M7(사전 1회 구축 계수 단언 포함 — E1, 아래 참조) |
+| Market/DeserializationBoundaryTests.cs | 11.7 | **M8**(core 키 자체 없음 -> Deserialization, E2), **M12(신규 개별 파일 아님, 이 파일의 한 메서드) — {"core":null,...}가 Deserialization으로 귀결함을 단언. 2프라임 골격 널 검사 회귀**, **M12Prime**({"core":{...},"lines":null} -> Deserialization), **M12DoublePrime**(본문이 null 리터럴 -> Deserialization) |
 | Market/LeagueListTests.cs | 11.7 | M13~M15 |
 | Market/RetryAfterTests.cs | 11.7 | M16~M18 |
 | Market/NinjaGatewayTests.cs | 11.7 | M19~M21, M20Prime |
@@ -1831,7 +1973,7 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 
 | 파일 | S2 절 | 커버 ID |
 |---|---|---|
-| Store/CommitValidationTests.cs | 11.8 | **S0 — 기동 후 BeginNewLeague -> CommitCategory 커밋이 착지함을 단언, B1 회귀**. S1, S2, S2Prime, S2DoublePrime, S3, S4, S4Prime |
+| Store/CommitValidationTests.cs | 11.8 | **S0 — 기동 후 BeginNewLeague -> CommitCategory 커밋이 착지함을 단언, B1 회귀**. S1, S2, S2Prime, S2DoublePrime, **S2TriplePrime**(`Items`에 `default(ItemId)` 키 -> `EmptyItemId` 거부, Release에서도 — §13.4가 코드를 정의한 자리, E2), S3, S4, S4Prime |
 | Store/ConcurrencyTests.cs | 11.8 | S5 |
 | Store/ApplyFaultTests.cs | 11.8 | S6, S7, S7Prime, S7DoublePrime |
 | Store/CommitRejectedConditionTests.cs | 11.8 | S8, S8Prime |
@@ -1870,13 +2012,26 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | 파일 | 대응 절 | 내용 |
 |---|---|---|
 | Presentation/SnapshotFanoutMergeTests.cs | S3 8.2, 측정 R2 | 병합 규약 — 소규모 스트레스(생산자 여러 스레드 x 다회, 유실 0건). 80만 회 규모의 원측정은 재현하지 않되(CI 시간), 유실 0건 단언은 유지 |
-| Presentation/SnapshotFanoutReentrancyTests.cs | S3 8.4, 측정 §10.3 | 경계 트리거+래치 구현이 반복 실패에서 유한 패스 후 수렴함을 단언 — >=N 레벨 구현으로 회귀하면 실패하도록 상한 패스 수를 assert |
+| Presentation/SnapshotFanoutReentrancyTests.cs | S3 8.4, 측정 §10.3 | 경계 트리거+래치 구현이 반복 실패에서 유한 패스 후 수렴함을 단언 — **상한 패스 수 N=7**(E4, `00-shell-measurements.md` §10.3 실측값)로 고정 assert. `>=N` 레벨 구현으로 회귀하면 실패하도록 정확히 7을 assert하며, "N 이하"가 아니라 "정확히 7 이하로 수렴"임을 단언한다 |
 | Presentation/DerivedConditionsTests.cs | S3 9.2 | PollingStopped/RatePending/RowStale/ClassifyRow 네 순수 함수 |
 | Presentation/ViewModelRefreshFailingLatchTests.cs | S3 10.1, B3 | 경계(false->true/true->false)에서만 Set이 호출됨을 단언 — N-1회 실패 시 미호출, N회째 정확히 1회 호출 |
+
+### 16.9 Diagnostics (E3, 신규)
+
+§2.1 배치에 `tests/PoeOverlay.Core.Tests/Diagnostics/` 폴더가 있었는데 이 절이 초판에 없어 §4.1의 로그 와이어 형식과 D-DG1(포화 시 유실)의 동작이 무검증이었다.
+
+| 파일 | 대응 절 | 내용 |
+|---|---|---|
+| Diagnostics/LogLineFormatterTests.cs | 4.1절 | 로그 줄 형식(고정폭 접두 + key=value 꼬리, 이스케이프 규칙)의 문자 단위 단언 |
+| Diagnostics/RollingFileSinkOverflowTests.cs | 4.3절, D-DG1, D2(신규) | 상한 초과 시 최고참 항목 폐기 + `LogBufferOverflow` 유실 통지가 상한 무시하고 큐잉됨을 단언. **유실 통지의 LogLevel이 Warning임을 단언**(D2 회귀) |
+| Diagnostics/RecentErrorRingTests.cs | 4.4절 | Warning 이상만 담김, 용량 64에서 최고참 폐기 |
+| Diagnostics/SessionSuppressionRegistryTests.cs | 4.5절, 14.8절 | `ShouldReport`의 채널별 1회 억제, `DumpTotals` |
 
 ### 16.8 공통 규약
 
 FakeTimeProvider(Microsoft.Extensions.TimeProvider.Testing)로 전부 구동한다. Task.Delay/Thread.Sleep 직접 호출 금지(S2 11절). Market 테스트는 HttpMessageHandler 스텁 + 00-api-contract.md 실측 본문을 고정 자산(tests/PoeOverlay.Core.Tests/Market/Fixtures/*.json)으로 둔다.
+
+**E1 — M7이 공허하게 통과할 수 있었던 자리를 닫는다.** 조인은 `MarketClient`의 private 경로 안이고 `CategorySnapshot`은 `JoinMissCount`만 갖는다 — "사전을 1회만 구축한다"(선형 탐색 금지)를 검사할 수 있는 표면이 없었다. `MarketClient`에 테스트 전용 `internal` 계수 훅을 둔다: `internal int JoinDictionaryBuildCount { get; private set; }`(7.4절에 필드로 추가, 조인 사전을 구성할 때마다 증가) — `InternalsVisibleTo`(2.2절, D-DL0-1)로 `Market/JoinTests.cs`가 직접 읽는다. `Ok` 카테고리를 여러 항목으로 1회 조회한 뒤 `JoinDictionaryBuildCount == 1`을 단언하면 선형 탐색(항목마다 순회)으로 퇴행해도 값이 늘지 않아 테스트가 계속 공허하게 통과하는 일은 없다 — 오히려 사전이 항목 수만큼 재구축되면 값이 커지므로 그 실패 모드를 직접 잡는다.
 
 
 ## 17. 추적표 — S2/S3의 모든 "S4로 유예" 표시가 이 문서 어디에서 닫히는지
@@ -1907,6 +2062,7 @@ FakeTimeProvider(Microsoft.Extensions.TimeProvider.Testing)로 전부 구동한�
 | S3 | 14절 항목 6 | firstRunAcknowledged 스키마 키·위치 | 10.2절 |
 | HLD | 3.3절 | 이동 모드 워치독 비활동 임계(S3와 동일 지점) | 15.7절 |
 | HLD | 7절 | firstRunAcknowledged 키 이름(HLD측 인용) | 10.2절 |
+| S3 | 14절 항목 13 | 렌더링 품질 검증 도구·자동화 배치 → S4 | 2.4절(Shell 전용 테스트 프로젝트를 두지 않으므로 화면 캡처 기반 렌더링 검증은 자동화 대상 밖 — RTB 무효 경고만 유지, F5 정정 — 초판 §17에 이 행이 없었다) |
 
 **의도적으로 열어 둔 자리 하나** — S3 14절 항목 12("색 팔레트·폰트 크기 선택 → S4")는 이 문서의 범위 선언(헤더 "범위 밖: 오버레이 색상 팔레트 전체")과 충돌하지 않는다. 컬러키 한 값만 확정하고(15.1절) 나머지 팔레트는 XAML 마크업과 함께 다음 단계로 넘긴다 — 실사용 판독성 실험(항목 12 자체가 요구하는 선행 조건)이 아직 없으므로 지금 팔레트를 확정하면 근거 없는 색이 된다.
 
@@ -1928,7 +2084,7 @@ internal sealed class BootWatchdog : IDisposable
     public void Dispose();
 }
 ```
-타임아웃 15초(상수, 15절에 추가). Arm 이후 15초 안에 Disarm이 불리지 않으면 onTimeout이 BootFailureGuard.ShowFatalMessageBox(state: 그 시점까지 모은 DiagnosticsStartupState, exception: null)를 호출한다 — 예외 경로(§12.2)와 같은 최종 표시 메서드를 공유한다. 근거: 15초는 정상 기동(수백 ms~수 초, HLD 3.5 "정상 기동은 8~11단계를 밀리초~수백 밀리초 안에 통과")의 수십 배 여유이며, 사용자가 "exe가 아무것도 하지 않는다"고 느끼기 시작하는 체감 임계(수 초~10여 초)보다 살짝 길게 잡아 오탐(정상인데 느린 디스크에서 격리 파일 10개를 순회하는 경우 등)을 피한다.
+타임아웃 15초(상수, 15절에 추가). Arm 이후 15초 안에 Disarm이 불리지 않으면 onTimeout이 BootFailureGuard.ShowFatalMessageBox(state: 그 시점까지 모은 DiagnosticsStartupState, exception: null)를 호출한다 — 예외 경로(§12.2)와 같은 최종 표시 메서드를 공유한다. 근거: 15초는 정상 기동(수백 ms~수 초, **S3 §3.2** "정상 기동은 8~11단계를 밀리초~수백 밀리초 안에 통과" — F4 정정, 초판은 이 문장을 HLD §3.5로 잘못 귀속시켰다)의 수십 배 여유이며, 사용자가 "exe가 아무것도 하지 않는다"고 느끼기 시작하는 체감 임계(수 초~10여 초)보다 살짝 길게 잡아 오탐(정상인데 느린 디스크에서 격리 파일 10개를 순회하는 경우 등)을 피한다.
 
 ### 18.2 무응답/지연 구별 대화상자 문구 — NativeDialogText (M6 discharge)
 
@@ -1989,13 +2145,16 @@ S2 §12·S3 §13과 같은 형식이다. 이 문서가 상위 결정을 뒤집�
 
 | # | 항목 | 성격 | 처분 |
 |---|---|---|---|
-| 19.1 | **S2 8.4절의 "쓰기는 소스 생성 직렬화기를 그대로 쓴다"는 AppSettings를 직접 직렬화한다는 뜻으로 읽히지만 컴파일되지 않는다** — WatchlistEntry.Id(ItemId)/Category(CategoryRef)/DisplayCurrency(Domain 열거형?)가 System.Text.Json 기본 처리로는 10.2절의 평평한 스키마를 만들지 못하고 중첩 객체가 된다 | **구현 불가능 지점(가장 가치 있는 발견)** | 10.7절에서 SettingsWriteDto/WatchlistEntryWriteDto와 SettingsWriteDtoMapper.ToWriteDto를 신설해 닫았다. S2를 개정하지 않는다 — 이 문서가 S2가 남긴 구현 세부(직렬화기를 "그대로" 쓴다는 표현의 정확한 의미)를 채우는 것으로 충분하다 |
+| 19.1 | **S2 8.4절의 "쓰기는 소스 생성 직렬화기를 그대로 쓴다"는 AppSettings를 직접 직렬화한다는 뜻으로 읽히지만, 그러면 계약과 다른 JSON이 나온다**(F1 정정 — "컴파일되지 않는다"가 아니라 **컴파일은 되고 잘못된 JSON을 낸다**: `{"id":{"value":"divine"},"category":{"raw":"Currency","known":1}}`처럼 값 타입이 중첩 객체로, enum이 숫자로 나온다) — WatchlistEntry.Id(ItemId)/Category(CategoryRef)/DisplayCurrency(Domain 열거형?)가 System.Text.Json 기본 처리로는 10.2절의 평평한 스키마를 만들지 못한다 | **구현 불가능 지점(가장 가치 있는 발견)** | 10.7절에서 SettingsWriteDto/WatchlistEntryWriteDto와 SettingsWriteDtoMapper.ToWriteDto를 신설해 닫았다(A2가 그 DTO 자신의 CS8618을 마저 고쳤다). S2를 개정하지 않는다 — 이 문서가 S2가 남긴 구현 세부(직렬화기를 "그대로" 쓴다는 표현의 정확한 의미)를 채우는 것으로 충분하다 |
 | 19.2 | **FailureKind.ElementFault 열거 멤버가 죽은 코드다** — S2 5.5.3/5.5.4의 판정 순서를 전수 추적하면, 원소 단위 결함은 항상 SkipCounts.ElementFault(카운터)로만 계상되고 카테고리 단위 FailureRecord.Kind로는 FieldMissingRatio(Code=ElementFaultRatio, 20% 초과 시) 또는 아무 실패도 아닌 것(소표본 예외, M10 회귀)으로만 귀결된다. Kind=ElementFault 자체를 만드는 생산자가 없다 | 상위 문서의 사소한 미비 | 13.1절에 Code 리터럴은 정의해 두되(혹시 모를 호출 대비) 미사용으로 명시했다. **개정 권고 — S2 2.12절의 FailureKind 열거에서 ElementFault를 제거하거나, 의도했던 생산 지점을 S2가 명시할 것.** 이 문서는 열거를 바꾸지 않았다(그럴 권한이 없다) |
 | 19.3 | **11.8절 UiStateTemplates 원 목록이 14.3절 카탈로그가 요구하는 세 상수(FetchFailedRow, FetchFailedBadge, LoggingUnavailableWithPath)를 빠뜨렸다** | 이 문서 자신의 작성 중 발견 | 18.3절에서 다섯 상수(위 셋 + MoreRows + MoreRowsExplicit)를 추가로 확정해 닫았다. 구현 시 11.8절 코드 블록과 18.3절 코드 블록을 합쳐 하나의 UiStateTemplates로 만든다 |
 | 19.4 | **11.5절 SettingsViewModel.RetryTrayRegistrationCommand의 주입 형태가 "위임"이라고만 적혀 시그니처가 비어 있었다** | 이 문서 자신의 작성 중 발견 | 12.4절이 이미 TrayIconHost.TryReregisterAsync(CancellationToken) -> Task<bool>을 확정했으므로, SettingsViewModel 생성자는 `Func<CancellationToken, Task<bool>> retryTrayRegistration` 매개변수를 받아 그 델리게이트를 커맨드 본문에서 호출한다. Composition의 ServiceRegistration이 `sp => sp.GetRequiredService<TrayIconHost>().TryReregisterAsync`를 바인딩한다 |
 | 19.5 | 오버레이 색상 팔레트 전체(컬러키 제외) | 의도적으로 열어 둠 — 이 문서의 범위 선언 | S3 14절 항목 12가 스스로 "체감 판독성 검증 후 반영"을 전제 조건으로 달았으므로, 그 실험이 없는 지금 팔레트를 고정하면 근거 없는 색이 된다. XAML 마크업과 함께 다음 단계(구현 중 또는 S5)로 넘긴다. **상위 문서가 예약한 결정이므로 이 문서가 대신 발명하지 않는다** |
 | 19.6 | FieldMissingRatio 사유 분화에서 Duplicate가 지배 원인일 때(또는 동률일 때) 전부 기본 코드로 뭉개진다 — S2 5.5.4는 이 경우를 언급하지 않았다 | 이 문서가 명시적으로 결정(13.2절 D-DL11) | 재론이 필요하면 실사용 로그에서 Duplicate 지배 사례가 실제로 관측된 뒤 판단한다(§15.2의 다른 임계값들과 같은 성격 — "실사용 후 조정") |
 | 19.7 | Interop/의 CA2007 개별 재활성 지점(2.3절 세 번째 행)이 현재 빈 집합 | 확인 사항, 결함 아님 | 구현 중 실제로 그런 지점이 생기면 그때 표를 채운다. 지금 억지로 만들 필요가 없다 |
+| 19.8 | **AppConditionKind.FetchFailed가 고아다**(D3, 제2판이 새로 발견) — 저장 그룹으로 선언됐으나 생산자도 소비자도 없다. 실제 실패 목록 표시는 `CategoryStatuses`에서 `DerivedConditions.ClassifyRow(...)`로 파생되며 `Conditions`를 건드리지 않는다 — `snapshot.Conditions[FetchFailed]`는 영원히 부재한다. 19.2가 `FailureKind.ElementFault`에 대해 스스로 수행한 추적을 이 문서 자신에게는 적용하지 못했던 자리다 | 상위 문서의 사소한 미비, 19.2와 동형 | 3.3절 열거 주석에 고아임을 표시해 두되(값 재배열 금지이므로 자리는 그대로 둔다) 열거 자체를 바꾸지 않는다. **개정 권고 — S2 §2.11에서 `FetchFailed`를 파생 그룹으로 옮기거나, 생산자·소비자와 회귀 테스트를 새로 명시할 것.** 어느 쪽이든 열거 멤버의 소속 그룹(저장/파생 경계, 값 순서에 영향)이 바뀌므로 이 문서가 대신 결정하지 않는다 |
 
 **요약**: 42/42 요구사항 충족은 이 문서가 재논증하지 않는다(S2/S3가 이미 확정) — 이 문서는 그 결정들이 실제로 컴파일되는 형태를 갖추게 했을 뿐이다. 19.1이 유일하게 "상위 문서의 문장이 문자 그대로는 성립하지 않는" 자리였고, 나머지는 전부 상위 문서가 의도적으로 남겨 둔 빈칸이었다.
+
+**S2 개정 요구 2건(제2판 확정)** — ① `FailureKind.ElementFault` 제거 또는 생산 지점 명시(§19.2) ② `AppConditionKind.FetchFailed`의 그룹 재배치 또는 생산자 신설(§19.8, D3). 둘 다 열거 멤버의 소속·순서에 관한 결정이라 S2의 권한이며, 이 문서는 어느 쪽도 대신 정하지 않았다.
 
