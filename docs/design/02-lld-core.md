@@ -1343,12 +1343,25 @@ Apply(CommitCategory):
 
 ```
 라운드 종료 시:
-   착지한 커밋(CommitCategory + RecordCategoryFailure)이 0건이면
+   착지한 커밋(CommitCategory + RecordCategoryFailure)이 하나라도 있으면
+       ConsecutiveEmptyCommitRounds = 0        // 취소된 라운드여도 리셋한다 —
+                                               // 취소 이전에 착지한 커밋은 진짜 증거다
+   0건이고 RoundOutcome == Canceled 이면
+       변화 없음                                // 【구현 3단계 정정】 아래 참조
+   0건이고 그 외의 결말이면
        ConsecutiveEmptyCommitRounds++
-   하나라도 있으면 0 으로 리셋
    >= 2  -> SetCondition(CommitRejected, true, detail: 마지막 거부 코드)
    == 0  -> SetCondition(CommitRejected, false)
+
+BeginNewLeague 는 ConsecutiveEmptyCommitRounds 를 0 으로 되돌리고
+   CommitRejected 조건과 마지막 거부 코드를 함께 지운다 (INV-8 의 정신).
+   RejectedCommitCount 는 수명 전체 관측 카운터이므로 리셋하지 않는다 (D9).
 ```
+
+> **【구현 3단계 정정】 취소는 거부가 아니다.** 초판은 「착지한 커밋이 0건이면 ++」로만 적어 `RoundOutcome.Canceled`를 구별하지 않았다. 그러면 리그 변경과 관심목록 편집이 연달아 일어나 라운드가 두 번 취소되는 것만으로 `CommitRejected` 배너가 뜬다 — `Validate`가 불린 적이 없어 `detail`은 `null`이고, `RejectedCommitCount`는 옳게 0인 채로. **D-ST1이 명령에 `RoundContext` 대신 `DataTag`만 싣기로 한 근거가 정확히 이 뭉개짐을 막기 위해서였는데**, 빈 라운드 카운터에서 되살아났다. §7.8이 「취소는 오염이 아니라 취소다」라고 적은 것과 같은 구별이다.
+>
+> **`RoundOutcome.LeagueUnresolved`도 같은 모양이다** — 거부가 아닌 이유로 아무것도 착지시키지 않는다. 생산자(`Polling`)가 아직 없어 도달 불가이므로 **S4 구현 단계에서 함께 판정한다.**
+
 
 **이것이 없으면 화면이 무기한 정지한다.** `RecordCategoryFailure`**도** 검증 대상이므로 실패조차 기록되지 않아 `ConsecutiveFailures`가 0에 머물고 배지가 뜨지 않는다. 하트비트는 무검증이라 계속 적용되어 `PollingStopped`도 뜨지 않는다. `RoundOutcome`은 `MarketResult`로 판정하므로 `Completed`를 보고하고 `DisplayState`는 `Ready`다. `RejectedCommitCount`에는 **소비자가 없었다.** 사용자는 거부가 시작된 순간의 가격을 정상 서식으로 계속 본다.
 

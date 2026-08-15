@@ -1,0 +1,67 @@
+{
+  "core": {
+    "primary": "chaos",
+    "secondary": "divine",
+    "items": [
+      {
+        "id": "divine",
+        "name": "Divine Orb",
+        "image": "/gen/image/WzI1LDE0.png",
+        "category": "Currency",
+        "detailsId": "divine-orb"
+      },
+      {
+        "id": "vivid-lifeforce",
+        "name": "Vivid Lifeforce",
+        "image": "/gen/image/WzI1LDE1.png",
+        "category": "Currency",
+        "detailsId": "vivid-lifeforce"
+      },
+      {
+        "id": "chaos",
+        "name": "Chaos Orb",
+        "image": "/gen/image/WzI1LDE2.png",
+        "category": "Currency",
+        "detailsId": "chaos-orb"
+      }
+    ],
+    "rates": {
+      "divine": 0.005139
+    }
+  },
+  "lines": [
+    {
+      "id": "divine",
+      "primaryValue": 194.6,
+      "volumePrimaryValue": 812345,
+      "maxVolumeCurrency": "chaos",
+      "maxVolumeRate": 0.005139,
+      "sparkline": {
+        "totalChange": -9.18,
+        "data": [-0.25, -2.01, -7.08, -8.73, -10.11, -9.47, -9.18]
+      }
+    },
+    {
+      "id": "vivid-lifeforce",
+      "primaryValue": 0.06401,
+      "volumePrimaryValue": 2097323,
+      "maxVolumeCurrency": "divine",
+      "maxVolumeRate": 3040,
+      "sparkline": {
+        "totalChange": 30.46,
+        "data": [-3.45, 5.88, 5.61, 18.18, 35.97, 31.76, 30.46]
+      }
+    },
+    {
+      "id": "chaos",
+      "primaryValue": 1,
+      "volumePrimaryValue": 9999999,
+      "maxVolumeCurrency": "divine",
+      "maxVolumeRate": 194.6,
+      "sparkline": {
+        "totalChange": 0,
+        "data": [0, 0, 0, 0, 0, 0, 0]
+      }
+    }
+  ]
+}

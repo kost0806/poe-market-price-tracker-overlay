@@ -1693,7 +1693,11 @@ S2 6.4/6.2가 이미 리터럴을 문자로 제시했다 — 이 문서는 그�
 
 ### 13.5 Store 소비 루프 예외 — ApplyFault
 
-Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "ApplyFault", "ui.error.applyFault", ex.Message, null, null, null, ex.GetType().Name))`를 같은 catch 안에서 큐잉한다(S2 6.3 의사코드 그대로, Code="ApplyFault"는 리터럴로 고정).
+Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "ApplyFault", "ui.error.applyFault", ex.Message, CategoryOf(command), Current.DataLeague, null, ex.GetType().Name))`를 같은 catch 안에서 큐잉한다(S2 6.3 의사코드 그대로, Code="ApplyFault"는 리터럴로 고정).
+
+**【구현 3단계 정정】 초판은 `Category`·`League`·`RoundNumber`를 셋 다 `null`로 적었다.** 그러나 실패한 `CommitCategory`/`RecordCategoryFailure`/`SetFetchedListing`은 **자기 카테고리를 싣고 있고** `Store`는 현재 `DataLeague`를 안다. `Apply`가 던졌을 때 살아남도록 설계된 **유일한 채널**이 정작 가진 정보를 버리고 있었다. 둘은 채운다.
+
+**`RoundNumber`만 `null`로 남는다** — D-ST1이 `RoundContext`를 명령에서 빼기로 했으므로 `Store`에 도달하지 않는다(§12-33). 이것은 설계된 부재이지 누락이 아니다.
 
 
 ### 13.6 MessageKey 카탈로그 — ui.error.*

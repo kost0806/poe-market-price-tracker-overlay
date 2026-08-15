@@ -19,4 +19,10 @@
     <ProjectReference Include="..\..\src\PoeOverlay.Core\PoeOverlay.Core.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- S4 16.8: the Market tests run against the measured bodies of 00-api-contract.md, kept as
+         fixed assets rather than string literals so that a contract change is a diff on the asset. -->
+    <None Update="Market\Fixtures\*.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
