@@ -1,19 +1,43 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PoeOverlay", "src\PoeOverlay\PoeOverlay.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{5D389949-21CC-407B-9D44-0B61AFD480A5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PoeOverlay.Core", "src\PoeOverlay.Core\PoeOverlay.Core.csproj", "{C397D7A2-39F0-4C1F-AB61-420E34AC6343}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PoeOverlay.Shell", "src\PoeOverlay.Shell\PoeOverlay.Shell.csproj", "{F91FDAF3-D07E-466D-AAC4-BCBF1F13579E}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{81B23845-785E-4DB4-8F0D-A7971CE17CA4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PoeOverlay.Core.Tests", "tests\PoeOverlay.Core.Tests\PoeOverlay.Core.Tests.csproj", "{326FC129-631D-4844-A26D-6F53CD4D894A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C397D7A2-39F0-4C1F-AB61-420E34AC6343}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C397D7A2-39F0-4C1F-AB61-420E34AC6343}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C397D7A2-39F0-4C1F-AB61-420E34AC6343}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C397D7A2-39F0-4C1F-AB61-420E34AC6343}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F91FDAF3-D07E-466D-AAC4-BCBF1F13579E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F91FDAF3-D07E-466D-AAC4-BCBF1F13579E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F91FDAF3-D07E-466D-AAC4-BCBF1F13579E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F91FDAF3-D07E-466D-AAC4-BCBF1F13579E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{326FC129-631D-4844-A26D-6F53CD4D894A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{326FC129-631D-4844-A26D-6F53CD4D894A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{326FC129-631D-4844-A26D-6F53CD4D894A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{326FC129-631D-4844-A26D-6F53CD4D894A}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C397D7A2-39F0-4C1F-AB61-420E34AC6343} = {5D389949-21CC-407B-9D44-0B61AFD480A5}
+		{F91FDAF3-D07E-466D-AAC4-BCBF1F13579E} = {5D389949-21CC-407B-9D44-0B61AFD480A5}
+		{326FC129-631D-4844-A26D-6F53CD4D894A} = {81B23845-785E-4DB4-8F0D-A7971CE17CA4}
 	EndGlobalSection
 EndGlobal

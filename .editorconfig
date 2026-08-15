@@ -1,0 +1,7 @@
+root = true
+
+[*.cs]
+# D-DL3 (S4 2.2): CA2007 / CA1031 are disabled by default on net8. WarningsAsErrors
+# alone promotes nothing, so they must be turned on here first.
+dotnet_diagnostic.CA2007.severity = warning
+dotnet_diagnostic.CA1031.severity = warning

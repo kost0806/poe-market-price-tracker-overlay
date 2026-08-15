@@ -1,0 +1,7 @@
+# S4 2.3 / S3 D-SH1.
+# Reason: the shell's event handlers assume resumption on the UI thread throughout, so
+# ConfigureAwait(false) is wrong here. CA2007 is switched off for the whole project.
+# Any genuinely pure I/O point in Interop/ re-enables it locally with
+# "#pragma warning restore CA2007" and disables it again straight afterwards (S3 1.4).
+[*.cs]
+dotnet_diagnostic.CA2007.severity = none

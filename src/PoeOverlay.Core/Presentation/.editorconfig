@@ -1,0 +1,5 @@
+# S4 2.3 / S2 D-C3.
+# Reason: async commands in Presentation assume resumption on the UI thread, so
+# ConfigureAwait(false) is exactly wrong here. CA2007 is switched off for this folder only.
+[*.cs]
+dotnet_diagnostic.CA2007.severity = none

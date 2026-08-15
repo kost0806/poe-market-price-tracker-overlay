@@ -290,12 +290,13 @@ public enum HeightMode { Auto, Explicit }
 public enum AppConditionKind
 {
     // 저장되는 것 — Store.SetCondition이 받아들인다 (6.4절)
-    FetchFailed,   // 고아 — 생산자·소비자 없음. §19.8, S2 개정 요청 중. 값 재배열 금지이므로 자리는 그대로 둔다
     LeagueUnresolved, CommitRejected,
     SettingsWriteFailed, SettingsCorrupt, SettingsReadOnly, SettingsUnreadable,
     TrayUnavailable, LoggingUnavailable, ViewModelRefreshFailing,
     // 저장되지 않는 것 — 표시 시점 파생. Store는 이 멤버로 SetCondition을 받으면 거부한다
-    RatePending, RateInherited, PollingStopped, ItemUnresolved, ItemDropped
+    // 【S2 제5판 반영】 FetchFailed가 저장 그룹에서 여기로 옮겨졌다(§19.8) —
+    // 생산자·소비자가 없었고 실제 표시는 S2 §10.5가 CategoryStatuses에서 파생한다
+    FetchFailed, RatePending, RateInherited, PollingStopped, ItemUnresolved, ItemDropped
 }
 ```
 값(정수)은 로그에 남는 결정적 순서이므로 재배열 금지(S2 2.2). AppConditionKind의 두 그룹 순서는 S2 2.11 그대로 — ViewModelRefreshFailing이 저장 그룹의 마지막(LoggingUnavailable 다음)이다(S3 13-28).
@@ -386,8 +387,10 @@ public sealed record ConditionState(bool Active, DateTimeOffset Since, string? D
 
 public enum FailureKind
 {
+    // 【S2 제5판 반영】 ElementFault가 제거됐다(§19.2) — 원소 단위 결함은
+    // SkipCounts.ElementFault(카운터)로만 계상되고 Kind로 생산되는 자리가 없었다
     Network, Timeout, HttpStatus, RateLimited, Deserialization,
-    ElementFault, EmptyLines, NoPricedLines, FieldMissingRatio,
+    EmptyLines, NoPricedLines, FieldMissingRatio,
     PrimaryCurrencyMismatch, DivineLineMissing, MedianJump,
     LeagueListInvalid, MappingFault
 }

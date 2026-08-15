@@ -1,0 +1,8 @@
+# The root .editorconfig turns CA2007 on so that S2 1.4 ("ConfigureAwait(false) on every await in
+# Core") is enforced as an error. xUnit1030 says the opposite for test methods, so the two rules
+# cannot both hold here. CA2007 wins — keeping the convention uniform across the repository means
+# a test never demonstrates the wrong pattern — and xUnit1030 is switched off for this project.
+# The xunit concern (bypassing the parallelization limiter) does not apply: these tests are
+# FakeTimeProvider-driven and do no real waiting.
+[*.cs]
+dotnet_diagnostic.xUnit1030.severity = none

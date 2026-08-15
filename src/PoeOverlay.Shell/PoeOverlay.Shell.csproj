@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <!-- S4 2.1 names the shell assembly "PoeOverlay". The project file lives beside the legacy
+         src/PoeOverlay skeleton rather than on top of it, so the identity is restated here. -->
+    <RootNamespace>PoeOverlay</RootNamespace>
+    <AssemblyName>PoeOverlay</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\PoeOverlay.Core\PoeOverlay.Core.csproj" />
+  </ItemGroup>
+
+</Project>
