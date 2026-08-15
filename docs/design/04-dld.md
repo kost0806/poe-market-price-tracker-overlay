@@ -621,9 +621,14 @@ public static class PricingEngine
 {
     public static ResolvedCurrency Resolve(DisplayCurrency? entryPref, DisplayCurrency globalDefault, string? token);
 
+    // 【구현 2단계 정정】 fetchedAt이 추가됐다 — S2 §4.5.1은 EffectiveAsOf를
+    // min(category.FetchedAt, rate.AcquiredAt)으로 정의하는데 ItemPrice에는
+    // 타임스탬프가 없어 초판 시그니처로는 계산할 수 없었다. 호출자(§11.4)가
+    // 소유 CategorySnapshot.FetchedAt을 넘긴다
     public static PriceDisplay Format(
         ItemPrice price, DivineRate? rate, ResolvedCurrency display,
-        DateTimeOffset now, TimeSpan rateMaxAge, ITemplateSource templates);
+        DateTimeOffset fetchedAt, DateTimeOffset now, TimeSpan rateMaxAge,
+        ITemplateSource templates);
 
     public static ChangeDisplay Change(double? totalChangePercent, ITemplateSource templates);
 

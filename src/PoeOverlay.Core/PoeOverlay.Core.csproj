@@ -13,7 +13,20 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- S2 3.3 (D3): en.json is the floor of the fallback chain, so it ships twice — embedded in
+         the assembly (level ③, which cannot be absent) and copied to Localization/ in the output
+         (level ②, which a translator may edit). The link keeps the output path at
+         Localization/en.json, matching {AppContext.BaseDirectory}/Localization/ (S2 3.2). -->
+    <EmbeddedResource Include="Localization\Localization\en.json"
+                      LogicalName="PoeOverlay.Core.Localization.en.json" />
+    <None Update="Localization\Localization\en.json"
+          Link="Localization\en.json"
+          CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

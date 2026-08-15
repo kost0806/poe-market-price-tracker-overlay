@@ -683,8 +683,11 @@ Resolve(entryPref: DisplayCurrency?, globalDefault: DisplayCurrency, token: stri
 const decimal MinPrice = 1e-9m;             // 【신규 D-PR8】
 
 // 0. rate 게이트 — 시각은 인자로 들어온다
+// 【구현 2단계 정정】 rate에도 MinPrice 하한이 필요하다. `> 0`만 요구하면
+// D-PR8이 막으려던 `194.6m / 1e-28m` 오버플로에 **양수 rate를 통해 그대로 도달**한다 —
+// 하한이 v에만 걸려 있었기 때문이다. 이것이 usableRate가 null이 되는 두 번째 사유다
 usableRate = (rate is not null
-              && rate.ChaosPerDivine > 0
+              && rate.ChaosPerDivine >= MinPrice
               && (now - rate.AcquiredAt) <= rateMaxAge) ? rate : null
 
 // 1. 방어
