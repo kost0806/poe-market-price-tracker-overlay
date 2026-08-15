@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| 문서 상태 | **개정 6판 — S1 동결** |
+| 문서 상태 | **개정 7판 — S1 동결** |
 | 작성일 | 2026-08-15 |
-| 상위 문서 | `docs/REQUIREMENTS.md` **개정 2판**, `docs/design/00-api-contract.md` (**데이터 계약 — 구속력 있음**) |
+| 상위 문서 | `docs/REQUIREMENTS.md` **개정 2판**, `docs/design/00-api-contract.md` (**데이터 계약 — 구속력 있음**), `docs/design/00-shell-measurements.md` (**Win32·렌더링 실측 — 구속력 있음**) |
 | 범위 | 컴포넌트·경계·흐름·수명 모델. **메서드 시그니처·클래스 멤버·JSON 필드 매핑은 다루지 않는다** (S2~S4 소관) |
 | 표기 규약 | **【측정】** 표시가 붙은 진술은 프로브 프로젝트를 빌드·실행해 확인한 사실이다. 추론보다 우선하며, 이와 어긋나는 설계는 무효다 |
 | 데이터 계약 | 필드 수준의 정본은 `00-api-contract.md`. REQUIREMENTS §6은 개정 2판에서 대응표로 정정, §7은 `Microsoft.Extensions.Http.Resilience`·서킷브레이커 미사용을 명시 |
@@ -15,7 +15,29 @@
 
 ## 0. 개정 이력
 
-### 0.0 개정 6판 — S3(`03-lld-shell.md` 제4판) §13의 검증된 42행 개정 목록을 반영
+### 0.0 개정 7판 — 최종 정합성 마감 지시서 반영. 구현 가능한 상태로 닫는다
+
+검증 3종(개정 정확성 감사 · 교차 일관성 검토 · 요구사항 재감사)을 통합한 마감 지시서(`docs/design/_wip/final-consistency-punchlist.md`)의 지적을 반영했다. **기각된 지적은 없다.** 개정 요구 태그가 붙은 행은 27개(1·3·4·7·11·15·16·17·18·24·25·26·27·28·29·30·32·33·34·35·36·37·38·39·40·41·42, S3 §13 기준)이며, 이번 패스에서 27개 전부의 처리 여부를 다시 세었다 — 직전 패스가 산수 실수(`42 − 25 = 17`)로 놓친 **행 11**(FR-08-6 필드 부재)을 이번에 닫았다.
+
+- **FR-08-6 영속 필드 신설(B1, 행 11)** — §7 스키마 표에 최상위 `bool`(기본 `false`) 행을 추가하고, §8 FR-08-6 행의 소유 모듈에 `Settings`를 더했다. S2 §8.1 `AppSettings`·§8.2 검증표·§8.4 읽기 경로도 같은 패스로 동기화했다(세부는 S2 §0).
+- **기동 순서와 초기 언어 적용(B5)** — §3.5 5단계의 `Settings`/`Localization` 순서를 뒤집었다(`Localization` → `Settings`) — S2 §8.2가 `language`를 "발견된 사전 중 하나"로 검증하므로 그 반대 순서는 성립할 수 없었다(S3 §3.1이 이미 옳은 순서로 등록하고 있었다). `settings.language`를 부팅 시 적용하는 주체와 시점도 명시했다(§3.5 5.5번, 신규).
+- **인스턴스 신호 절차를 D18-d/D-SH18과 측정 §10.1에 맞춤(B6)** — §3.5 2단계의 응답 판정을 "타임아웃 시"에서 센티널 불일치=무응답으로 정정했고, 8단계의 "오버레이 HWND 훅" 선택지와 "펌프 시작 전 신호도 큐에 남는다"는 전제를 삭제했다(S3 D-SH4/D-SH18이 채택한 메시지 전용 창 + 재시도 방식으로 교체).
+- **§2.2 의존 표를 §2.3 그래프와 맞춤** — `Localization → Domain`(D-C1), `Polling → Pricing.StalenessPolicy`(D-C2) 행을 추가했다.
+- **§3.4/§4.1의 커밋 페이로드 정정** — "`RoundContext` 동봉"을 S2 D-ST1이 실제로 채택한 `DataTag`(league, dataEpoch)로 고쳤다.
+- **§3.5에 `Store`의 `IHostedService` 등록과 그 순서를 명문화** — `Polling`보다 먼저 등록해야 정지 순서(역순)가 D20의 마지막 하트비트 기록을 보존한다(S3 §3.1과 일치).
+- **§3.4의 최근 오류 링 소유자 정정** — `Store`가 아니라 `Diagnostics`(§9.3, S2와 일치).
+- **D17의 `settings.bak.json` 정의 정정** — "마지막으로 성공 로드한 설정"을 "마지막으로 성공 **쓴** 설정"으로 고쳐 S2 §8.5(`File.Replace`의 실제 동작)와 맞췄다.
+- **§6.1 다섯 표시 형태에 `ui.price.*` 키 열 추가**(S2 §3.6과 일치).
+- **§6.4 배너 표 보강** — `CommitRejected`를 S3 §5.5의 오버레이 배너 우선순위표 4위(신설)로 편입했고, 파생 상태 `ItemDropped`·`RateInherited` 행을 추가했다(S2 §2.11/§10.5).
+- **인용·문언 정정** — §3.5 11단계의 "함정" 프레이밍을 제거하고 의도된 z-순서로 재서술(D18-b와 정합), §10 Q5의 측정 문서 인용을 `00-shell-measurements.md §8`/`§8.2`로 확장, §0.2(구 개정 4판 이력) 5번 행 각주의 판 번호를 "개정 5판"에서 "개정 6판"으로 정정, §7 `window.x`/`.y` 검증의 근거 인용을 정정(D19 푸터 불변식, S3 §4.5).
+- **상위 문서에 `00-shell-measurements.md`를 추가**했다(개정 6판 전체를 유발한 구속력 있는 문서인데 헤더가 인용하지 않고 있었다).
+- **D4-d의 자기모순을 바로잡았다(§E 정정).** 지난 지시서는 "통과 메커니즘이 컬러키로 바뀌었다"고 적었으나 두 기제(창 전체 단위 `WS_EX_TRANSPARENT`, 상시 존재하는 `LWA_COLORKEY`)는 실제로 공존한다 — 적용된 문장이 "메커니즘은 하나"로 시작한 뒤 그 직후 문장에서 사실상 둘을 서술해 자기모순이었다. 공존과 각각의 적용 국면이 드러나도록 다시 썼다.
+
+FR-08-6을 제외한 42/42 요구사항 충족은 유지된다. B1이 닫히므로 다시 42/42다.
+
+세부 근거와 원문 대조는 `docs/design/_wip/final-consistency-punchlist.md`와 `03-lld-shell.md` §13을 참조.
+
+### 0.1 개정 6판 — S3(`03-lld-shell.md` 제4판) §13의 검증된 42행 개정 목록을 반영
 
 S3 제4판 §13이 원문 대조로 재검증한 42개 항목 가운데 이 문서(HLD)를 대상으로 하는 개정 요구를 반영했다. 실패로 확인된 행은 없었다. 원인별로 묶으면:
 
@@ -26,7 +48,7 @@ S3 제4판 §13이 원문 대조로 재검증한 42개 항목 가운데 이 문�
 
 세부 근거와 원문 대조는 `03-lld-shell.md` §13을 참조.
 
-### 0.1 개정 5판 — 동결 전 내부 모순 3건 해소
+### 0.2 개정 5판 — 동결 전 내부 모순 3건 해소
 
 4판을 최종 추적 감사에 넘긴 결과 **41개 ID 전부 SATISFIED (NOMINAL·PARTIAL·VIOLATED 0건)** 이 확인됐다. 3판이 남긴 PARTIAL 4건(FR-01-1·FR-05-3·FR-05-6·FR-08-2)은 모두 실질 해소됐다. 다만 **4판이 새로 추가한 것들 사이의 규범 문장 충돌 3건**이 남아 있었고, 5판은 그것만 고친다. 설계 변경이 아니라 모순 제거다.
 
@@ -38,7 +60,7 @@ S3 제4판 §13이 원문 대조로 재검증한 42개 항목 가운데 이 문�
 
 비차단 잔여 항목(오류 링 소유 표기, `DispatcherTimer`의 TFM 문제, 엄격 역직렬화와 비율 검사의 순서, `volume` 보존 여부, 신호 큐잉 주장 범위, 기하 검증을 최소 가시 면적으로, §8의 `TrayViewModel`·`opacity` 기록자 표기, 워치독 타이머의 §3.3 등재, §6.1 다섯 서식의 `ui.*` 키 부여, 설정 창 레이아웃 절 신설)은 **S2/S3에서 처리한다.**
 
-### 0.2 개정 4판 — 측정으로 확정하고, 표시 전용화가 남긴 구멍을 메웠다
+### 0.3 개정 4판 — 측정으로 확정하고, 표시 전용화가 남긴 구멍을 메웠다
 
 개정 3판을 네 갈래로 검토했고(요구사항 추적 · 아키텍처 · 조용한 실패 사냥 · 실제 프로브 빌드 기반 .NET/WPF 타당성), 추적 결과는 **41개 ID 중 37 SATISFIED / 4 PARTIAL / 0 NOMINAL / 0 VIOLATED** 였다. 방향에는 차단 사유가 없다. 4판이 고치는 것은 아래다.
 
@@ -50,7 +72,7 @@ S3 제4판 §13이 원문 대조로 재검증한 42개 항목 가운데 이 문�
 | 2 | `NotifyIcon`이 `RegisterWindowMessage("TaskbarCreated")`(49340)를 내부 필드로 보유. `NIM_DELETE`로 몰래 지운 뒤 `PostMessage`로 `TaskbarCreated`를 보내자 `NIM_MODIFY`가 false→true로 회복 | `TaskbarCreated` 수동 훅을 **요구에서 금지로 전환**(D18-c). WPF 펌프만으로 충분함도 동시에 증명됨 |
 | 3 | `SizeToContent="Height"` 활성 중 `Height` DP가 레이아웃마다 덮어써짐 (`500 → 136 → 680 → 300 → 102 → 68`). 대입은 조용히 무시됨 | **flush 시점에 `Window.Height`/`ActualHeight`를 읽지 않는다.** 사용자 조작 시점에 스칼라로 포착해 **값으로** 큐잉 (D19) |
 | 4 | `SizeToContent="Manual"`에서도 `MaxHeight`가 강제됨. `MaxHeight=300`이면 그립을 400까지 끌어도 300에서 잘림 | 3판의 "조절한 값을 새 상한으로 저장"은 **줄어들기만 하는 래칫**이었다. D19 전면 재작성 |
-| 5 | `settingsWindow.Owner = MainWindow` 시 exstyle `0x00040108` — `WS_EX_TOPMOST` 켜짐. 그런데 `Topmost` 속성은 false로 읽힘 | **설정 창에 `Owner`를 지정하지 않는다**를 불변식화(D18-b). 소스 어디에도 `Topmost=true`가 없는데 설정 창이 게임 위로 뜨는 사고 방지 (이 결정은 개정 5판/S3 4판에서 뒤집혔다 — D18-b·§5.1 참조, `00-shell-measurements.md` §2) |
+| 5 | `settingsWindow.Owner = MainWindow` 시 exstyle `0x00040108` — `WS_EX_TOPMOST` 켜짐. 그런데 `Topmost` 속성은 false로 읽힘 | **설정 창에 `Owner`를 지정하지 않는다**를 불변식화(D18-b). 소스 어디에도 `Topmost=true`가 없는데 설정 창이 게임 위로 뜨는 사고 방지 (이 결정은 개정 6판/S3 4판에서 뒤집혔다 — D18-b·§5.1 참조, `00-shell-measurements.md` §2) |
 | 6 | `SourceInitialized` 시점에 이미 `WS_EX_LAYERED`(`0x00080008`) 설정됨 | D4-d의 읽고-고쳐-쓰기는 **주의가 아니라 필수**. 통째 대입은 투명도를 즉시 파괴 |
 | 7 | Win32가 마우스 이동 메시지를 병합 (주입 5회 → 전달 2회) | 드래그·리사이즈는 **절대 커서 좌표 − 드래그 원점**으로 계산. 누적 델타 금지 (D4-c) |
 | 8 | `Run(window)` + `OnExplicitShutdown`에서 `Closing` 핸들러의 `e.Cancel=true`가 `Shutdown()`을 막지 못함. `Run` 복귀 후 `SynchronizationContext.Current`는 평범한 컨텍스트로 되돌아옴 | §3.6의 진단과 처방 모두 유효. 이동 모드 종료 핸들러에 유리 |
@@ -90,7 +112,7 @@ S3 제4판 §13이 원문 대조로 재검증한 42개 항목 가운데 이 문�
 
 **표시 전용화(3판)로 사라진 복잡도는 그대로 유지된다** — 3상태 기계, 64ms 히트테스트와 입력 지연, `SetForegroundWindow` 위험, `WindowFromPoint` 검사가 모두 없다. 4판은 그 자리에 생긴 **관측 공백**(폴링 사망, 트레이 실패, 창 실종)을 메운다.
 
-### 0.3 개정 3판 — 오버레이가 표시 전용이 되었다 (유지)
+### 0.4 개정 3판 — 오버레이가 표시 전용이 되었다 (유지)
 
 REQUIREMENTS 개정 2판(E2/E4/E6)이 부분 클릭 통과를 폐기했다. 오버레이는 입력을 일절 받지 않고, 모든 조작은 트레이에서 여는 일반 설정 창으로 옮겼다.
 
@@ -104,7 +126,7 @@ REQUIREMENTS 개정 2판(E2/E4/E6)이 부분 클릭 통과를 폐기했다. 오�
 
 유휴 타이머는 3개 → **2개**(§3.3).
 
-### 0.4 개정 2판 — 초판에서 바뀐 것 (유지)
+### 0.5 개정 2판 — 초판에서 바뀐 것 (유지)
 
 | # | 내용 | 사유 |
 |---|---|---|
@@ -179,15 +201,17 @@ graph LR
 | 모듈 | 단일 책임 | 허용 의존 |
 |---|---|---|
 | `Domain` | 불변 도메인 타입·열거값(카테고리 18종, 표시통화, 관심목록 항목, 아이템 시세, 카테고리 스냅샷, `DivineRate?`, `RoundContext`, `LeagueList`). 로직 없음 | 없음 |
-| `Localization` | 문자열 ID → 표시 문자열. 사전 디렉터리 열거, 내장 바닥 사전, 폴백 체인, 미해결 키 기록 | `Diagnostics` |
+| `Localization` | 문자열 ID → 표시 문자열. 사전 디렉터리 열거, 내장 바닥 사전, 폴백 체인, 미해결 키 기록 | `Domain`, `Diagnostics` |
 | `Pricing` | **순수 계산 전부** — 표시통화 결정, 디바인 환산, 역수 판정, FR-04-4 5행 서식, 변동 방향·문자열, 상대 시각, vintage 산출 | `Domain`, `Localization` |
 | `Market` | poe.ninja 접근 창구. 리그 목록, 카테고리 overview, `core.items` 조인 매핑, **구조 유효성 검사**(D8-a/b/d), `NinjaGateway` | `Domain`, `Diagnostics`, `IHttpClientFactory` + Resilience |
 | `Store` | 최신 스냅샷 1개 + **divine rate 슬롯 + 리그 목록 슬롯 + 조회된 카테고리 목록 슬롯 + 하트비트 + lastError** 보관, 변경 신호 발신. **단일 기록자**(명령 채널 경유), 다수 독자 | `Domain`, `Diagnostics` |
-| `Polling` | 라운드 실행. 주기 관리, 배치 구성, **문맥 유효성 검사**(D8-c/e)와 커밋 판정, epoch 관리, 하트비트 기록, 최종 방어선 | `Domain`, `Market`, `Store`, `Settings`, `Diagnostics` |
+| `Polling` | 라운드 실행. 주기 관리, 배치 구성, **문맥 유효성 검사**(D8-c/e)와 커밋 판정, epoch 관리, 하트비트 기록, 최종 방어선 | `Domain`, `Market`, `Store`, `Settings`, `Diagnostics`, `Pricing`(`StalenessPolicy` 한 타입 한정) |
 | `Settings` | 불변 `AppSettings` 보관, 로드·검증·격리·원자적 저장·변경 통지 | `Domain`, `Diagnostics` |
 | `Presentation` | `SnapshotFanout` + 뷰모델 **셋** — `OverlayViewModel`(표시), `SettingsViewModel`(조작), `TrayViewModel`(상태 신호). 그리고 `IOverlayModeService` 인터페이스 | `Domain`, `Pricing`, `Localization`, `Store`, `Settings`, `Market`(사용자 개시 조회 한정), `Diagnostics` |
 | `Shell` *(WPF)* | 오버레이 창, 설정 창, 트레이 아이콘, Win32 interop, **창 기하·높이·클리핑**, `IOverlayModeService` 구현, 컴포지션 루트 | `Presentation`, `Localization`, `Domain`, 전 모듈(루트로서) |
 | `Diagnostics` | 횡단 관심사. 롤링 파일 로깅, 최근 오류 링 버퍼, 세션 1회 경고 억제 | 없음 |
+
+**`Localization`의 `Domain`(D-C1, S2 §1.2)과 `Polling`의 `Pricing.StalenessPolicy`(D-C2, S2 §1.2) 허용 의존은 이 표를 아래 §2.3 그래프와 일치시키기 위해 추가됐다 — 두 간선은 원래부터 그래프에 있었으나(다음 절) 표에 반영되지 않았다.**
 
 ### 2.3 의존 방향
 
@@ -260,7 +284,7 @@ graph TD
 
 ```
 [ThreadPool] Polling 라운드 완료 또는 실패
-      │  불변 카테고리 결과 + RoundContext, league 와 epoch
+      │  불변 카테고리 결과 + DataTag(league, dataEpoch)
       ▼
 [Store] 명령 채널에 커밋 명령 투입 → 단일 소비자가 처리
       │  epoch 불일치면 거부 + Warning 기록, 조용히 버리지 않는다
@@ -296,7 +320,7 @@ graph TD
 - **`PollingStopped`는 저장 상태가 아니라 파생 계산이다.** 하트비트와 현재 시각으로 표시 시점에 판정한다(D20). UI 스레드가 `Store`에 그 상태를 써 넣지 않는다 — 그러면 생산자가 하나 더 늘고, 판정 임계가 바뀔 때 저장된 값이 낡는다.
 - 팬아웃과 구독자의 예외는 `Polling` 루프로 새어나갈 수 없다(post된 델리게이트가 자체 catch + 기록).
 - **핸들러 안에서 `Store`를 변경하지 않는다.** 테스트용 동기 `IUiDispatcher`가 발신→핸들러→커밋을 재귀로 만들기 때문이며 Debug 빌드에 재진입 가드를 둔다.
-- **뷰모델끼리 참조하지 않는다.** 설정 창이 필요로 하는 것(카테고리 목록, 카테고리별 실패 상태, 미해결 슬러그, 최근 오류 링)은 표시용 행과 다른 데이터이므로 `Store`에서 직접 읽는다.
+- **뷰모델끼리 참조하지 않는다.** 설정 창이 필요로 하는 것 중 카테고리 목록·카테고리별 실패 상태·미해결 슬러그는 표시용 행과 다른 데이터이므로 `Store`에서 직접 읽는다. **최근 오류 링은 `Store`가 아니라 `Diagnostics`가 소유**하며 그쪽에서 직접 읽는다(§9.3) — `Store.LastError`(`ErrorRecord` 하나)와는 별개 개념이다.
 
 ### 3.5 기동 순서 (`Main`)
 
@@ -304,18 +328,30 @@ graph TD
 [STAThread] static void Main
  1. Diagnostics 부트스트랩 — 로그 파일 오픈. 이후 모든 실패가 기록 가능해진다
  2. 단일 인스턴스 가드(명명 뮤텍스)
-      획득 실패 시: AllowSetForegroundWindow(firstPid) → 등록 메시지로 신호 전송
-                    응답 타임아웃 시 네이티브 MessageBox 로 로그 경로 안내 후 종료  (D18-d)
+      획득 실패 시: AllowSetForegroundWindow(firstPid) → 메시지 전용 창을 SendMessageTimeout 으로
+                    탐색해 신호 전송, 짧고 유한한 횟수만 재시도(D-SH4/D-SH18)
+                    ack 판정은 반환값이 아니라 lpdwResult 의 센티널 일치로만 한다.
+                    센티널 불일치는 무응답과 동일 처리 — 무응답 시 네이티브 MessageBox 로
+                    로그 경로 안내 후 종료  (D18-d, 측정 §10.1)
  3. System.Windows.Forms.Application.EnableVisualStyles()
  4. HostBuilder 구성
       - IHostLifetime = NoopLifetime            (ConsoleLifetime 제거)
       - HostOptions.BackgroundServiceExceptionBehavior = Ignore
       - HostOptions.ServicesStartConcurrently = false
-      - Settings 와 Localization 을 IHostedLifecycleService 로 등록
+      - Localization 과 Settings 를 IHostedLifecycleService 로 등록
+      - **Store 를 IHostedService 로, Polling 보다 먼저 등록한다** — 정지는 등록 역순이므로 이 순서라야
+        Polling.StopAsync 의 최외곽 finally(D20의 마지막 하트비트 기록)가 Store 의 명령 채널이
+        아직 열려 있는 동안 실행된다(세부 근거·등록 표는 S3 §3.1)
       - HttpClient + Resilience 파이프라인, DI 등록
  5. host.Start()      ← 동기화 컨텍스트 없는 스레드
-      StartingAsync : Settings 로드(동기 파일 API) → Localization 카탈로그 로드
+      StartingAsync : Localization 카탈로그 로드 → Settings 로드(동기 파일 API)
       StartAsync    : Polling 기동
+      (순서 근거: Settings 의 language 검증은 "발견된 사전 중 하나"를 요구하므로(REQUIREMENTS §8,
+       S2 §8.2) Localization 이 먼저 사전 목록을 확정해야 한다)
+ 5.5. host.Start() 반환 직후, Main 스레드가 DI 컨테이너에서 해석한 ILocalizer.SetLanguage(settings.Language)
+      를 직접 호출해 초기 언어를 적용한다. 이 구간은 아직 Dispatcher 펌프가 시작되지 않은 단일 스레드
+      구간이므로 SetLanguage 의 "쓰기는 UI 스레드 전용" 제약(S2 §3.5)이 자명하게 성립한다 — 이 Main
+      스레드가 그대로 이후 WPF UI 스레드가 된다
  6. 전역 훅 등록
       AppDomain.UnhandledException          (트레이 폐기 → 기록 → 종료)
       TaskScheduler.UnobservedTaskException (기록 전용 — 안전망이 아니다)
@@ -323,7 +359,10 @@ graph TD
  7. var app = new Application { ShutdownMode = OnExplicitShutdown };
       app.DispatcherUnhandledException += 허용 목록 기반 처리   (D12)
       app.SessionEnding             += 설정 flush
- 8. 인스턴스 신호 수신기 생성 (메시지 전용 창 또는 오버레이 HWND 훅). 펌프 시작 전 도착 신호도 큐에 남는다
+ 8. 인스턴스 신호 수신기 생성 — **메시지 전용 창**(`HWND_MESSAGE` 부모, D-SH4) 하나뿐이다.
+      오버레이 HWND 는 9번에서야 생기므로 신호 수신을 얹을 수 없다.
+      SendMessageTimeout 은 PostMessage 와 달리 큐에 남지 않는다 — 펌프 시작 전(8~11번 구간)
+      도착한 신호는 큐잉이 아니라 **발신측의 짧고 유한한 재시도**로 커버한다(D-SH18, 측정 §10.1)
  9. 오버레이 창 생성
       WindowStyle=None, AllowsTransparency=False, ShowActivated=False, ShowInTaskbar=False,
       Topmost=True, ResizeMode=NoResize
@@ -334,8 +373,9 @@ graph TD
       실패 시 백오프 재시도. 최종 실패면 Error 기록 + TrayUnavailable 상태 +
       설정 창 즉시 표시 (그때는 그것이 유일한 가시 표면)          (D18-c)
 11. app.Run(overlayWindow)
-      ※ MainWindow 지정은 편의이며 함정이다. 【측정】 설정 창의 Owner 로 쓰면
-        WS_EX_TOPMOST 가 전파되어 Topmost 를 켠 적 없는데 게임 위로 뜬다. Owner = 오버레이 (D18-b)
+      ※ MainWindow 지정은 편의다. 【측정】 설정 창의 Owner 로 쓰면 WS_EX_TOPMOST 가 전파된다 —
+        오버레이가 상시 Topmost=true 인 이 앱에서는 그 전파가 설정 창을 오버레이 위에 띄우는
+        데 필요조건이다(§6.0). 위험이 아니라 의도된 z-순서다. Owner = 오버레이 (D18-b)
 12. Run 복귀 후 teardown — 전체를 하드 타임아웃으로 감싼다
       a. 종료 플래그 설정 → ApplicationStopped 등 트레이를 만지는 구독 해제
       b. 설정 전량 flush (자체 타임아웃)
@@ -349,7 +389,7 @@ graph TD
 - 오버레이가 첫 라운드보다 먼저 뜨는 것은 경합이며 무방하다. 첫 라운드 이전 상태를 `OverlayViewModel`이 `Loading`으로 **표현한다**.
 - 설정 로드는 **진짜 동기 파일 API**를 쓴다. `...Async().Result`는 금지 — 컨텍스트가 있는 스레드에서 교착한다.
 - 【측정】 `Run` 복귀 후 `SynchronizationContext.Current`는 평범한 컨텍스트로 되돌아오므로 12번의 블로킹 대기는 안전하다.
-- 유령 아이콘은 프로세스 급사에서 생기지, 수백 밀리초의 순서 차이에서 생기지 않는다. 다만 §0.0 #3이 확정했듯 트레이 폐기(c)는 `StopAsync`(e) **앞**에 둔다 — d(뮤텍스 해제)가 e보다 앞서야 하고 d는 c 다음이므로, 순서상 c도 자연히 e보다 앞에 온다.
+- 유령 아이콘은 프로세스 급사에서 생기지, 수백 밀리초의 순서 차이에서 생기지 않는다. 다만 §0.1 #3이 확정했듯 트레이 폐기(c)는 `StopAsync`(e) **앞**에 둔다 — d(뮤텍스 해제)가 e보다 앞서야 하고 d는 c 다음이므로, 순서상 c도 자연히 e보다 앞에 온다.
 
 ### 3.6 종료 순서
 
@@ -397,7 +437,7 @@ sequenceDiagram
             Mk-->>Poll: 구조 검사 통과분만 반환
         end
         Poll->>Poll: 문맥 검사 후 커밋 판정
-        Poll->>Sto: 커밋 명령, RoundContext 와 하트비트 동봉
+        Poll->>Sto: 커밋 명령, DataTag 와 하트비트 동봉
         Sto-->>Fan: SnapshotChanged 신호
         Fan->>Fan: 세 뷰모델 재조회, 상태 Ready
     else 리그 확정 실패
@@ -616,7 +656,7 @@ sequenceDiagram
 - 확장 스타일은 항상 `GetWindowLong` → 비트 조작 → `SetWindowLong`으로 **읽고-고쳐-쓴다.** 【측정】 `SourceInitialized` 시점에 `WS_EX_LAYERED`가 이미 설정되어 있으므로(`0x00080008`) **통째 대입은 투명도를 즉시 파괴한다.** 이것은 주의가 아니라 필수다.
 - `WS_EX_TRANSPARENT` 변경에 **`SWP_FRAMECHANGED`는 필요 없다.** 그 주의사항은 `WS_EX_CLIENTEDGE` 같은 프레임 스타일용이며, 붙이면 불필요한 `WM_NCCALCSIZE`와 레이어드 창 재합성을 유발한다. "안전하게 하려고" 다시 추가되는 것을 막기 위해 근거를 남긴다.
 - WPF는 `Topmost`·`WindowStyle`·`ResizeMode`를 런타임에 바꾸면 스타일을 다시 쓴다. **셋 다 런타임 변경을 금지**한다.
-- **통과 메커니즘은 컬러키 하나다** — `AllowsTransparency=false` 전환(D-SH17) 이후 완전 투명 픽셀이라는 개념 자체가 없다. `WS_EX_TRANSPARENT`는 창 전체에 적용되며, 클릭 통과와 렌더링의 구분은 컬러키 색상 매칭만으로 이뤄진다. 이동 모드 중에도 마찬가지이므로 D4-c의 불투명 픽셀 규칙은 여전히 성립하되, 근거는 완전 투명 픽셀이 아니라 컬러키(클릭 통과) 영역으로 다시 진술한다.
+- **통과 메커니즘은 둘이 공존한다(§E 정정).** ① `WS_EX_TRANSPARENT` 비트 — **창 전체 단위**로 켜고 끈다. 평시에는 켜져 있어 창 전체가 클릭을 통과시키고(FR-05-2), 이동 모드에서는 이 비트만 끈다(D4-b). ② `LWA_COLORKEY`(D-SH17) — `AllowsTransparency=false` 전환 이후 창의 배경은 컬러키로 칠해진 영역과 불투명 콘텐츠 영역으로 나뉘며, **컬러키 영역은 ①의 상태와 무관하게 클릭이 닿지 않는다**(`WM_LBUTTONDOWN` 자체가 전달되지 않는다, 측정 §8.6). 평시에는 ①이 창 전체를 통과시키므로 ②는 관측되지 않지만, 이동 모드에서 ①을 끄면 ②만 남아 **컬러키 영역은 여전히 클릭 통과, 불투명 영역만 클릭을 받는다** — 이동 모드의 모든 어피던스(그립·테두리)를 불투명 픽셀 위에 두어야 하는 이유(D4-c)가 바로 ②다.
 
 **D4-e. DPI**
 
@@ -782,7 +822,7 @@ sequenceDiagram
 | **확인(acknowledge)의 정의** | **확인 = 쓰기 재개.** 격리 파일이 이미 증거를 보존하므로 안전하며, 사용자에게 쓸모 있는 유일한 해석이다 |
 | **확인 전 편집** | **UI 수준에서 편집을 비활성화**하거나, 최소한 영향 받는 모든 컨트롤에 "이 세션에서는 저장되지 않습니다"를 표시한다. 그러지 않으면 사용자가 15분 걸려 관심목록을 재구성하고 전부 적용·재폴링되는 것을 본 뒤 **재시작에서 전부 잃는다** |
 | 개별 항목 무효 | **조용히 버리지 않는다.** "미해결" 행으로 보존 |
-| 백업 | 마지막으로 성공 로드한 설정을 `settings.bak.json` 1개 유지 |
+| 백업 | 마지막으로 성공 **쓴** 설정을 `settings.bak.json` 1개 유지 — `File.Replace`의 백업 인자가 만드는 파일은 직전에 성공적으로 쓴 파일이다 |
 | **쓰기 실패** | 트레이가 **오류 변형**으로 바뀌고, **오버레이에도 표시하며**(§6.4), 설정 창에 지속 경고 + 위 편집 차단 규칙을 동일 적용. **성공적 쓰기에서만 해제** |
 | 종료 시 flush | 대기 중 **전체** 변경을 쓰고 자체 짧은 타임아웃으로 대기. 실패는 로그 디렉터리에 흔적을 남겨 **다음 기동 시 1회 보고**하고 흔적을 지운다 |
 
@@ -930,23 +970,23 @@ sequenceDiagram
 
 `v` = `lines[].primaryValue` (카오스), `r` = divine rate (카오스/디바인), `d = v ÷ r`.
 
-| # | 표시통화 | 조건 | 출력 | 예 | rate 필요 |
-|---|---|---|---|---|---|
-| 1 | chaos | `v ≥ 1` **그리고** `d ≥ 1` | `359.7c (1.85d)` | 뿔 갑충석 | 예 |
-| 2 | chaos | `v ≥ 1` **그리고** `d < 1` | `43.5c` | Sacred 생기 | 예 |
-| 3 | chaos | `v < 1` | `1c당 15.5개` (`1 ÷ v`) | 혈기생기 | **아니오** |
-| 4 | divine | `d ≥ 1` | `1.85d` | 뿔 갑충석 | 예 |
-| 5 | divine | `d < 1` | `1d당 3,040개` (`r ÷ v`) | 혈기생기 | 예 |
+| # | 표시통화 | 조건 | 출력 | 예 | rate 필요 | 키(S2 §3.6) |
+|---|---|---|---|---|---|---|
+| 1 | chaos | `v ≥ 1` **그리고** `d ≥ 1` | `359.7c (1.85d)` | 뿔 갑충석 | 예 | `ui.price.chaosWithDivine` |
+| 2 | chaos | `v ≥ 1` **그리고** `d < 1` | `43.5c` | Sacred 생기 | 예 | `ui.price.chaos` |
+| 3 | chaos | `v < 1` | `1c당 15.5개` (`1 ÷ v`) | 혈기생기 | **아니오** | `ui.price.perChaos` |
+| 4 | divine | `d ≥ 1` | `1.85d` | 뿔 갑충석 | 예 | `ui.price.divine` |
+| 5 | divine | `d < 1` | `1d당 3,040개` (`r ÷ v`) | 혈기생기 | 예 | `ui.price.perDivine` |
 
 **비대칭**: 카오스 표시는 임계를 **둘**(1c와 1d), 디바인 표시는 **하나**만 검사한다. "카오스 항목은 rate 없이도 동작한다"는 **행 3에만 참**이다.
 
 **rate 부재 시**: 행 1/2는 구분이 불가능하다. 병기만 떼어 `359.7c`로 출력하면 **행 2와 문자 단위로 동일**해져 괄호의 부재가 "1디바인 미만"이라는 **거짓 정보를 적극적으로 전달**한다.
 
-| 표시통화 | rate 부재 시 |
-|---|---|
-| chaos, `v ≥ 1` | `359.7c (환율 대기)` — 슬롯 유지 |
-| chaos, `v < 1` | 행 3 그대로 정상 출력 |
-| divine | `환율 대기` (값 없음) |
+| 표시통화 | rate 부재 시 | 키 |
+|---|---|---|
+| chaos, `v ≥ 1` | `359.7c (환율 대기)` — 슬롯 유지 | `ui.price.chaosRatePending` |
+| chaos, `v < 1` | 행 3 그대로 정상 출력 | `ui.price.perChaos` |
+| divine | `환율 대기` (값 없음) | `ui.price.ratePending` |
 
 환산은 `primaryValue ÷ divine.primaryValue`. `core.rates.divine` 역수도 금지(D1). 실측 검산: `0.06401 ÷ 194.6 → 역수 3040.0` = API의 `maxVolumeRate` 3040.
 
@@ -1022,6 +1062,8 @@ sequenceDiagram
 | `SettingsReadOnly` | `schemaVersion`이 미래 버전 | 이 세션에서 해제되지 않음(다음 기동에 파일이 구버전으로 교체된 뒤에만) | — | 원인 표시 + 편집 차단(D17과 동일 계열) | **오류** |
 | `SettingsUnreadable` | 읽기 I/O 실패, 격리 못 함 | 다음 기동에서 읽기 성공 | — | 원인·마지막 시도 시각만(확인 버튼 없음) | **오류** |
 | `CommitRejected` | `ConsecutiveEmptyCommitRounds >= 2` | 1회라도 커밋 착지 | 배너 | 리그 값 확인 안내 | **오류** |
+| `ItemDropped` | 스냅샷에 있으나 가격을 읽지 못해 스킵됨(`SkippedIds`, S2 §2.6) | 다음 라운드에서 값 회복 | 행에 `가격 읽기 실패 — 항목은 존재합니다` | 강조 표시(`ItemUnresolved`와 구분) | — |
+| `RateInherited` | rate가 승계됨(`DivineRate.Inherited`) | 새 rate 확보 | 병기 옆 한 줄(`환율 승계 중`) | — | — |
 
 원칙:
 
@@ -1054,7 +1096,7 @@ sequenceDiagram
 | `refreshIntervalMinutes` | int | 5 | **[5, 60]** (D11) | 클램프 + 기록 |
 | `language` | string | `"en"` | 발견된 사전 중 하나 | `en` 폴백 |
 | `defaultDisplayCurrency` | enum | `auto` | `auto` \| `chaos` \| `divine` | `auto` 폴백 |
-| `window.x` / `.y` | double | 100 / 100 | **어느 한 작업영역과의 교집합이 최소 '푸터 전체 폭 × 푸터 높이' 이상**이어야 한다(D-SH8, `00-shell-measurements.md` §8.6 근거는 S3 §4.5) | 기본 위치로 클램프 |
+| `window.x` / `.y` | double | 100 / 100 | **어느 한 작업영역과의 교집합이 최소 '푸터 전체 폭 × 푸터 높이' 이상**이어야 한다(D-SH8, 근거: D19 의 푸터 불변식, S3 §4.5) | 기본 위치로 클램프 |
 | `window.width` | double | 420 | 최소·최대 범위 | 클램프 |
 | `window.height` | double | 500 | 최소·최대 범위 | 클램프. **`heightMode=explicit`일 때만 의미를 갖는 높이 값**이다 (D19) |
 | **`window.heightMode`** | enum | `auto` | `auto` \| `explicit` | `auto` 폴백 |
@@ -1063,6 +1105,9 @@ sequenceDiagram
 | `watchlist[].id` | string | — | 비지 않음 | 무효 항목은 **버리지 않고** 미해결 행으로 보존 (D17) |
 | `watchlist[].category` | string | — | 18종 열거 (§7.3) | 미지 문자열도 **보존**하고 미해결 행으로 표시 |
 | `watchlist[].displayCurrency` | enum? | 생략 | `auto` \| `chaos` \| `divine` | **생략 시 `defaultDisplayCurrency`를 따른다** |
+| `firstRunAcknowledged` | bool | `false` | 값 그대로 신뢰(불리언, 클램프 불필요) | 파싱 실패 시 `false` |
+
+**`firstRunAcknowledged`** — FR-08-6(첫 실행 안내)의 영속 필드다. `bool`, 기본 `false`, **최상위**(창 기하와 무관한 1회성 플래그이므로 `window.*` 아래에 두지 않는다). 정확한 JSON 키 이름은 → S4(S3 §6.5, D-SH6).
 
 **저장하지 않는 것**: 위치 이동 모드(FR-05-6/FR-06 — `IOverlayModeService` 보유), 런타임 확정 리그(D6), divine rate(D1), 조회된 카테고리 목록 캐시(`Store` 보유).
 
@@ -1120,7 +1165,7 @@ sequenceDiagram
 | FR-08-3 | 설정 창이 담는 조작 일체 | `SettingsViewModel` + `Settings` + `IOverlayModeService` + **높이 자동 되돌리기**(D19) + **위치·크기 초기화**(D22) + **리그 목록 재조회·자유 입력**(D6) | S3 |
 | FR-08-4 | 설정 창을 닫아도 종료되지 않음 | `Shell` — `ShutdownMode=OnExplicitShutdown`, `Shutdown()` 호출자는 트레이 종료 하나 (D12, §3.6) | S3 |
 | FR-08-5 | 설정 창 관심목록 스크롤 | 설정 창 View | S3 |
-| FR-08-6 | 첫 실행 안내 | `Shell`(설정 창 자동 표시 + 닫을 수 없는 배너) + `SettingsViewModel` | S3 |
+| FR-08-6 | 첫 실행 안내 | `Shell`(설정 창 자동 표시 + 닫을 수 없는 배너) + `SettingsViewModel` + **`Settings`**(영속 필드 `firstRunAcknowledged`) | S3 |
 | NFR-01 | 유휴 CPU 무시 가능 | `Polling`(UI 스레드 밖, §3.2) + `Shell`(히트테스트 타이머 없음) + 상시 타이머 2개 유지 + 이동 모드 중에만 존재하는 워치독 1개(§3.3, S3 §13-30) | S2, S3 |
 | NFR-02 | 과도한 요청 금지 | `Market`(`NinjaGateway`) + `Polling`(배치·5분 하한·재폴링 디바운스) + `Shell`(단일 인스턴스 가드 D18-d) | S2, S3 |
 | NFR-03 | 네트워크 실패가 앱을 죽이지 않음 | `Polling`(최종 `catch` + **최외곽 `finally`**) + **하트비트 기반 `PollingStopped`**(D20) + `Composition`(`Ignore`, 허용 목록 `DispatcherUnhandledException`) + `Diagnostics` + 오버레이 배너·트레이 오류 변형 | S2, S3 |
@@ -1174,7 +1219,7 @@ sequenceDiagram
 | # | 항목 | 성격 | 다음 행동 |
 |---|---|---|---|
 | **Q2** | **미해결 슬러그·카테고리 정책** — `ItemUnresolved`, 열거에 없는 카테고리 문자열. D17의 "무효 항목을 버리지 않는다"와 하나의 정책으로 통합해야 한다 | 중 | S2에서 확정. **자동 삭제는 하지 않는다** |
-| **Q5** | **`AllowsTransparency` 재평가** — "소프트웨어 렌더링" 서술은 Windows 7 이전 것이다. 실제 비용은 레이어드 창 present 경로이며 유휴 시 리페인트가 없으므로 **NFR-01은 위험 축이 아니다.** 진짜 비용은 ① **ClearType 서브픽셀 안티에일리어싱 비활성화 → 흐린 글자** (숫자와 소수점을 읽는 것이 존재 이유인 앱에서 기능적 손실), ② 자식 HWND 미렌더, ③ 면적 비례 리페인트 | 중 | S3 측정: 스냅샷 갱신 시 프레임 시간, **글자 가독성**. 가독성 문제는 실측으로 확인됐다(§8) — 유일한 해법은 `AllowsTransparency=false` + `WS_EX_LAYERED` 전환이며, 텍스트 뒤 불투명 배경만으로는 ClearType이 돌아오지 않는다(§8.2) |
+| **Q5** | **`AllowsTransparency` 재평가** — "소프트웨어 렌더링" 서술은 Windows 7 이전 것이다. 실제 비용은 레이어드 창 present 경로이며 유휴 시 리페인트가 없으므로 **NFR-01은 위험 축이 아니다.** 진짜 비용은 ① **ClearType 서브픽셀 안티에일리어싱 비활성화 → 흐린 글자** (숫자와 소수점을 읽는 것이 존재 이유인 앱에서 기능적 손실), ② 자식 HWND 미렌더, ③ 면적 비례 리페인트 | 중 | S3 측정: 스냅샷 갱신 시 프레임 시간, **글자 가독성**. 가독성 문제는 실측으로 확인됐다(`00-shell-measurements.md` §8) — 유일한 해법은 `AllowsTransparency=false` + `WS_EX_LAYERED` 전환이며, 텍스트 뒤 불투명 배경만으로는 ClearType이 돌아오지 않는다(`00-shell-measurements.md` §8.2) |
 | **Q9** | **미래 리그의 신규 카테고리가 보이지 않는다.** 자동 발견 엔드포인트는 없음이 확인됐다(`00-api-contract.md` §1.2) | 낮음, 지연성 | 리그 교체 시 수동 확인 |
 | **Q10** | **리그 변형 처리.** `Standard`/`Hardcore`/SSF/Ruthless가 드롭다운을 오염시킨다 | 중 | 전량 나열 + 첫 원소 기본값 + 자유 입력(D6). 필터링은 하지 않는다 |
 | **Q11** | **`maxVolumeCurrency` 값 공간.** `chaos`/`divine` 둘만 관측, 결측 없음. **닫혔다는 증거는 아니다** | 낮음 | §6.2의 chaos 폴백으로 동작 보장, 미지 값은 세션당 1회 기록 |

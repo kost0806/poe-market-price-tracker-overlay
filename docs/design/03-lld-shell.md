@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| 문서 상태 | **제4판 — 제3판 리뷰 3종(csharp-reviewer 실측 프로브 3개 · silent-failure-hunter · 검증/개정목록 감사) 결과 마감. 25/25 CLOSED·0 PAPER 결론 위에서, P3 ack 기제를 실측 반증에 따라 센티널 방식으로 교체하고 §13 개정 목록을 원문 대조로 재검증했다. 42/42 요구사항 SATISFIED 유지** |
+| 문서 상태 | **제5판 — 최종 정합성 마감 지시서 반영. `IUiDispatcher.Post`의 TFM 위반(B2), `Store`의 다섯 얼굴 등록 누락(B3), `IUiTicker.Start` 호출자 부재(B4)를 닫고 `CommitRejected`를 오버레이 배너 우선순위표에 편입했다. 42/42 요구사항 SATISFIED 유지** |
 | 작성일 | 2026-08-15 |
-| 상위 문서 | `docs/design/02-lld-core.md` **제3판**(frozen) · `docs/design/01-hld.md` **개정 6판**(frozen, D1–D22) · `docs/design/00-shell-measurements.md`(측정 확정, 구속력 있음 — **§8/§9 신설로 확장**) · `docs/REQUIREMENTS.md` **개정 2판**(§2/§9 E1 근거 정정, FR-08-6 포함, §4/§9 필드명 정정) |
+| 상위 문서 | `docs/design/02-lld-core.md` **제4판**(frozen) · `docs/design/01-hld.md` **개정 7판**(frozen, D1–D22) · `docs/design/00-shell-measurements.md`(측정 확정, 구속력 있음 — **§8/§9/§10 신설로 확장**) · `docs/REQUIREMENTS.md` **개정 2판**(§2/§9 E1 근거 정정, FR-08-6 포함, §4/§9 필드명 정정) |
 | 범위 | `src/PoeOverlay`(`net8.0-windows`)의 `Shell` — 오버레이 창·설정 창·트레이 아이콘·Win32 interop·컴포지션 루트. `src/PoeOverlay.Core/Presentation`(`net8.0`)의 `SnapshotFanout`·뷰모델 셋·`IOverlayModeService`·`IUiDispatcher`·`IUiTicker` 구현 배선 |
 | **범위 밖** | 메서드 시그니처·JSON 속성명·오류 코드 문자열·테스트 프로젝트 배치·XAML 마크업. **→ S4** |
 | 추상 수준 | 타입·관계·불변식·상태기계·알고리즘·스레딩 계약. S2와 동일 |
@@ -81,6 +81,21 @@
 
 **요구사항 42/42는 이 판에서도 재논증하지 않았다.**
 
+### 0.4 제5판 — 최종 정합성 마감 지시서 반영. 세 개의 컴파일 차단과 하나의 무동작 경로를 닫는다
+
+검증 3종(개정 정확성 감사 · 교차 일관성 검토 · 요구사항 재감사)을 통합한 마감 지시서(`docs/design/_wip/final-consistency-punchlist.md`)의 지적 가운데 이 문서를 대상으로 하는 항목을 반영했다. **기각된 지적은 없다.**
+
+| # | 항목 | 처분 |
+|---|---|---|
+| B2 | `IUiDispatcher.Post`가 `DispatcherPriority`(`WindowsBase`, `net8.0-windows`)를 매개변수로 받아 `Presentation`(`net8.0`)이 컴파일되지 않는다 | §7.2. `Presentation` 지역 열거형 `UiPostPriority`를 신설하고 `Shell` 어댑터에서 `DispatcherPriority`로 사상한다. 사상표를 §7.2에 명시했다 |
+| B3 | `ISearchSource`가 §3.1 6번 행의 `Store` 등록("넷 다")에서 빠져 있다 — `SettingsViewModel`이 의존성을 해석하지 못해 FR-01-1이 죽는다 | §3.1. `Store`를 **다섯 얼굴**로 정정했다 |
+| B4 | `IUiTicker.Start`의 호출자가 어디에도 없다 — D20의 파생 상태 전부가 그 틱에 의존하는데 §3.3은 `Stop()`만 적었다 | §3.2. 오버레이 표시(9번) 직후, `app.Run()`(11번) 직전에 `Start(30초)`를 호출하도록 명시했다 |
+| C-1 | HLD §6.4의 `CommitRejected`가 오버레이 배너를 요구하는데 §5.5의 우선순위표는 다섯까지만 있었다 | §5.5. `CommitRejected`를 4위(`LeagueUnresolved`와 `SettingsWriteFailed` 사이)로 편입했다 — 근거는 §5.5 본문 참조 |
+
+이 판이 여는 동결 문서 개정 요구(HLD §7/§8, S2 §8.1/§8.2/§8.4 등)는 호출자가 직접 반영한다 — 이 문서는 그 문서들을 고치지 않는다.
+
+**요구사항 42/42는 이 판에서도 재논증하지 않았다.**
+
 ---
 
 ## 1. 공통 규약 — `Shell`/`Presentation`에 추가되는 제약
@@ -129,11 +144,11 @@ HLD §2.3 규칙 2("`Shell`의 interop는 `Presentation`을 모른다. 역방향
 
 | 기법 | 근거 | 출처(문서 §절) |
 |---|---|---|
-| `AttachThreadInput` + `SetForegroundWindow` | 포그라운드 **잠금 우회**다. 사용자 입력 0에서도 활성화에 성공해, 오버레이가 게임에서 포커스를 훔칠 수단을 갖게 된다 | 이 문서 §1.4 |
+| `AttachThreadInput` + `SetForegroundWindow` | 포그라운드 **잠금 우회**다. 사용자 입력 0에서도 활성화에 성공해, 오버레이가 게임에서 포커스를 훔칠 수단을 갖게 된다 | `00-shell-measurements.md` §1.4 |
 | `TaskbarCreated` 수동 훅(`RegisterWindowMessage` 재구현) | `NotifyIcon`이 이미 내부적으로 처리한다. 중복 `NIM_ADD` 경로만 늘린다 | 【측정】 `00-shell-measurements.md` §4(D3) — **정정(N2)**: 초판은 §4.1로 오기했다 |
 | `RestoreBounds`를 기하 저장에 쓰는 것 | `Shutdown()` 후 `Empty`다 | HLD D19 |
-| `window.IsActive`로 활성화 성공 판정 | 실패한 모든 사례에서 `True`였다 | 이 문서 §1.4 |
-| `GetActiveWindow`/`GetFocus`로 활성화 판정 | 스레드 지역이라 `IsActive`와 같은 결함 | 이 문서 §1.4 |
+| `window.IsActive`로 활성화 성공 판정 | 실패한 모든 사례에서 `True`였다 | `00-shell-measurements.md` §1.4 |
+| `GetActiveWindow`/`GetFocus`로 활성화 판정 | 스레드 지역이라 `IsActive`와 같은 결함 | `00-shell-measurements.md` §1.4 |
 | `Shell_NotifyIconGetRect`의 HRESULT 신뢰 | `S_OK`와 함께 **틀린** 좌표(셰브론 사각형)를 반환했다 | 【측정】 `00-shell-measurements.md` §4.1 — **정정(N2)**: 초판은 §4로 오기했다 |
 | DirectX 훅·인젝션, 게임 프로세스 감지 | NFR-04, REQUIREMENTS §2 제외 항목. 안티치트 위험 | `REQUIREMENTS.md` §2 |
 | `SWP_FRAMECHANGED`를 `WS_EX_TRANSPARENT` 토글에 붙이는 것 | 불필요한 `WM_NCCALCSIZE`·재합성만 유발 | HLD D4-d |
@@ -189,13 +204,15 @@ S2 §12.3의 #13+14. HLD §6.4는 해제 조건을 "라운드 재개"라 적었�
 | 3 | `HttpClient` + Resilience 파이프라인 | `IHttpClientFactory` | D13 |
 | 4 | `Localization` | `IHostedLifecycleService` | `StartingAsync`에서 사전 로드(D-L1) |
 | 5 | `Settings` | `IHostedLifecycleService` | `StartingAsync`에서 동기 로드. **종료 flush 실패 흔적 파일이 있으면 이 시점에 읽는다(M10, §3.2 참조)** |
-| 6 | **`Store`** | `IHostedService` **+** `IMarketSnapshotSource` **+** `IConditionSink` **+** `IErrorSink` (넷 다 같은 싱글턴 인스턴스) | **`Polling`보다 먼저** |
+| 6 | **`Store`** | `IHostedService` **+** `IMarketSnapshotSource` **+** `IConditionSink` **+** `IErrorSink` **+** `ISearchSource`(S2 §10.6, B3) — **다섯 얼굴, 같은 싱글턴 인스턴스** | **`Polling`보다 먼저** |
 | 7 | `Market`(`NinjaGateway` 포함) | 싱글턴 | |
 | 8 | **`Polling`** | `IHostedService` | **`Store` 다음** |
 | 9 | `Presentation`: `SnapshotFanout` | 싱글턴 | `IUiDispatcher`·`IUiTicker`는 `Shell`이 구현해 여기서 주입 |
 | 9′ | `Presentation`: `OverlayViewModel`, `TrayViewModel` | **싱글턴** — B5/신규 D-SH15 | `SnapshotFanout`이 §8.0의 attach 계약으로 붙인다. 창 수명(닫고 다시 열림)과 뷰모델 수명을 **분리**한다 — 창은 뷰를 잃을 뿐 뷰모델은 살아 있다 |
 | 9″ | `Presentation`: `SettingsViewModel` 팩터리 | **transient** | D18-b가 실제로 transient를 요구하는 것은 이것 하나뿐이다(§3.3 참조) |
 | 10 | `Shell`: `IOverlayModeService`/`IOverlayGeometryService` 구현, `TrayIconHost`, `OverlayWindow`, `SettingsWindow` 팩터리 | 싱글턴 / transient | `IUiTicker`의 `Start`/`Stop` 호출자는 여기서 확정한다(§3.3) |
+
+**행 6의 정정(B3) — `ISearchSource`가 등록에서 빠져 있었다.** S2 §10.6이 `ISearchSource`를 선언하고 §6.7이 `Store`에 검색 알고리즘을 준다. §7.4/§5.4가 `SettingsViewModel`에서 그것을 소비한다. 그런데 초판의 이 행은 `Store`를 "넷 다 같은 싱글턴"으로만 등록해 `ISearchSource`가 빠져 있었다 — DI 컨테이너가 그 인터페이스로 해석을 요청받으면 실패하고 `SettingsViewModel`이 생성되지 않는다. FR-01-1이 선언만 되고 배선되지 않은 채 죽는다. **결정**: `Store`를 다섯 얼굴로 등록한다. §E의 보호 목록이 승인한 것은 "하나의 싱글턴을 여러 인터페이스로 등록한다"는 **구조**이지 얼굴의 개수가 아니다.
 
 **행 9′/9″의 근거(B5) — 초판의 결함**: 초판은 "뷰모델은 transient"(§8.1)라고 뭉뚱그려 §8.1의 "세 뷰모델의 `Refresh`를 못박아 호출한다"는 요구, §3.1의 transient 선언, §5.3의 "창 닫을 때 뷰모델 폐기"가 **동시에 성립할 수 없게** 만들었다 — attach/detach API도, 어느 스레드에서 부르는지도, 패스 도중 detach가 안전한지도 정의하지 않아 한 구현자는 3슬롯 고정 팬아웃 + 싱글턴 뷰모델(D18-b 위반)을, 다른 구현자는 동적 목록 + 순회 시 복사본을 만드는 식으로 **둘 다 §8.1을 만족**하는 사고가 났다. HLD D18-b를 다시 읽으면 transient를 요구하는 근거("창을 살려두면 보이지 않는 UI를 매 스냅샷마다 갱신한다")는 **설정 창에만** 적용된다 — 오버레이와 트레이는 애초에 "보이지 않아도 갱신해야" 정상 동작한다(오버레이는 항상 보이고, 트레이 아이콘·툴팁은 항상 표시된다). `OverlayViewModel`/`TrayViewModel`을 컴포지션 루트 소유 싱글턴으로 바꾸면 §8.0의 attach 계약이 단순해진다 — 창이 열리고 닫혀도 뷰모델은 살아서 계속 갱신되고, 뷰(코드비하인드)만 `DataContext`를 붙였다 뗀다.
 
@@ -230,6 +247,8 @@ S2 §12.3의 #13+14. HLD §6.4는 해제 조건을 "라운드 재개"라 적었�
 **9번(오버레이 창)**: `SourceInitialized`에서 §4.0의 레이어드 읽고-고쳐-쓰기(`WS_EX_LAYERED`·`TRANSPARENT`·`NOACTIVATE` 설정 + `SetLayeredWindowAttributes`)를 적용한다. 저장된 기하를 §4.5의 검증 규칙으로 검사한 뒤 적용(§4.7은 같은 규칙을 디스플레이 변경 시점에 재사용할 뿐, 규칙 자체를 정의하지 않는다). `HeightMode`에 따라 `SizeToContent` 설정(§4.6).
 
 **10번(트레이 아이콘)**: §6.2.
+
+**`IUiTicker.Start` 호출 시점 — B4, 이 판이 채운다.** §3.1 10번 행은 "`Start`/`Stop` 호출자는 여기서 확정한다(§3.3)"고 적었으나 §3.3은 **정지**(a②)만 적었다 — 30초 틱을 시작하는 코드가 어디에도 없었다. `PollingStopped`·`RatePending`을 비롯한 D20의 파생 상태 계산 전부가 그 틱에 의존하므로(§9.1, D-PS3), 시작 지점이 없으면 그 계산들은 `SnapshotChanged`가 발화할 때만(즉 데이터가 살아 있는 동안만) 돌고, 정작 감시해야 할 순간(폴링이 멈춰 스냅샷이 더 이상 바뀌지 않는 순간)에 멈춘다. **결정**: 오버레이 창 표시(9번) 직후, `app.Run()`(11번) 직전에 `uiTicker.Start(TimeSpan.FromSeconds(30))`를 호출한다 — §3.3-a②의 `Stop()`과 대칭이 되는 지점이다.
 
 ### 3.3 종료 순서 — 무엇이 왜 깨지는가
 
@@ -510,15 +529,16 @@ HLD §3.6의 5단계를 그대로 구현한다. 순서가 의미를 가진다.
 
 **`ViewModelRefreshFailing` — B3/D-PS10/P4, 신규.** 진입·해제·버퍼링 규칙은 §10.1에 정의했다. 표시: 트레이 툴팁 한 줄(D21 조립 규칙에 추가) + 설정 창 배너(이 표). 신규 `AppConditionKind` 멤버이므로 **개정 요구로 S2 §2.11과 HLD §6.4에 등재한다**(§13).
 
-**오버레이 배너 슬롯의 우선순위 — §4 인용 정리가 드러낸 빈자리를 채운다.** 오버레이는 배너 한 줄을 표시할 슬롯이 하나뿐인데(HLD §6.4 표에서 "오버레이" 열에 "배너"를 요구하는 항목이 `LeagueUnresolved`·`PollingStopped`·`SettingsWriteFailed`·`SettingsCorrupt`**·`TrayUnavailable`**의 **다섯**이다 — **정정(M4)**: 초판은 `TrayUnavailable` 행의 오버레이 열이 "배너"임을 놓치고 "넷"이라 세었다. 그런데 B1에서 배너가 가장 중요한 바로 그 상태가 `TrayUnavailable`이다 — 트레이가 죽으면 오버레이 배너가 "설정 창을 여세요"를 말할 수 있는 유일하게 남은 표면에 가깝다), 이 문서 어디에도 그 다섯이 동시에 활성일 때의 우선순위가 없었다(§10.1은 세 catch 지점을 나열하는 표일 뿐 우선순위 표가 아니다 — 이전 판의 인용 오류였다). **결정**: 사용자가 지금 조치해야 하는 정도(actionability × 심각도)로 다음 순서를 채택한다.
+**오버레이 배너 슬롯의 우선순위 — §4 인용 정리가 드러낸 빈자리를 채운다. C-1, 이 판이 여섯 번째 자리를 마저 닫는다.** 오버레이는 배너 한 줄을 표시할 슬롯이 하나뿐인데(HLD §6.4 표에서 "오버레이" 열에 "배너"를 요구하는 항목이 `LeagueUnresolved`·`PollingStopped`·`SettingsWriteFailed`·`SettingsCorrupt`**·`TrayUnavailable`**의 **다섯**이다 — **정정(M4)**: 초판은 `TrayUnavailable` 행의 오버레이 열이 "배너"임을 놓치고 "넷"이라 세었다. 그런데 B1에서 배너가 가장 중요한 바로 그 상태가 `TrayUnavailable`이다 — 트레이가 죽으면 오버레이 배너가 "설정 창을 여세요"를 말할 수 있는 유일하게 남은 표면에 가깝다), 이 문서 어디에도 그 다섯이 동시에 활성일 때의 우선순위가 없었다(§10.1은 세 catch 지점을 나열하는 표일 뿐 우선순위 표가 아니다 — 이전 판의 인용 오류였다). **그리고 HLD §6.4는 `CommitRejected` 행에도 "오버레이" 열을 "배너"로 적어 두었다** — 이 문서가 놓친 **여섯 번째 자리**다(마감 지시서 §C-1). **결정**: 사용자가 지금 조치해야 하는 정도(actionability × 심각도)로 다음 순서를 채택하고, `CommitRejected`를 4위로 편입한다.
 
 | 순위 | 조건 | 근거 |
 |---|---|---|
 | 1 | `SettingsCorrupt` | 쓰기가 완전히 막혀 있고 사용자 확인 없이는 절대 풀리지 않는다(D17) — 가장 긴급하고 가장 확실하게 사용자 행동을 요구한다 |
 | 2 | `TrayUnavailable`(M4, 신규) | 데이터는 계속 보이지만 **진입점 자체가 위험하다** — 이 배너를 닫거나 놓치면 남는 회수 경로가 D-SH14(두 번째 exe 실행)뿐이며, 그마저 사용자가 직관적으로 떠올릴 방법이 아니다. `LeagueUnresolved`보다 뒤에 두면 트레이를 잃었다는 사실 자체가 가려질 수 있어 앞세운다 |
 | 3 | `LeagueUnresolved` | 표시할 가격 데이터 자체가 없다 — 앱이 기능적으로 정지한 것과 같다 |
-| 4 | `SettingsWriteFailed` | 데이터 표시는 정상이지만 영속성이 위험하다. 사용자 행동(재시도 대기 또는 디스크 확인)의 여지가 `SettingsCorrupt`보다 적다 |
-| 5 | `PollingStopped` | 마지막 성공 데이터는 계속 보이므로 체감 피해가 가장 작다. 두 갈래 중 하나(하트비트 노후)는 자연 해제를 기다리기만 하면 된다(§2.2) |
+| 4 | **`CommitRejected`(C-1, 신규)** | `LeagueUnresolved`와 같은 근본 증상(데이터가 더 이상 착지하지 않는다)을 공유하고, 조치("리그 값 확인")도 그와 동형으로 구체적이다. **그러나 `LeagueUnresolved`보다는 뒤다** — 폴링 루프 자체는 살아 있고 마지막으로 착지한 데이터가 화면에 남아 있어 `LeagueUnresolved`(데이터 자체의 부재)보다 체감 피해가 작다. **`SettingsWriteFailed`보다는 앞이다** — 설정 쓰기 실패는 재시작 시에만 영향을 미치는 영속성 문제인 반면, `CommitRejected`는 앱의 핵심 기능(시세 표시)이 지금 이 순간 멈춰 있다는 뜻이며 사용자가 직접 나서지 않는 한(리그 값을 고치지 않는 한) 이 상태는 자연 해제되지 않는다는 점에서 `PollingStopped`의 하트비트 노후 갈래보다도 능동적 개입이 필요하다 |
+| 5 | `SettingsWriteFailed` | 데이터 표시는 정상이지만 영속성이 위험하다. 사용자 행동(재시도 대기 또는 디스크 확인)의 여지가 `SettingsCorrupt`보다 적다 |
+| 6 | `PollingStopped` | 마지막 성공 데이터는 계속 보이므로 체감 피해가 가장 작다. 두 갈래 중 하나(하트비트 노후)는 자연 해제를 기다리기만 하면 된다(§2.2) |
 
 `ViewModelRefreshFailing`·`LoggingUnavailable`은 오버레이 슬롯을 아예 배정받지 않으므로(위 두 문단) 이 우선순위 밖에 있다 — 오버레이 자신이 멈춘 상태를 오버레이로 알릴 수 없고, 로그 채널 실패는 사용자가 화면에서 조치할 수 있는 일이 아니다. 설정 창은 배너 영역이 스크롤을 갖춘 목록이므로(§5.4) 이 우선순위를 적용하지 않는다 — 활성 조건 전부를 동시에 나열한다.
 
@@ -582,17 +602,28 @@ HLD §2.2/§3.4가 이미 확정한 것을 이 문서는 뒤집지 않는다. `O
 
 **신규 D-PS1.** S2 §10.8은 `IUiTicker`(30초 타이머 추상)를 신설했지만, HLD §3.4가 요구하는 "`IUiDispatcher`로 UI 스레드에 post"의 인터페이스 자체가 어디에도 선언되지 않았다. `SnapshotFanout`은 `net8.0`(`Presentation`)에 있고 `Dispatcher` 타입은 `WindowsBase`(`net8.0-windows`)에 있으므로 `IUiTicker`와 같은 이유로 추상이 필요하다.
 
+**신규 B2 — `DispatcherPriority`는 `WindowsBase`(`net8.0-windows`) 타입이고 `Presentation`은 `net8.0`이다(§1.1, S2 §10.8). 인터페이스 시그니처에 그대로 쓰면 `Presentation` 프로젝트가 컴파일되지 않는다** — `IUiTicker`가 `DispatcherTimer`를 직접 쓰지 않는 것과 정확히 같은 이유(S2 §10.8)인데, 초판은 `Post`의 매개변수를 추가하면서 그 제약을 다시 어겼다.
+
 ```
 Presentation/Fanout/
+    enum UiPostPriority { Normal, Background, Render }     // net8.0, WindowsBase 의존 없음
     interface IUiDispatcher
         bool CheckAccess()
-        void Post(Action action, DispatcherPriority priority = DispatcherPriority.Normal)
+        void Post(Action action, UiPostPriority priority = UiPostPriority.Normal)
         bool HasShutdownStarted { get; }
 ```
 
-구현은 `Shell`이 `Dispatcher.CurrentDispatcher`를 감싼다(`Post` → `BeginInvoke(action, priority)`, `HasShutdownStarted` → `Dispatcher.HasShutdownStarted`). 테스트는 동기 스텁으로 대체한다(HLD §3.4가 이미 "테스트용 동기 `IUiDispatcher`가 발신→핸들러→커밋을 재귀로 만든다"고 재진입 위험을 언급했으므로, 그 스텁의 존재는 이미 전제되어 있었다 — 이름만 없었다).
+구현은 `Shell`이 `Dispatcher.CurrentDispatcher`를 감싸며, `Post` 내부에서 `UiPostPriority`를 `DispatcherPriority`로 **사상**한 뒤 `BeginInvoke(action, mapped)`를 호출한다(`HasShutdownStarted` → `Dispatcher.HasShutdownStarted`). 사상표:
 
-**우선순위 매개변수 — N8-②, 이 판이 결정한다.** 초판의 `Post(Action)`에는 `DispatcherPriority` 매개변수도 기본값도 없어, `Republish`가 `Normal`인지 `Background`/`Render`인지가 §9의 30초 틱 + 스냅샷 변경 팬인 하에서 체감 지연을 좌우하는데도 인터페이스가 그 선택을 표현할 수조차 없었다. **결정**: 매개변수를 추가하고 기본값은 WPF의 관용적 기본과 같은 `DispatcherPriority.Normal`로 둔다. `Republish`(§8.1)는 명시적으로 `Normal`을 쓴다 — §0 E5가 확인했듯 프레임 비용은 문제가 아니므로(165Hz에서 드롭 0), `Background`로 낮춰야 할 측정된 근거가 없다. 근거 없이 우선순위를 낮추는 것은 §0 E5가 이미 걷어낸 "성능을 근거로 한 설계 타협"을 다른 이름으로 재도입하는 것이다. 값 자체는 **확인** — 실사용에서 설정 창 타이핑과 경합하는 정황이 발견되면 그때 `Background`로 낮추되, 그 경우에도 측정을 먼저 남긴다.
+| `UiPostPriority` | `DispatcherPriority` |
+|---|---|
+| `Normal` | `Normal` |
+| `Background` | `Background` |
+| `Render` | `Render` |
+
+테스트는 동기 스텁으로 대체한다(HLD §3.4가 이미 "테스트용 동기 `IUiDispatcher`가 발신→핸들러→커밋을 재귀로 만든다"고 재진입 위험을 언급했으므로, 그 스텁의 존재는 이미 전제되어 있었다 — 이름만 없었다).
+
+**우선순위 매개변수 — N8-②, 이 판이 결정한다.** 초판의 `Post(Action)`에는 우선순위 매개변수도 기본값도 없어, `Republish`가 `Normal`인지 `Background`/`Render`인지가 §9의 30초 틱 + 스냅샷 변경 팬인 하에서 체감 지연을 좌우하는데도 인터페이스가 그 선택을 표현할 수조차 없었다. **결정**: 매개변수를 추가하고 기본값은 WPF의 관용적 기본과 같은 `UiPostPriority.Normal`(→ `DispatcherPriority.Normal`)로 둔다. `Republish`(§8.1)는 명시적으로 `Normal`을 쓴다 — §0 E5가 확인했듯 프레임 비용은 문제가 아니므로(165Hz에서 드롭 0), `Background`로 낮춰야 할 측정된 근거가 없다. 근거 없이 우선순위를 낮추는 것은 §0 E5가 이미 걷어낸 "성능을 근거로 한 설계 타협"을 다른 이름으로 재도입하는 것이다. 값 자체는 **확인** — 실사용에서 설정 창 타이핑과 경합하는 정황이 발견되면 그때 `Background`로 낮추되, 그 경우에도 측정을 먼저 남긴다.
 
 ### 7.3 `IOverlayModeService` 배치
 

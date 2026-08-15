@@ -2,9 +2,9 @@
 
 | | |
 |---|---|
-| 문서 상태 | **제3판 — 3개 검토(조용한 실패 사냥 · 요구사항 추적 · .NET 타입 설계 프로브 8개 빌드·실행) 반영 완료. S3 `03-lld-shell.md` 제4판 §13 검증 개정 목록(행 28/35/39/41) 반영** |
+| 문서 상태 | **제4판 — 최종 정합성 마감 지시서 반영. FR-08-6 영속 필드(B1) 신설, D-PL1 철회, ViewModelRefreshFailing 회귀 테스트 추가** |
 | 작성일 | 2026-08-15 |
-| 상위 문서 | `docs/design/01-hld.md` **개정 6판** (입력 명세, D1–D22 확정) · `docs/design/00-api-contract.md` (**데이터 계약, 구속력 있음**) · `docs/design/00-shell-measurements.md` (**Win32·렌더링 실측, 구속력 있음**) · `docs/REQUIREMENTS.md` 개정 2판 |
+| 상위 문서 | `docs/design/01-hld.md` **개정 7판** (입력 명세, D1–D22 확정) · `docs/design/00-api-contract.md` (**데이터 계약, 구속력 있음**) · `docs/design/00-shell-measurements.md` (**Win32·렌더링 실측, 구속력 있음**) · `docs/REQUIREMENTS.md` 개정 2판 |
 | 범위 | `src/PoeOverlay.Core` (`net8.0`) 의 8개 모듈 — `Domain` · `Localization` · `Pricing` · `Market` · `Store` · `Polling` · `Settings` · `Diagnostics` |
 | **범위 밖** | `Shell` 전부(창·트레이·Win32 interop·오버레이 높이/클리핑/기하)와 `Presentation`의 뷰모델 셋·`SnapshotFanout`·`IOverlayModeService`. **→ S3.** 이들이 소비하는 것은 §10에서 *경계의 모양*까지만 정의하고 멈춘다 |
 | 추상 수준 | 타입·관계·불변식·상태기계·알고리즘. **메서드 시그니처·JSON 속성명·오류 코드 문자열·테스트 프로젝트 배치는 S4** |
@@ -64,6 +64,16 @@ S3 제4판 §13이 원문 대조로 재검증한 42개 항목 가운데 이 문�
 - **§12-5 처리 완료로 등재(S3 §13-35)** — 인스턴스 신호 큐잉 주장의 범위를 좁히는 처방이 HLD D18-d 채널 행 개정(`SendMessageTimeout` 채택)으로 반영됐다.
 
 세부 근거와 원문 대조는 `03-lld-shell.md` §13을 참조.
+
+### 0.3 제4판 — 최종 정합성 마감 지시서 반영
+
+검증 3종을 통합한 마감 지시서(`docs/design/_wip/final-consistency-punchlist.md`)의 지적 가운데 이 문서를 대상으로 하는 항목을 반영했다.
+
+- **B1 — FR-08-6 영속 필드 신설.** §8.1 `AppSettings` 레코드에 `FirstRunAcknowledged`(`bool`) 위치 매개변수를 추가하고, §8.2 검증표에 행을 추가(불리언이므로 파싱 실패 시 `false`), §8.4 키 판독 경로(6번, 키별 판독)에 포함시켰다. HLD §7 스키마·§8 FR-08-6 소유 행과 1:1을 회복한다.
+- **B7 — §7.9의 D-PL1을 철회한다.** S3 §2.2(D-SH2)가 이미 이 잠정안을 대체했다 — `PollingStopped`의 "라운드 재개"는 인-프로세스 재기동이 아니라 프로세스 재시작(`LoopExited` 갈래)과 하트비트 자연 회복(그 외 갈래)으로 성립하며, 이 결정에는 `Presentation → Polling` 간선이 필요 없다. §12.3의 "차단 후보 13+14"도 **처리 완료**로 각인한다.
+- **§11.8에 회귀 테스트(S17) 추가** — `ViewModelRefreshFailing`이 §2.11의 저장 그룹에 실제로 등재돼 `Store`가 그 조건을 거부하지 않음을 단언한다(S3 P4/B3가 전제하는 개정이 실제로 성립하는지의 회귀).
+- **§10.3의 `ITemplateSource` 라벨 완화** — "`Pricing` 전용" 주석이 S3 §9.3의 재사용(`ILocalizer : ITemplateSource`)과 문면상 어긋난다는 지적을 반영해 정정했다.
+- **§12의 판정 재확인** — 이 문서가 신설한 이슈 1·9·11·16·24·33·34번은 HLD 개정 7판이 전부 반영했다(§12.3 참고 각주). 5번은 이미 이전 판에서 처리 완료로 등재돼 있었다.
 
 ---
 
@@ -1566,7 +1576,7 @@ roundGeneration++ → 라운드 CTS 취소 → HTTP 취소 → OperationCanceled
 | 호스트 | `Ignore`이므로 프로세스는 산다 |
 | **자동 재기동을 하지 않는다** | 원인을 숨기고, 같은 예외가 반복되면 로그를 덮는다 |
 
-**【신규 D-PL1, 잠정】** HLD §6.4는 `PollingStopped`의 해제 조건을 "라운드 재개"라 적어 놓고 **재개를 일으키는 생산자를 정의하지 않았다.** 잠정: 설정 창의 "지금 재시도"가 죽은 루프를 1회 재기동한다. **문제**: 그 배선은 `Presentation → Polling` 간선을 요구하는데 HLD §2.2/§2.3에 그 간선이 없다. 유예하되 문제를 이름 붙여 둔다. → §12-14
+**【철회】 D-PL1(잠정안)은 S3 §2.2(D-SH2)로 대체됐다.** 이 절의 잠정 결정("설정 창의 '지금 재시도'가 죽은 루프를 1회 재기동한다")은 스스로 지적했듯 `Presentation → Polling` 간선을 요구했고 그 간선은 HLD §2.2/§2.3에 없었다. S3는 그 배선을 만드는 대신 **인-프로세스 재개를 두지 않기로 결정했다** — `PollingStopped`의 해제는 `LoopExited` 갈래에서는 애플리케이션 재시작으로만, 그 외 갈래(하트비트 노후)에서는 다음 라운드의 하트비트 갱신으로 자연히 성립한다(D-SH2, HLD §6.4 개정). 새 의존 간선은 필요 없다. §12.3의 "차단 후보 13+14"는 **처리 완료**로 각인한다.
 
 ---
 
@@ -1577,12 +1587,13 @@ roundGeneration++ → 라운드 CTS 취소 → HTTP 취소 → OperationCanceled
 ```
 record AppSettings(int SchemaVersion, string? League, int RefreshIntervalMinutes,
                    string Language, DisplayCurrency DefaultDisplayCurrency,
-                   WindowSettings Window, EquatableArray<WatchlistEntry> Watchlist)
+                   WindowSettings Window, EquatableArray<WatchlistEntry> Watchlist,
+                   bool FirstRunAcknowledged)
 record WindowSettings(double X, double Y, double Width, double Height,
                       HeightMode HeightMode, double Opacity)
 enum HeightMode { Auto, Explicit }
 ```
-HLD §7 스키마와 1:1이며 **`heightMode`를 포함**한다(D19). `AppSettings.Default`를 정적 속성으로 둔다.
+HLD §7 스키마와 1:1이며 **`heightMode`**(D19)와 **`FirstRunAcknowledged`**(FR-08-6, `bool`, 기본 `false`, 최상위 — S3 §6.5/D-SH6, 키 이름은 → S4)를 포함한다. `AppSettings.Default`를 정적 속성으로 둔다.
 
 ### 8.2 검증·클램프
 
@@ -1601,6 +1612,7 @@ HLD §7 스키마와 1:1이며 **`heightMode`를 포함**한다(D19). `AppSettin
 | 중복 `id` | 유일 | 첫 항목 우선 |
 | `watchlist[].category` | 18종 | **`CategoryRef(raw, null)`로 보존** |
 | `watchlist[].displayCurrency` | 3종 | **`null`(생략)로 취급** |
+| `firstRunAcknowledged` | 없음 — 불리언이므로 파싱 실패 시 `false` | `false` |
 
 - **화면 적합성은 `Settings`가 검증하지 않는다.** 작업영역은 픽셀·모니터 개념이고 §2.3 규칙 2에 따라 `Shell`의 몫이다.
 - **미지 `displayCurrency`를 `auto`로 강제하지 않는다.** 강제하면 §4.1의 "명시적 `Auto` ≠ 생략"이 훼손된다.
@@ -1637,7 +1649,7 @@ HLD §7 스키마와 1:1이며 **`heightMode`를 포함**한다(D19). `AppSettin
 3. JsonDocument.Parse 실패   -> Corrupt   + 격리 + 쓰기 차단 + SettingsCorrupt 조건
 4. 루트가 객체가 아님        -> Corrupt   + 격리 + 쓰기 차단
 5. schemaVersion 판독        -> 미래 버전이면 ReadOnly + 쓰기 차단 + SettingsReadOnly 조건
-6. 키별 판독 + §8.2 검증     -> Loaded(settings, corrections)
+6. 키별 판독(`firstRunAcknowledged` 포함) + §8.2 검증  -> Loaded(settings, corrections)
 ```
 
 ```
@@ -1827,7 +1839,7 @@ ISettingsSource
 ### 10.3 지역화 — **두 표면으로 나눈다** 【신규 D-L4】
 
 ```
-ITemplateSource                                  // Pricing 전용
+ITemplateSource                                  // Pricing이 주 소비자. Presentation도 재사용한다(ILocalizer : ITemplateSource, S3 §9.3)
     bool TryGetTemplate(string key, out string template)
 
 ILocalizer : ITemplateSource                     // S3 전용
@@ -2074,6 +2086,7 @@ IUiTicker { event EventHandler Tick;  void Start(TimeSpan period);  void Stop();
 | **S14** | 관심목록 편집(`roundGeneration`++) 후 검색 | **결과 유지** — C2 회귀 |
 | S15 | 진행 중 사용자 조회 + 항목 추가 | 그 조회의 커밋이 **거부되지 않는다** |
 | **S16** | 임의의 `Store` 명령(`SetCondition`/`SetLastError` 포함) 적용 | **`SnapshotChanged`가 정확히 1회 발신된다** — §6.3의 `AP → EV` 간선이 예외 없이 성립함을 확인(S3 §13-41, §8.4 P1의 전제) |
+| **S17** | `SetCondition(ViewModelRefreshFailing, true, ...)` | **적용된다** — §2.11 저장 그룹에 `ViewModelRefreshFailing`이 실제로 등재돼 `Store`가 거부하지 않음을 단언(S3 P4/B3의 전제 회귀. 이 멤버 없이는 D-PS10이 런타임에 죽는다) |
 
 ### 11.9 `Polling`
 
@@ -2205,4 +2218,6 @@ IUiTicker { event EventHandler Tick;  void Start(TimeSpan period);  void Stop();
 | **S3에서 처리** | 6, 8, 10, 14, 31 |
 | **계약 문서(`00-api-contract.md`) 보강** | 27 |
 | **방어 비대칭 — 알고 남긴다** | 28 |
-| **차단 후보 — S3 착수 전에 답이 있어야 함** | **13 + 14** (`PollingStopped`의 해제 경로와 그것이 요구하는 의존 간선) |
+| **처리 완료 — S3 §2(D-SH2)가 닫음** | **13 + 14** (`PollingStopped`의 해제 경로와 그것이 요구하는 의존 간선) |
+
+**§12 판정 재확인(제4판)** — 1(오류 링 소유)·9(§6.1 키 열)·11(D-C1)·16(`Store` 등록 순서)·24(`settings.bak.json` 정의)·33(D-ST1/`DataTag`)·34(D-C2)은 HLD 개정 7판이 전부 반영했다. 5(인스턴스 신호 큐잉 범위)는 이미 처리 완료로 등재돼 있었다.
