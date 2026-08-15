@@ -1,44 +1,39 @@
-using System.Net.Http;
-using System.Text.Json;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using AngleSharp;
-using AngleSharp.Dom;
-using OxyPlot;
-using OxyPlot.Axes;
-using OxyPlot.Series;
+using PoeOverlay.ViewModels;
 
 namespace PoeOverlay;
 
+/// <summary>
+/// [UI 로직] MainWindow의 코드비하인드입니다.
+/// ViewModel에 위임하지 않는 순수 UI 동작(드래그, 투명도, 키보드 이벤트)만 처리합니다.
+/// </summary>
 public partial class MainWindow : Window
 {
-    private static readonly HttpClient HttpClient = new();
+    private readonly MainViewModel _viewModel;
 
-    public MainWindow()
+    public MainWindow(MainViewModel viewModel)
     {
         InitializeComponent();
+        _viewModel = viewModel;
+        DataContext = _viewModel;
         Loaded += MainWindow_Loaded;
     }
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
-        SetupChart();
-        LoadSampleImage();
-        await FetchAndParseHtmlAsync();
+        await _viewModel.SearchAsync();
     }
 
-    // --- Drag only from the grip handle ---
+    // ── 순수 UI 이벤트 핸들러 ────────────────────────────────
+
     private void DragGrip_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
     {
         if (e.ButtonState == MouseButtonState.Pressed)
-        {
             DragMove();
-        }
     }
 
-    // --- Opacity slider ---
     private void OpacitySlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
         if (Content is Border border)
@@ -49,107 +44,21 @@ public partial class MainWindow : Window
         }
     }
 
-    // --- Close button ---
-    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    private void CloseButton_Click(object sender, RoutedEventArgs e) => Close();
+
+    private async void SearchButton_Click(object sender, RoutedEventArgs e)
     {
-        Close();
+        await _viewModel.SearchAsync();
     }
 
-    // --- Sample line chart using OxyPlot ---
-    private void SetupChart()
+    private async void SearchBox_KeyDown(object sender, KeyEventArgs e)
     {
-        var model = new PlotModel
-        {
-            Title = "Price History",
-            TitleColor = OxyColors.LightGray,
-            PlotAreaBorderColor = OxyColors.Gray,
-            Background = OxyColors.Transparent,
-        };
-
-        model.Axes.Add(new LinearAxis
-        {
-            Position = AxisPosition.Bottom,
-            Title = "Day",
-            TitleColor = OxyColors.LightGray,
-            TextColor = OxyColors.LightGray,
-            TicklineColor = OxyColors.Gray,
-        });
-
-        model.Axes.Add(new LinearAxis
-        {
-            Position = AxisPosition.Left,
-            Title = "Price (chaos)",
-            TitleColor = OxyColors.LightGray,
-            TextColor = OxyColors.LightGray,
-            TicklineColor = OxyColors.Gray,
-        });
-
-        var series = new LineSeries
-        {
-            Title = "Exalted Orb",
-            Color = OxyColor.FromRgb(255, 200, 50),
-            StrokeThickness = 2,
-        };
-
-        // Sample data points
-        double[] prices = [150, 148, 155, 160, 158, 165, 170, 168, 175, 180];
-        for (int i = 0; i < prices.Length; i++)
-        {
-            series.Points.Add(new DataPoint(i + 1, prices[i]));
-        }
-
-        model.Series.Add(series);
-        model.LegendTextColor = OxyColors.LightGray;
-
-        ChartView.Model = model;
+        if (e.Key == Key.Enter)
+            await _viewModel.SearchAsync();
     }
 
-    // --- Sample image ---
-    private void LoadSampleImage()
+    private async void RefreshButton_Click(object sender, RoutedEventArgs e)
     {
-        try
-        {
-            var bitmap = new BitmapImage();
-            bitmap.BeginInit();
-            bitmap.UriSource = new Uri("https://web.poecdn.com/gen/image/WzI1LDE0LHsiZiI6IjJESXRlbXMvQ3VycmVuY3kvQ3VycmVuY3lBZGRNb2RUb1JhcmUiLCJ3IjoxLCJoIjoxLCJzY2FsZSI6MX1d/fc05f25452/CurrencyAddModToRare.png");
-            bitmap.CacheOption = BitmapCacheOption.OnLoad;
-            bitmap.EndInit();
-            SampleImage.Source = bitmap;
-        }
-        catch
-        {
-            // Image load failure is non-critical for a demo
-        }
-    }
-
-    // --- HTML fetch + parse with AngleSharp, JSON demo with System.Text.Json ---
-    private async Task FetchAndParseHtmlAsync()
-    {
-        try
-        {
-            // Fetch a lightweight public page
-            var html = await HttpClient.GetStringAsync("https://httpbin.org/html");
-
-            // Parse with AngleSharp
-            var config = Configuration.Default;
-            var context = BrowsingContext.New(config);
-            var document = await context.OpenAsync(req => req.Content(html));
-
-            var heading = document.QuerySelector("h1")?.TextContent ?? "(no heading found)";
-
-            // Also demonstrate System.Text.Json parsing
-            var jsonString = await HttpClient.GetStringAsync("https://httpbin.org/json");
-            using var jsonDoc = JsonDocument.Parse(jsonString);
-            var title = jsonDoc.RootElement
-                .GetProperty("slideshow")
-                .GetProperty("title")
-                .GetString() ?? "(no title)";
-
-            FetchedTextLabel.Text = $"HTML <h1>: {heading}\nJSON title: {title}";
-        }
-        catch (Exception ex)
-        {
-            FetchedTextLabel.Text = $"Fetch error: {ex.Message}";
-        }
+        await _viewModel.RefreshAsync();
     }
 }
