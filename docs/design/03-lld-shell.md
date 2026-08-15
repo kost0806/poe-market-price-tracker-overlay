@@ -1,0 +1,764 @@
+# S3 — 저수준 설계 (LLD): Shell/Presentation 절반 (`net8.0-windows` + `net8.0`)
+
+| | |
+|---|---|
+| 문서 상태 | **제2판 — 4개 리뷰(csharp-reviewer 프로브 4개 빌드 · silent-failure-hunter · 요구사항 추적성 감사 · architect) 통합 반영** |
+| 작성일 | 2026-08-15 |
+| 상위 문서 | `docs/design/02-lld-core.md` **제2판**(frozen) · `docs/design/01-hld.md` **개정 5판**(frozen, D1–D22) · `docs/design/00-shell-measurements.md`(측정 확정, 구속력 있음 — **§8/§9 신설로 확장**) · `docs/REQUIREMENTS.md` **개정 2판**(§2/§9 E1 근거 정정, FR-08-6 포함, §4/§9 필드명 정정) |
+| 범위 | `src/PoeOverlay`(`net8.0-windows`)의 `Shell` — 오버레이 창·설정 창·트레이 아이콘·Win32 interop·컴포지션 루트. `src/PoeOverlay.Core/Presentation`(`net8.0`)의 `SnapshotFanout`·뷰모델 셋·`IOverlayModeService`·`IUiDispatcher`·`IUiTicker` 구현 배선 |
+| **범위 밖** | 메서드 시그니처·JSON 속성명·오류 코드 문자열·테스트 프로젝트 배치·XAML 마크업. **→ S4** |
+| 추상 수준 | 타입·관계·불변식·상태기계·알고리즘·스레딩 계약. S2와 동일 |
+| 표기 규약 | S2와 동일. **【측정】** = `00-shell-measurements.md`(또는 이 개정을 있게 한 리뷰 프로브)로 확인한 사실, 추론보다 우선 · **【신규 D-xx】** = 이 문서의 결정, `D-SH*`는 `Shell`, `D-PS*`는 `Presentation` · **→ S4** = 의도적 유예 · **【확인】** = 검증되지 않은 전제, 구현 착수 시 1회 확인 |
+
+---
+
+## 0. 개정 이력
+
+### 0.1 제2판 — 실측이 오버레이 렌더링 기제와 D-SH5의 근거를 뒤집었다. §4는 전면 재작성
+
+초판은 방향 대부분이 유지됐다(§D — 리뷰가 명시적으로 승인한 6개 결정은 이 판에서 손대지 않았다). 이 판이 고치는 것은 **측정이 반박한 자리**, **차단 결함 7건**, **주요 11건**, **사소 8건**이다.
+
+**측정이 문서를 뒤집은 자리 (§0의 R1–R3, §E의 E1–E5)**
+
+| # | 【측정】 사실 | 반영 |
+|---|---|---|
+| R1 | `SynchronizationContext.Current`는 `new Application()` **전에도 후에도 `null`**이다. `app.Run()`이 펌프를 시작해야 비로소 `DispatcherSynchronizationContext`가 선다. 그 구간의 `await Task.Delay(...)`는 교착하지 않고 스레드풀에서 재개된다(`tid` 이동 관측) | §1.4/§6.2의 근거 문장을 교체. **D-SH5의 결론(동기 `Thread.Sleep` 백오프)은 유지**하되, 위험의 성격을 "교착"에서 "**스레드 친화성 오염**"으로 정정 |
+| R2 | `SnapshotFanout` 병합(D-PS2) 스트레스 하네스 — 생산자 8스레드 × 2만 회 × 5회 반복(총 80만 회), **유실 0건** | §8.2 알고리즘은 **실측 승인, 변경 없음**. 예외 경로만 별도 수정(M4) |
+| R3 | 한 디스패처 패스 안에서 레이아웃 없이 `MaxHeight=100` 후 `MaxHeight=500`을 즉시 쓰면 `Height==100`인데 `ActualHeight==254`로 갈라진다 | §4.5(옛 §4.3)의 포착 시점을 `Height` 스칼라 대신 `ActualHeight`/선행 `UpdateLayout()`으로 정정. 도달 가능성 자체는 SUSPECT이나 방어 비용이 0에 가까워 채택 |
+| E1 | `AllowsTransparency=true`에서 화면 캡처 색수차 잉크 픽셀 **0/521**(ClearType 꺼짐). `false`+`WS_EX_LAYERED`에서 **90.29~90.46%**(켜짐). 창 내부 어떤 요소로도 복구 불가(`00-shell-measurements.md` §8.1/§8.2) | **§4 전면 재작성.** `AllowsTransparency=false` + `WS_EX_LAYERED` + `SetLayeredWindowAttributes`로 전환(§4.0, 신규 D-SH17) |
+| E2 | 전환은 픽셀 단위 알파(둥근 모서리·그림자·그라데이션·부분 반투명)를 없앤다. 투명도 슬라이더는 무관(균일 `LWA_ALPHA`) | §4.0.2에 새 설계 제약으로 명문화. HLD D4-a/D4-c의 "둥근 모서리" 문구는 **무효화**되어 개정 요구로 등재(§13) |
+| E3 | `RenderTargetBitmap`은 화면 안티에일리어싱을 반영하지 않는다(모든 구성에서 그레이스케일 반환, 기준선 12행 중 9행 불일치) | 렌더링 품질 검증은 **화면 캡처만 유효** — §4.0.3, §14 |
+| E4 | 성장 시 1~3프레임(약 6~11ms) 미도색 띠(새 행 크기와 정확히 일치), 축소 시 0. 확장 스타일·`Topmost`는 리사이즈·모니터 이동 16단계 내내 불변(`0x08080028`) | §4.6에 알려진 현상으로 기록, `SizeToContent=Height` 우선(명시 `Height`보다 낫다). **재적용 코드 금지** — 넣으면 근거 없는 방어 코드가 된다 |
+| E5 | 165Hz에서 `AllowsTransparency` 두 값 모두 p50/p95=6.06ms, 드롭 0. CPU 차이는 병적 부하에서도 8%뿐 | 성능을 근거로 한 설계 타협 없음을 확인. 60Hz는 §14로 유예 |
+
+**차단 결함 (B1–B7, 전부 해소)**
+
+| # | 문제 | 조치 |
+|---|---|---|
+| B1 | 트레이 등록 최종 실패 + 첫 실행 배너 닫힘 = 프로세스에 도달할 수단이 영구히 사라짐 | §3.2 8번 신호 수신 핸들러가 **매 수신마다** 설정 창을 표시·활성화하도록 명시(신규 D-SH14) — `TrayUnavailable`·배너 닫힘 상태의 도달성 폴백으로 의도적 재사용. HLD D18-d "회수 수단 아님" 문언 개정 요구(§13) |
+| B2 | `TrayUnavailable`은 진입만 있고 해제 생산자가 없음, 재시도 버튼 없음 | §6.2에 **펌프가 도는 시점 전용** 사용자 개시 재등록 경로 신설(신규 D-SH12, 빈 ID 자리 채움). D-SH5의 동기 백오프는 **재사용하지 않는다**(UI 스레드를 얼린다) |
+| B3 | `OverlayViewModel.Refresh`가 계속 던지면 유일한 상시 표면이 조용히 멈추는데 나머지 지표는 전부 초록 | §10.1에 뷰모델별 연속 실패 카운터 + N회 초과 시 트레이 툴팁·설정 창 배너로 드러나는 저장 조건 신설(신규 D-PS10) |
+| B4 | `SnapshotFanout`의 구독자 계약 부재, S3가 정한 뷰모델 수명(transient)과 모순 | §8.0 신설 — attach/detach는 UI 스레드 전용, 패스는 스냅샷 순회, 팬아웃은 attach로 받지 않은 뷰모델을 쥐지 않는다(신규 D-PS9) |
+| B5 | 메시지 전용 창·`SnapshotFanout`·`IUiTicker`·두 뷰모델·워치독 타이머에 소유자와 폐기 시점이 없음 | §3.1 등록 표·§3.3 종료 표 확장(신규 D-SH15). `OverlayViewModel`/`TrayViewModel`을 **컴포지션 루트 소유 싱글턴**으로 전환(D18-b의 transient 요구는 `SettingsViewModel`뿐임을 재확인) |
+| B6 | 설정 창의 기하 명령(위치·크기 초기화, 높이 자동 되돌리기)에 통로가 없음 — D19 단일 기록자 불변식 붕괴 위험 | `IOverlayGeometryService` 신설(신규 D-PS7) — `Presentation` 선언·`Shell` 구현, 기존 `Shell → Presentation` 간선 재사용, 그래프 변경 없음 |
+| B7 | FR-08-6은 CLAIMED-ONLY — 영속 필드가 어디에도 없음 | §6.5에 필드의 **존재·타입·기본값을 지금 확정**(`bool`, 기본 `false`, 키 이름은 S4). HLD §7·S2 §8.1 `AppSettings` 개정 요구로 등재(§13) |
+
+**주요(M1–M11) 11건, 사소(N1–N8) 8건**은 각 절에 반영했다. §D의 승인 목록(6건)은 **재론하지 않았다** — 인용은 하되 문면을 바꾸지 않았다.
+
+---
+
+## 1. 공통 규약 — `Shell`/`Presentation`에 추가되는 제약
+
+### 1.1 물리 배치
+
+```
+src/PoeOverlay.Core/
+  Presentation/            PoeOverlay.Core.Presentation        (S2가 이미 선언, 이 문서가 채운다)
+    Fanout/                SnapshotFanout, IUiDispatcher, IUiTicker(계약만)
+    ViewModels/             OverlayViewModel, SettingsViewModel, TrayViewModel
+    Overlay/                IOverlayModeService(계약), IOverlayGeometryService(계약)
+
+src/PoeOverlay/                                                 PoeOverlay.Shell   (net8.0-windows)
+  Composition/              Main, HostBuilder 확장, DI 등록
+  Interop/                  Win32 P/Invoke 래퍼 (읽고-고쳐-쓰기 캡슐화, 이 폴더 밖으로 HWND 타입이 새지 않는다)
+  Overlay/                  OverlayWindow, IOverlayModeService/IOverlayGeometryService 구현, 높이/클리핑 첨부 동작
+  Settings/                 SettingsWindow
+  Tray/                     TrayIconHost(NotifyIcon 래퍼), IUiDispatcher 구현
+  Startup/                  단일 인스턴스, 신호 채널, 첫 실행 안내
+```
+
+**폴더 = 모듈**이 S2의 규약이었다. `Shell` 내부는 컴파일러가 강제하지 않으므로 이 세분화는 관례다. 유일하게 의미 있는 경계는 **`Interop/`을 벗어나면 `HWND`·`RECT`·확장 스타일 상수가 보이지 않아야 한다**는 것 — S2 §10.7의 "뷰모델이 `Window`·`HwndSource`·`Screen`·`Rect`를 타입으로 알지 못한다"를 `Shell` 내부에도 한 단계 더 적용한 것이다. `OverlayWindow`의 코드비하인드조차 `Interop/`의 래퍼를 통해서만 Win32를 만진다 — 읽고-고쳐-쓰기(D4-d)를 여러 자리에서 각자 재구현하면 통째 대입 사고가 재발한다.
+
+### 1.2 의존 방향 재확인
+
+HLD §2.3 규칙 2("`Shell`의 interop는 `Presentation`을 모른다. 역방향도 없다")와 규칙 6("뷰모델은 다른 뷰모델을 참조하지 않는다")은 그대로 유지한다. 이 문서가 추가하는 것은 하나뿐이다.
+
+**`Presentation`은 `Domain/Ports`(`IConditionSink`·`IErrorSink`)를 소비할 수 있다.** S2 §2.13은 `Store`가 유일한 구현체이고 `Settings`·`Shell`이 포트만 안다고 했는데, `Shell`이 포트를 알려면 그 인터페이스가 `Domain`에 있어야 하고 `Shell`은 이미 전 모듈을 안다(HLD §2.2, "루트로서"). `Presentation`도 `Domain`을 허용 의존으로 이미 갖고 있으므로(HLD §2.2), `SnapshotFanout`의 예외 처리(§8.3)가 `IErrorSink`를 직접 쓰는 데 **새 간선이 필요 없다.** §2에서 같은 논법으로 차단 항목을 닫는다.
+
+### 1.3 시각
+
+`Shell`의 상태 있는 컴포넌트(위치 이동 모드 워치독, 트레이 재등록 판단, 디스플레이 변경 디바운스)도 S2 §1.3의 규약을 따른다 — `TimeProvider` 주입, `DateTimeOffset.UtcNow` 직접 호출 금지. `IUiTicker`(S2 §10.8)의 `Shell` 구현(`DispatcherTimer` 기반)만이 예외적으로 벽시계에 닿는다 — 그것이 `DispatcherTimer` 자체의 존재 이유다.
+
+### 1.4 비동기 — 면제 범위 확장
+
+**【신규 D-SH1】 CA2007 면제를 `Shell/` 프로젝트 전체로 넓힌다.** S2 D-C3는 `Presentation/` 폴더 하나만 면제했다. 근거였던 "async 명령은 UI 동기화 컨텍스트 복귀를 전제한다"(HLD §2.3 규칙 7)는 `Shell`의 이벤트 핸들러(트레이 클릭, 설정 창 명령, `DispatcherTimer` 콜백)에도 문자 그대로 적용된다 — 이들은 전부 `await` 뒤에 UI 스레드로 **돌아와야** 다음 줄에서 `Window`·`NotifyIcon`을 안전하게 만질 수 있다. `ConfigureAwait(false)`를 강제하면 오히려 스레드 규약 위반을 유발한다. `Directory.Build.props`의 오류 승격은 유지하고, `src/PoeOverlay/.editorconfig`에 `Presentation/`과 동일한 사유 주석을 단 면제를 추가한다.
+
+**단, 예외가 있다.** `Interop/`의 Win32 P/Invoke 래퍼 자체(예: 파일 시스템으로 로그 폴더를 여는 `Process.Start` 호출, 첫 실행 안내 표시 여부를 읽는 설정 읽기 경로처럼 UI 스레드 재개가 불필요한 순수 I/O)는 여전히 `ConfigureAwait(false)`를 붙인다. **면제는 "UI 스레드로 돌아와야 하는 코드"에 대한 것이지 "`Shell` 폴더 안이면 전부"가 아니다** — 폴더 스코프 면제 도구는 파일 단위로만 갈라낼 수 없으므로, `Interop/`의 그런 자리는 `#pragma warning restore CA2007` 지역 재활성으로 개별 표시한다. 이유 없이 지역 재활성을 지우면 다음 리뷰에서 CA2007이 다시 조용히 죽는다.
+
+**【측정】 사전 순차 재시도의 진짜 위험 — 교착이 아니라 스레드 친화성 오염 (R1, §0 참조).** 초판은 §6.2에서 "`host.Start()`부터 `new Application()` 사이 구간에는 동기화 컨텍스트가 없다가, `Application` 생성 이후에는 생기지만 메시지 펌프는 `Run()` 전까지 돌지 않는다. 그 구간에서 `await Task.Delay(...)`를 쓰면 컨티뉴에이션이 큐에 쌓인 채 영원히 실행되지 않아 동기 대기와 결합하면 교착한다"고 적었다. **이 문장은 틀렸다.** 실측하면 `SynchronizationContext.Current`는 `new Application()` 전에도 후에도 `null`이고, `Dispatcher.CurrentDispatcher`를 강제로 만들어도 여전히 `null`이다 — `DispatcherSynchronizationContext`는 `app.Run()`이 펌프를 시작해야 비로소 선다. 그 구간의 `await Task.Delay(100)`은 교착하지 않고 **스레드풀 스레드에서 재개**됐다(STA `tid=1`이 아닌 다른 `tid`로 이동 관측). 같은 구간의 `taskB.Wait(2000)`도 정상 반환했다.
+
+**그렇다면 실제 위험은 무엇인가.** 동기화 컨텍스트가 **아예 없어** `await`가 조용히 스레드풀로 재개된다는 사실 자체가 문제다 — 재시도 연속(예: 트레이 재등록 백오프를 비동기로 구현했을 때)이 재개된 스레드풀 스레드에서 `DispatcherObject`나 창 핸들을 건드리는 순간 **`InvalidOperationException`("호출한 스레드가 이 개체를 소유하지 않아…")** 이 난다. 이 경로는 **첫 `NIM_ADD`가 실패해야만** 돈다 — 정상 기동에서는 결코 밟히지 않는, 테스트에서 가장 놓치기 쉬운 경로다. §6.2가 이 사실을 구체적 사례로 못박는다. CA2007 면제가 "그러니 여기서도 `await`를 자유롭게 써도 된다"는 뜻이 아님은 여전히 유효하다 — 다만 그 이유는 "교착" 때문이 아니라 "**펌프도 컨텍스트도 없는 구간에서 재개된 스레드는 UI 스레드가 아니다**"이기 때문이다.
+
+### 1.5 금지 목록 — 코드 리뷰가 잡아야 하는 것
+
+| 기법 | 근거 | 【측정】 출처 |
+|---|---|---|
+| `AttachThreadInput` + `SetForegroundWindow` | 포그라운드 **잠금 우회**다. 사용자 입력 0에서도 활성화에 성공해, 오버레이가 게임에서 포커스를 훔칠 수단을 갖게 된다 | §1.4 |
+| `TaskbarCreated` 수동 훅(`RegisterWindowMessage` 재구현) | `NotifyIcon`이 이미 내부적으로 처리한다. 중복 `NIM_ADD` 경로만 늘린다 | §4.1/D3 |
+| `RestoreBounds`를 기하 저장에 쓰는 것 | `Shutdown()` 후 `Empty`다 | HLD D19 |
+| `window.IsActive`로 활성화 성공 판정 | 실패한 모든 사례에서 `True`였다 | §1.4 |
+| `GetActiveWindow`/`GetFocus`로 활성화 판정 | 스레드 지역이라 `IsActive`와 같은 결함 | §1.4 |
+| `Shell_NotifyIconGetRect`의 HRESULT 신뢰 | `S_OK`와 함께 **틀린** 좌표(셰브론 사각형)를 반환했다 | §4 |
+| DirectX 훅·인젝션, 게임 프로세스 감지 | NFR-04, REQUIREMENTS §2 제외 항목. 안티치트 위험 | REQUIREMENTS |
+| `SWP_FRAMECHANGED`를 `WS_EX_TRANSPARENT` 토글에 붙이는 것 | 불필요한 `WM_NCCALCSIZE`·재합성만 유발 | HLD D4-d |
+| 키(컬러키) 영역 위에 텍스트를 직접 그리는 것 | 안티에일리어싱이 키 색으로 오염된다(자홍색 후광). 텍스트는 반드시 불투명 비-키 패널 위에 앉는다 | §4.0.2, `00-shell-measurements.md` §8.6 |
+| 트레이 재등록 재시도를 `async`/`Task.Delay`로 구현하는 것 | §1.4/§6.2가 정정한 위험(스레드 친화성 오염)에 정확히 해당한다. 동기 백오프 또는 §6.2의 펌프 도는 시점 전용 재등록만 쓴다 | §1.4, §6.2 |
+
+---
+
+## 2. 차단 항목 해결 — `PollingStopped`의 해제 경로
+
+S2 §12.3의 #13+14. HLD §6.4는 해제 조건을 "라운드 재개"라 적었으나 그 재개를 일으키는 생산자가 없고, S2의 잠정안(D-PL1, 설정 창의 "지금 재시도"가 죽은 루프를 재기동)은 스스로 "이 배선은 `Presentation → Polling` 간선을 요구하는데 HLD §2.2/§2.3에 없다"고 적어 두고 유예했다.
+
+### 2.1 세 대안의 재검토
+
+| 대안 | 문제 |
+|---|---|
+| ① `Domain`에 `IPollingControl` 포트(D-C5와 같은 형태) | **의존 그래프는 무리 없다** — `Polling`은 이미 `Domain`을 참조하므로 그 인터페이스를 구현하는 데 새 간선이 필요 없고, `Presentation`도 이미 `Domain`을 참조한다. 그러나 이 포트가 실제로 뭔가를 하려면 **`Polling.ExecuteAsync`가 이미 반환한 뒤에도 응답할 수 있는 무언가**가 살아 있어야 한다 |
+| ② `Shell`이 중계 | HLD §2.2/§2.3에 `Shell → Polling` 간선은 이미 있다(루트로서). 그래프 문제는 없지만 ①과 같은 근본 문제를 안는다 |
+| ③ HLD에 `Presentation → Polling` 간선 추가 | 불필요한 그래프 확장. ①로 충분한데 굳이 새 간선을 그을 이유가 없다 |
+
+**세 대안이 공유하는 진짜 문제는 그래프가 아니라 수명이다.** `Polling`은 `BackgroundService`이고 `LoopExited`는 `ExecuteAsync`의 **최외곽 `finally`**(D20, S2 §7.9)가 실행된 뒤 그 메서드가 **반환했다**는 뜻이다. `IHostedService`의 계약상 `ExecuteAsync`의 `Task`가 완료되면 그 서비스 인스턴스는 끝이다 — 제네릭 호스트는 완료된 `BackgroundService`를 자동으로 다시 부르지 않는다(`BackgroundServiceExceptionBehavior.Ignore`는 "호스트가 죽지 않는다"는 뜻이지 "서비스가 재시작된다"는 뜻이 아니다). 어떤 포트를 두든, 그 포트의 구현체가 **이미 반환한 메서드 안의 상태**(트리거 채널, `PeriodicTimer`)에 다시 손댈 방법은 없다. 진짜 재개를 만들려면 `Polling.ExecuteAsync`를 "라운드 루프를 감싸는 감독 루프"로 재구조화해 재시작 신호를 기다리는 대기 지점을 둬야 하는데, 이것은 **`Polling`의 내부 상태기계를 바꾸는 결정**이고 `Polling`은 S2가 소유한 모듈이다.
+
+### 2.2 결정 — 인-프로세스 재개를 두지 않는다
+
+**【신규 D-SH2】 `PollingStopped`의 "라운드 재개"는 애플리케이션 프로세스 재시작으로만 성립한다. `Shell`/`Presentation`은 죽은 폴링 루프를 인-프로세스로 재기동하는 경로를 두지 않는다.** (초판에서 이 결정은 §1.4의 CA2007 면제와 동일한 ID `D-SH1`로 중복 부여되어 있었다 — 사소한 지적 N1로 리뷰가 잡아낸 것을 여기서 `D-SH2`로 재번호했다. HLD §6.4 개정처럼 결정 ID로 동결 문서를 개정하는 문서군에서 ID 중복은 추적을 불가능하게 만든다.)
+
+| | |
+|---|---|
+| 근거 1 — 그래프가 아니라 정직함 | 포트를 만들어도(①) 재개를 실제로 구현하려면 `Polling`의 내부 구조를 바꿔야 한다. 그 변경 없이 포트만 두면 "지금 재시도" 버튼이 눌러도 아무 일도 없는, HLD §5의 "**아무 일도 일어나지 않는다**"류 결함을 이 문서가 새로 만드는 것이다 |
+| 근거 2 — HLD 자신의 문언이 이미 이 답을 가리킨다 | §6.4 표의 `PollingStopped` 행, **설정 창 열**은 이미 "로그 폴더 열기, **재시작 안내**"라고 적혀 있다 — "지금 재시도" 버튼이 아니다. "지금 재시도"는 같은 표의 **`FetchFailed` 행**(카테고리 단위, 쿨다운 무시, §7.7)에만 있다. **해제 조건("라운드 재개")과 설정 창 행("재시작 안내")은 모순이 아니다** — 사용자가 앱을 재시작하면 새 프로세스가 하트비트 0부터 다시 시작하므로 그 자체로 "라운드가 재개"된다. HLD는 처음부터 프로세스 재시작을 재개 수단으로 전제하고 있었고, S2의 D-PL1이 잘못 읽어 존재하지 않는 배선을 상정했다 |
+| 근거 3 — `LoopExited`의 발생 조건 | D20이 예시로 든 원인(`IUiDispatcher` post 경로의 예외, 완료된 `Store` 채널, 폐기된 `PeriodicTimer`의 `ObjectDisposedException`)은 전부 **진짜 버그이거나 종료 근접 상황**이다. 평범한 네트워크 실패·리그 미확정은 라운드 단위 `catch`가 이미 흡수하며 루프를 떠나지 않는다(§7.9). 즉 이 상태에 도달하는 것 자체가 드물어야 하고, 자동 재시도를 붙이면 **동일한 버그가 반복 트리거되는 크래시 루프**를 만들 위험이 재개 편의보다 크다 |
+| **HLD 개정 (범위를 좁힌다 — M1)** | 초판은 §6.4 `PollingStopped` 행의 해제 열 전체를 "애플리케이션 재시작"으로 갈아치웠다. **이는 과도하다.** S2 §10.5는 `PollingStopped = LoopExited` **또는** `하트비트 노후`로 정의하고, 두 번째 갈래(절전 복귀, 오래 걸린 라운드, 느린 네트워크)는 다음 `RecordHeartbeatAttempt`가 착지하는 즉시 자연 해제된다 — "라운드 재개"가 원래 뜻한 것이 정확히 그 갈래다. 해제 열을 통째로 갈면 구현자가 조건을 래치해 **이미 회복한 앱에 재시작하라고 영구히 표시**하는 사고가 난다. **정정된 개정**: §6.4 해제 열 = "**라운드 재개(하트비트 갱신). 단 `LoopExited`는 애플리케이션 재시작**". 인-프로세스 재기동을 두지 않는다는 결정 자체는 유지한다 — `LoopExited` 갈래에만 적용된다 |
+| S2 D-PL1의 처분 | **철회한다.** S2 §7.9의 잠정 결정은 이 문서로 대체된다 |
+
+**결과**: 이 결정에는 **새 의존 간선이 전혀 필요 없다.** `Presentation`도 `Domain`을 통해 조건을 읽을 뿐이고(§9), `Polling`에 신호를 보낼 방법도, 보낼 필요도 없다. 무순환은 자명하게 유지된다.
+
+**설정 창의 표현**: `PollingStopped` 배너는 (하트비트 노후 갈래에서는) "폴링이 지연되고 있습니다. 마지막 시도: N분 전"을 보여주며 자연 해제를 기다린다. (`LoopExited` 갈래에서는) "폴링이 멈췄습니다. 앱을 재시작하세요"와 **로그 폴더 열기** 버튼만 제공한다(§5.4). 두 갈래 모두 "지금 재시도" 버튼은 **나타나지 않는다** — 나타나면 사용자가 눌렀을 때 아무 일도 없는 죽은 버튼이 된다(HLD 개정 4판 #25가 정확히 이 부류의 결함을 잡으려 했다). 두 갈래를 UI에서 구별하는 정확한 문구·판정은 → S4.
+
+**§0/§13 정정 (N5)** — 초판 §0의 종결 표는 S2 §12.3의 31번(주기 변경이 대기 중 라운드를 연장한다)을 이 절 또는 §4.6에서 "처리"했다고 주장했으나, 어느 절도 그 항목을 실제로 다루지 않는다. 이 판은 그 주장을 **철회한다.** §13-10이 이미 이 항목을 명시적으로 거절해 S2로 되돌리고 있었으므로, 그것이 유일하게 유효한 처분이다 — 31번의 소유자는 현재 없고, S2 차기 개정 대상이다.
+
+---
+
+## 3. 컴포지션 루트
+
+### 3.1 등록 순서와 그 이유
+
+**【신규 D-SH3】** DI 등록은 아래 순서를 지킨다. 호스트는 **등록 역순으로 정지**하므로, 이 순서가 곧 종료 순서를 결정한다.
+
+| # | 등록 대상 | 형태 | 비고 |
+|---|---|---|---|
+| 1 | `Diagnostics`(파일 로거) | 부트스트랩, DI 이전 | Main 1번(HLD §3.5). DI 컨테이너보다 먼저 열려야 이후 모든 실패가 기록 가능 |
+| 2 | `TimeProvider.System` | 싱글턴 | 전 모듈 공유 |
+| 3 | `HttpClient` + Resilience 파이프라인 | `IHttpClientFactory` | D13 |
+| 4 | `Localization` | `IHostedLifecycleService` | `StartingAsync`에서 사전 로드(D-L1) |
+| 5 | `Settings` | `IHostedLifecycleService` | `StartingAsync`에서 동기 로드. **종료 flush 실패 흔적 파일이 있으면 이 시점에 읽는다(M10, §3.2 참조)** |
+| 6 | **`Store`** | `IHostedService` **+** `IMarketSnapshotSource` **+** `IConditionSink` **+** `IErrorSink` (넷 다 같은 싱글턴 인스턴스) | **`Polling`보다 먼저** |
+| 7 | `Market`(`NinjaGateway` 포함) | 싱글턴 | |
+| 8 | **`Polling`** | `IHostedService` | **`Store` 다음** |
+| 9 | `Presentation`: `SnapshotFanout` | 싱글턴 | `IUiDispatcher`·`IUiTicker`는 `Shell`이 구현해 여기서 주입 |
+| 9′ | `Presentation`: `OverlayViewModel`, `TrayViewModel` | **싱글턴** — B5/신규 D-SH15 | `SnapshotFanout`이 §8.0의 attach 계약으로 붙인다. 창 수명(닫고 다시 열림)과 뷰모델 수명을 **분리**한다 — 창은 뷰를 잃을 뿐 뷰모델은 살아 있다 |
+| 9″ | `Presentation`: `SettingsViewModel` 팩터리 | **transient** | D18-b가 실제로 transient를 요구하는 것은 이것 하나뿐이다(§3.3 참조) |
+| 10 | `Shell`: `IOverlayModeService`/`IOverlayGeometryService` 구현, `TrayIconHost`, `OverlayWindow`, `SettingsWindow` 팩터리 | 싱글턴 / transient | `IUiTicker`의 `Start`/`Stop` 호출자는 여기서 확정한다(§3.3) |
+
+**행 9′/9″의 근거(B5) — 초판의 결함**: 초판은 "뷰모델은 transient"(§8.1)라고 뭉뚱그려 §8.1의 "세 뷰모델의 `Refresh`를 못박아 호출한다"는 요구, §3.1의 transient 선언, §5.3의 "창 닫을 때 뷰모델 폐기"가 **동시에 성립할 수 없게** 만들었다 — attach/detach API도, 어느 스레드에서 부르는지도, 패스 도중 detach가 안전한지도 정의하지 않아 한 구현자는 3슬롯 고정 팬아웃 + 싱글턴 뷰모델(D18-b 위반)을, 다른 구현자는 동적 목록 + 순회 시 복사본을 만드는 식으로 **둘 다 §8.1을 만족**하는 사고가 났다. HLD D18-b를 다시 읽으면 transient를 요구하는 근거("창을 살려두면 보이지 않는 UI를 매 스냅샷마다 갱신한다")는 **설정 창에만** 적용된다 — 오버레이와 트레이는 애초에 "보이지 않아도 갱신해야" 정상 동작한다(오버레이는 항상 보이고, 트레이 아이콘·툴팁은 항상 표시된다). `OverlayViewModel`/`TrayViewModel`을 컴포지션 루트 소유 싱글턴으로 바꾸면 §8.0의 attach 계약이 단순해진다 — 창이 열리고 닫혀도 뷰모델은 살아서 계속 갱신되고, 뷰(코드비하인드)만 `DataContext`를 붙였다 뗀다.
+
+**등록 순서의 진짜 이유(주석에 옮길 문장)**: `Polling`을 `Store`보다 나중에 등록하면 호스트는 `Polling.StopAsync`를 **먼저**, `Store.StopAsync`를 **나중에** 부른다. 그래야 `Polling`의 최외곽 `finally`(D20의 마지막 하트비트 기록, §2의 `LoopExited` 기록)가 **`Store`의 명령 채널이 아직 열려 있는 동안** 실행되어 마지막 기록이 착지하고, 그 다음 `Store.StopAsync`가 남은 버퍼를 전부 배수(S2 §6.6)한 뒤 채널을 닫는다. **순서를 뒤집으면 `Store`가 먼저 채널을 닫아 `Polling`의 마지막 기록이 닫힌 채널에 `Post`되고, S2 §6.2의 "`Post`는 `TryWrite`의 반환값을 검사한다"에 걸려 `Error`로 남을 뿐 하트비트는 갱신되지 않는다** — D20이 지키려는 바로 그 신호가 종료 경로에서 사라진다. S2 §6.1이 든 "첫 렌더 지연" 근거는 부수 효과일 뿐이며, 그 근거만 보고 등록 순서를 바꾸면 이 진짜 이유가 조용히 죽는다. **(§D 승인 — 재론하지 않았다.)**
+
+### 3.2 `Main` 세부 — HLD §3.5의 8·9·10번 채우기
+
+**5번(설정 로드) — M10, 종료 flush 실패 흔적의 소비**: S2 §8.6은 "종료 시 flush에 실패하면 흔적 파일을 남기고, 다음 기동 시 1회 보고 후 삭제한다"고 약속했으나 초판은 그 소비자를 정의하지 않았다. `StartingAsync`의 동기 로드 직후, 흔적 파일 존재 여부를 확인한다. 있으면: `IErrorSink.Report`로 기록 + `IConditionSink.Set(SettingsWriteFailed, true, "종료 시 flush 실패")` — **새 조건을 만들지 않고 §5.5가 이미 소비하는 `SettingsWriteFailed`를 재사용**한다(같은 배너·같은 해제 조건, "성공적 쓰기"로 자연 해제). 확인 후 흔적 파일은 즉시 삭제한다(다시 안내하지 않기 위해). 이 조건은 `Store`가 아직 등록되지 않은 시점에 감지되므로, `IConditionSink.Set` 호출은 6번(`Store` 등록) 이후로 큐잉하거나(간단히는 `Settings`가 `Store` 참조를 나중에 받는 대신) **`Diagnostics` 기록만 5번에서 하고 조건 설정은 6번 등록 직후로 미룬다** — 순서 문제일 뿐 새 배선은 아니다.
+
+**8번(신호 수신기)**: 메시지 전용 창(`HWND_MESSAGE` 부모)을 만들어 `RegisterWindowMessage`로 등록한 앱 고유 메시지를 받는다. **【신규 D-SH4】** 오버레이 HWND가 아니라 **별도의 메시지 전용 창**을 쓴다 — 오버레이는 9번에서야 생성되는데 8번은 그보다 먼저다. 오버레이 HWND에 신호 수신을 얹으면 "펌프 시작 전에 도착한 신호도 큐에 남는다"(D18-d)는 주장이 **"수신기 생성 이후"로만 참**이 되어 8→9 사이 창이 아직 없는 구간의 신호가 유실된다(S2 §12-5가 지적한 바로 그 구멍). 메시지 전용 창은 `CreateWindowEx`만으로 8번 시점에 즉시 존재할 수 있으므로 그 구멍이 사라진다.
+
+**【신규 D-SH14】 신호 핸들러 = 도달성 폴백 (B1)**. 이 핸들러가 발화할 때마다(즉 사용자가 두 번째 exe 실행을 시도할 때마다) **설정 창을 표시·활성화한다** — 이미 정의된 정상 동작(D18-d)이지만, 이 판은 그것을 **`TrayUnavailable`·첫 실행 배너 닫힘 이후의 유일한 도달성 폴백으로 의도적으로 재사용**한다고 명시한다. 근거: `NIM_ADD`가 3회 백오프 끝에 실패 → `TrayUnavailable` → 설정 창 1회 강제 표시(D18-c) → 사용자가 그 창을 닫으면(FR-08-4에 따라 앱은 종료되지 않는다) 남는 것은 트레이 없음 + 클릭 통과 오버레이뿐이라 **작업 관리자 외에 손댈 방법이 없다.** 신호 핸들러는 이미 다른 목적(단일 인스턴스 정합성, HLD D18-d)으로 존재하므로 새 표면이 아니다 — 두 번째 exe 실행이라는, 사용자가 "앱이 이상하다"고 느꼈을 때 가장 자연스럽게 하는 행동이 우연히 이미 회수 경로였을 뿐이다. **HLD 개정 요구** — D18-d의 "회수 수단이 아니라 정합성 때문에 유지한다"는 문언은, 트레이가 영구히 도달 불가능해질 수 있다는 사실이 이 판에서 처음 확정되었으므로 **정당한 개정**이다: "정합성 때문에 유지하며, 트레이가 도달 불가능해진 경우의 유일한 회수 경로이기도 하다"로 정정한다(§13).
+
+**9번(오버레이 창)**: `SourceInitialized`에서 §4.0의 레이어드 읽고-고쳐-쓰기(`WS_EX_LAYERED`·`TRANSPARENT`·`NOACTIVATE` 설정 + `SetLayeredWindowAttributes`)를 적용한다. 저장된 기하를 §4.7의 검증 규칙으로 검사한 뒤 적용. `HeightMode`에 따라 `SizeToContent` 설정(§4.6).
+
+**10번(트레이 아이콘)**: §6.2.
+
+### 3.3 종료 순서 — 무엇이 왜 깨지는가
+
+HLD §3.5의 12번(a→f)을 그대로 채택하고, 순서를 바꾸면 무엇이 깨지는지 표로 못박는다. **B5 — 이 판은 초판이 등재하지 않았던 신규 장수명 객체 넷(메시지 전용 창, `SnapshotFanout`, `IUiTicker`, 워치독 타이머)의 정지·폐기 시점을 a 단계로 확장한다.** HLD §3.5 12단계는 원래 이 문서가 채우도록 남겨 둔 뼈대(a~f 표제만 있고 내용은 "S3에서 채운다")이므로, 이 확장은 **동결 문서 개정이 아니다.**
+
+| 단계 | 내용 | **바꾸면** |
+|---|---|---|
+| a. 구독·타이머 정지 | ① `ApplicationStopped` 등 트레이를 만지는 구독 끊기. ② **`IUiTicker.Stop()`**(신규 D-SH15) — 이후 30초 틱이 죽어가는 `SnapshotFanout`을 깨우지 않는다. ③ **`SnapshotFanout`의 `Store.SnapshotChanged` 구독 해제**(신규 D-SH15) — `Store.StopAsync`가 아직 부르기 전인 e 단계보다 먼저다. ④ **메시지 전용 창의 신호 수신을 비활성화**(뮤텍스 해제 **전에** — 아래 d 참조) | 이 단계를 뒤로 미루면 c에서 트레이를 폐기한 뒤에도 구독자가 죽은 아이콘을 계속 만져 `ObjectDisposedException`이 이벤트 콜백 안에서 터진다. ②·③을 빠뜨리면 팬아웃이 정지 중인 뷰모델·죽은 `Dispatcher`를 향해 계속 `Post`를 시도한다(`HasShutdownStarted` 검사가 무해화하긴 하지만 근거 없이 기대는 것보다 명시적으로 끄는 것이 옳다) |
+| b. 설정 flush | 대기 중 전 변경을 쓴다(자체 타임아웃) | c보다 뒤로 미루면 flush 도중 트레이가 이미 사라져 `SettingsWriteFailed`를 사용자에게 알릴 표면이 없다. b는 반드시 c 이전 |
+| c. 트레이 폐기 | 확정적 `Dispose()` | a보다 앞서면 살아있는 구독자가 폐기 중인 아이콘을 만져 경합. e(호스트 정지)보다 뒤로 미루면 유령 아이콘 위험은 없지만(4판 #24 근거—유령은 프로세스 급사에서 생기지 순서 차이에서 생기지 않는다) d(뮤텍스 해제)를 먼저 하게 되어 아래 항목이 깨진다 |
+| d. 뮤텍스 해제 | 단일 인스턴스 뮤텍스 반납 | **e보다 반드시 앞서야 한다.** `StopAsync`는 최대 5초 걸릴 수 있고(§3.5의 하드 타임아웃), 그 사이 사용자가 exe를 다시 실행하면 d를 먼저 하지 않는 한 재실행 인스턴스가 뮤텍스 획득에 실패해 §3.2의 신호 전송 경로로 빠지는데, **이쪽 프로세스는 이미 종료 중이라 신호에 응답할 스레드가 없다** — 재실행이 "조용히 죽는" 사고가 재발한다. **바로 이 이유로 a에서 신호 수신을 먼저 꺼야 한다** — 그러지 않으면 해체 중인 창이 계속 펌프를 돌리다 그 사이 도착한 신호를 죽어 가는 프로세스가 처리하려 시도하는 경합이 생긴다(B5가 지적한 자리) |
+| e. `StopAsync(5s)` | 등록 역순 정지 | §3.1 참조. b가 e보다 앞서야 §6.6의 배수가 flush 대상 변경과 경합하지 않는다 |
+| — (d 이후) | **메시지 전용 창 파괴** | d 단계 이후, e 단계 진행 중 아무 때나 무방하다 — 신호 수신은 이미 a에서 꺼졌으므로 창 자체의 생존 여부는 더 이상 의미가 없다. f보다는 먼저 끝나야 한다(로그 flush 전에 자원 정리가 끝나 있어야 순서가 깔끔하다) |
+| f. 로그 flush | 채널 완료 → 배수 | 반드시 마지막 — 그 앞 단계들의 로그가 전부 이 시점 이전에 채널에 들어가 있어야 유실 없이 배수된다 |
+
+**치명적 예외 경로**(§3.6 표)도 같은 c 단계(트레이 폐기)를 거쳐야 한다. §10.2에서 `AppDomain.UnhandledException`과 `DispatcherUnhandledException`의 폐기 경로가 **하나의 멱등 가드**를 공유하도록 못박는다 — 정상 종료와 치명적 예외 종료가 경합하면 `NotifyIcon.Dispose()`가 두 번 불릴 수 있기 때문이다.
+
+**뷰모델 폐기 시점(B5 연속)**: `OverlayViewModel`/`TrayViewModel`은 이제 싱글턴이므로 "폐기"가 없다 — 프로세스 종료와 함께 GC가 회수한다. `SettingsViewModel`만 창별 `Dispose()`를 갖는다(§5.3, 변경 없음).
+
+---
+
+## 4. `Shell` — 오버레이 창
+
+**이 절은 초판 대비 패치가 아니라 재작성이다.** E1(§0)의 측정이 오버레이 창의 투명 기제 자체를 뒤집었기 때문이다 — `AllowsTransparency=true`에서 `AllowsTransparency=false` + `WS_EX_LAYERED`로 전환한다. 이후 모든 하위 절은 새 기제를 전제로 다시 썼다.
+
+### 4.0 창 구성 — `AllowsTransparency=false` 전환
+
+**【측정】** (`00-shell-measurements.md` §8) 화면 캡처 기준 색수차 잉크 픽셀 비율(ClearType 판정 지표):
+
+| 구성 | 색수차 잉크 픽셀 비율 | 판정 |
+|---|---|---|
+| 일반 창(`AllowsTransparency=false`) | 90.4% | ClearType 켜짐 |
+| `WindowStyle=None` + `AllowsTransparency=true` | **0.0%** | ClearType 꺼짐 |
+| 위 + `WS_EX_LAYERED\|TRANSPARENT\|NOACTIVATE` | **0.0%** | ClearType 꺼짐 |
+| `AllowsTransparency=false` + `WS_EX_LAYERED` + `SetLayeredWindowAttributes` | **90.29~90.46%** | ClearType 켜짐 |
+
+**복구 불가**(`00-shell-measurements.md` §8.2) — 배경 불투명화, `#C0000000`/`#01000000`, 투명 창 안의 불투명 `Border`, `TextOptions.TextRenderingMode="ClearType"` 명시, 전부 **0.00%**다. `AllowsTransparency=true`는 창 전체의 래스터화 경로를 바꾸며 창 내부의 어떤 요소로도 되돌릴 수 없다.
+
+**손실의 성격**(`00-shell-measurements.md` §8.5) — 총 잉크 커버리지는 사실상 같다(402.2 대 402.5). 손실은 획이 뭉개지는 것이 아니라 **획 위치의 정밀도**다 — ClearType의 3배 수평 표본 해상도가 사라진다. 이 앱은 작은 글자의 숫자·소수점을 읽는 것이 존재 이유이고, 그 구별(`8`/`6`, `3`/`9`, 소수점 위치)이 정확히 그 해상도에서 나온다. **결정 — 전환한다.** 시각적 세련미보다 판독성이 우선이다.
+
+**【신규 D-SH17】 채택 구성**:
+
+```
+WindowStyle        = None
+AllowsTransparency = false
+ResizeMode         = NoResize
+ShowInTaskbar      = false
+Topmost            = true
+SizeToContent      = Height
+TextOptions.TextFormattingMode = Display
+
+SourceInitialized 이후, 4.1의 읽고-고쳐-쓰기 게이트를 통해
+SetWindowLong(GWL_EXSTYLE, ex | WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE)
+SetLayeredWindowAttributes(hwnd, key, alpha, LWA_COLORKEY | LWA_ALPHA)
+```
+
+이 구성은 `LWA_ALPHA`·`LWA_COLORKEY`·둘의 조합 전부에서 90.29~90.46%를 유지한다(10·11·12·14px 전부 동일). 프레임 비용은 문제가 아니다 — 165Hz에서 두 구성(`AllowsTransparency` 참/거짓) 모두 p50/p95=6.06ms, 드롭 0(§0 E5). **성능을 근거로 이 결정을 다시 열지 않는다.**
+
+#### 4.0.1 전환의 대가 — 새 설계 제약 (E2)
+
+`AllowsTransparency=false` + 컬러키는 **픽셀 단위 알파를 잃는다.** 다음은 이제 불가능하며, §5(설정 창은 이 제약 밖이다 — 일반 창이므로 무관) 이외의 모든 오버레이 시각 요소가 이 제약을 받는다.
+
+| 잃는 것 | 대체 |
+|---|---|
+| 안티에일리어싱된 둥근 모서리 | 직각 모서리만. HLD D4-a의 "배경 투명·둥근 모서리" 행, D4-c의 "둥근 모서리의 우하단은 투명 픽셀" 문구는 이 전환으로 무효화된다 — 개정 요구로 등재(§13). 이동 모드 그립 등 어피던스는 여전히 "불투명 픽셀 위에 배치"라는 실질 규칙(D4-c)을 따르되, 근거를 "둥근 모서리를 피해서"가 아니라 "컬러키 영역은 클릭을 통과시키므로"로 다시 진술한다 |
+| 부드러운 그림자·그라데이션 페이드 | 단색 배경 + 이진 경계 |
+| 패널별 반투명(한 패널은 불투명, 다른 패널은 반투명) | 불가능 — 알파는 창 전체 균일(`LWA_ALPHA`). 배경 패널과 텍스트 패널을 시각적으로 구분하려면 밝기·테두리로 한다 |
+
+**투명도 슬라이더(FR-05-5)는 영향 없다** — `LWA_ALPHA`가 창 전체 균일 알파를 그대로 제공한다. 【확인】으로 남겨 뒀던 항목이 아니라 이 판에서 **확인 완료**로 종결한다.
+
+**세 가지 함정을 이 문서의 불변식으로 박는다**(`00-shell-measurements.md` §8.6 【측정】):
+
+1. **키(컬러키) 영역 위에 텍스트를 직접 그리지 않는다.** 키 영역 위 글리프는 안티에일리어싱이 키 색으로 오염된다 — `Grayscale`·`Aliased` 렌더링 모드조차 73% 색수차(자홍색 후광, ClearType과 무관한 오염)를 보였다. 텍스트는 반드시 **불투명한 비-키 패널** 위에 앉는다. §1.5 금지 목록에 등재했다.
+2. 콘텐츠 픽셀이 우연히 키 색과 같으면 **구멍이 된다.** 팔레트가 절대 쓰지 않는 색을 키로 고른다 — 정확한 값은 S4로 유예한다.
+3. `AllowsTransparency=false`에서 `Background="Transparent"`는 **불투명 검정**으로 렌더된다(실측 RGB=(0,0,0)). "비침"이 아니다 — 배경을 실제로 클릭 통과시키려면 반드시 키 색 그 자체를 칠해야 한다.
+
+#### 4.0.2 렌더링 품질 검증 도구를 못박는다 (E3)
+
+**【측정】 `RenderTargetBitmap`은 화면 안티에일리어싱을 반영하지 않는다** — 일반 창을 포함한 모든 구성에서 그레이스케일을 반환했고, 화면이 90.29%인 자리에서 RTB는 0.00%였다(기준선 12행 중 9행 불일치). S2 §11(테스트 계획)에 렌더링 품질 검증 항목을 두게 되면 **화면 캡처만 유효**하다고 명시한다 — RTB 기반 단언은 무효다. 이 프로젝트는 오버레이 렌더링 품질을 자동 테스트 대상으로 삼지 않으므로(S4/§14로 유예) 지금은 경고로만 남긴다.
+
+### 4.1 상시 스타일과 읽고-고쳐-쓰기
+
+HLD D4-a/D4-d를 그대로 채택한다(§4.0의 전환은 어떤 확장 스타일을 켤지를 바꿨을 뿐, 읽고-고쳐-쓰기 규율 자체는 바꾸지 않는다). `Interop/`에 다음 한 벌만 둔다.
+
+```
+ExtendedStyleGate
+    Bits Read()                          // GetWindowLong
+    void ApplyOr(Bits mask)              // Read → | mask → SetWindowLong. SWP_FRAMECHANGED 없음
+    void ApplyAndNot(Bits mask)          // Read → &~mask → SetWindowLong
+    void SetLayered(uint key, byte alpha, LwaFlags flags)   // SetLayeredWindowAttributes 래퍼
+```
+
+`Shell` 안 어디에서도 `SetWindowLong`/`SetLayeredWindowAttributes`를 직접 부르지 않는다 — 전부 이 게이트를 통과한다. 【측정】 `SourceInitialized` 시점에 이미 `WS_EX_LAYERED`가 켜져 있으므로(HLD D4-d가 이미 확인) 통째 대입 경로 자체를 타입으로 없앤다(생성자 없이 `Or`/`AndNot`/`SetLayered`만 노출).
+
+### 4.2 DPI
+
+`app.manifest`에 PerMonitorV2(D4-e). 기하 판정·작업영역 비교는 DIP로 하고 `HwndSource.CompositionTarget.TransformToDevice`로 필요 시 변환한다. **【확인】 Q21 — DPI 경계를 가로지르는 수동 드래그는 미검증.** 대응은 §4.6.1. **미측정(E6)** — 이 개발 장비는 두 모니터 모두 96 DPI라 `WM_DPICHANGED`가 실제로 발생하지 않는다(`00-shell-measurements.md` §9.1) — PerMonitorV2 매니페스트 외 처리가 필요한지는 §14에 유예로 등재한다.
+
+### 4.3 위치·크기 지속성 — 값-포착 큐잉
+
+HLD D19·D10을 그대로 채택. `Shell`이 `window.*`의 **유일한 기록자**(`opacity` 제외 — S2 §12-7이 지적한 모순대로, `opacity`는 값 자체는 `SettingsViewModel`이 쓰고 `Shell`은 그 값을 오버레이에 **적용만** 한다. `x/y/width/height/heightMode`는 `Shell`이 쓴다).
+
+**포착 시점 — 정확히 넷.**
+
+| 시점 | 포착 대상 | 조건 |
+|---|---|---|
+| 이동 모드 중 드래그 종료(`LostMouseCapture`, 취소 아님) | `X`, `Y` | 항상 |
+| 이동 모드 중 그립 리사이즈 종료(취소 아님) | `Width`, 그리고 `Height` + `HeightMode=Explicit`로 전환 | §4.4에서 `SizeToContent=Manual`이 이미 걸려 있을 때만 유효 — §4.4 참조 |
+| D22 재검증에 의한 자동 재배치 | `X`, `Y` | 사용자가 손대지 않아도 좌표가 바뀌었으므로 |
+| 설정 창의 "높이 자동으로 되돌리기" / "위치·크기 초기화" | `HeightMode=Auto`만, 또는 `X/Y/Width/HeightMode=Auto` 전체 | §4.3.1의 `IOverlayGeometryService` 경유 |
+
+**측정 — R3, Height 대신 ActualHeight (§0 참조).** 초판은 그립 리사이즈 종료 시 `Window.Height` 스칼라를 그대로 포착한다고 적었다. 실측하면 한 디스패처 패스 안에서 레이아웃 갱신 없이 `MaxHeight`가 두 번(예: 100에서 500으로) 쓰이면 `win.Height`는 **첫 번째 값(100)에 얼어붙고** `win.ActualHeight`는 실제 콘텐츠 높이(예: 254)를 정확히 반영한다 — `Height`는 그 뒤 레이아웃을 유발하는 별도 변경이 올 때까지 낡은 값에 머문다. §4.4가 열거하는 재계산 방아쇠(`watchlist`·`window.width`·`displayCurrency`·스냅샷 갱신)는 전부 한 콜백 안에서 `MaxHeight`를 조정할 수 있는 후보들이다. 이 설계에서 두 `MaxHeight` 쓰기가 실제로 한 콜백에 착지하는 구체적 경로가 확인된 것은 아니다(SUSPECT) — 하지만 포착 지점을 `Height`에서 `ActualHeight`로 바꾸는 비용은 사실상 0이므로 방어한다. **정정**: 위 표의 포착 지점은 `Window.Height`가 아니라 `Window.ActualHeight`를 읽거나, 읽기 전에 `UpdateLayout()`을 선행한다.
+
+**모두 스칼라 값으로, `Settings.Update(AppSettings next)`(S2 §8.6, 값만 받는 API)에 큐잉한다.** `Window`나 델리게이트를 넘기지 않는다 — 그 규약이 §1.6의 "`SizeToContent` 활성 중 `Height` DP가 조용히 덮어써진다"는 함정을 타입으로 막는다(S2가 이미 지적).
+
+#### 4.3.1 설정 창의 기하 명령 통로 — `IOverlayGeometryService` (B6)
+
+§5.4의 "위치·크기 초기화", "높이 자동으로 되돌리기"는 방아쇠인데, 위 규약은 `Shell`을 `x/y/width/height/heightMode`의 유일한 기록자로 못박고 `IOverlayModeService`(§7.3)는 이동 모드만 덮는다. 통로가 없으면 한쪽은 `IOverlayModeService`를 부당하게 넓히고 다른 쪽은 `SettingsViewModel`이 `Settings`에 직접 쓴다 — 어느 쪽이든 D19의 값-포착 큐잉이 기대는 단일 기록자 불변식이 깨진다. 이 구조는 S2가 옳게 거부한 D-PL1의 누락 간선(§2.1)과 동형인데, S3 초판은 정확히 이 자리를 놓쳤다.
+
+**신규 D-PS7.** `Presentation`에 `IOverlayGeometryService`를 선언하고 `Shell`이 구현한다 — `IOverlayModeService`와 같은 패턴(D-PS1), 기존 `Shell → Presentation` 간선을 그대로 쓰므로 의존 그래프 변경 없음.
+
+```
+Presentation/Overlay/
+    interface IOverlayGeometryService
+        ResetPlacement()          // X/Y/Width를 기본값으로, HeightMode=Auto
+        RevertHeightToAuto()      // HeightMode=Auto만. Width/X/Y는 그대로
+```
+
+구현(`Shell`)은 두 메서드 모두 값을 계산해 §4.3의 값-포착 경로(`Settings.Update`)로 큐잉한다 — `Shell`이 여전히 유일한 기록자라는 사실은 바뀌지 않는다. `SettingsViewModel`은 이 서비스를 통해서만 기하를 바꾼다. UI 스레드 전용(호출자가 이미 UI 스레드, HLD D4-b와 동일한 전제).
+
+### 4.4 높이/클리핑/기하 모델 — D19의 구현
+
+**핵심 화해**: "`SizeToContent`가 `Height`를 덮어쓴다"는 측정과 "그립으로 조절한 높이를 저장해야 한다"는 요구는 동시에 참일 수 없어 보이지만, 실제로는 시점이 겹치지 않는다. 이동 모드에 진입하는 순간 D4-b의 2번째 단계가 이미 `SizeToContent=Manual`로 바꾼다 — 그 순간부터 `Height` DP는 덮어써지지 않는 평범한 값이 된다. `Height`를 스칼라로 읽어도 안전한 유일한 창은 "이동 모드가 켜져 있고 그립 드래그가 막 끝난" 창뿐이며, D19는 정확히 그 창에서만 읽는다. §4.3의 R3 정정에 따라 그 자리에서도 이제 `ActualHeight`를 우선한다 — `Manual` 모드라 값이 안정적이라는 사실은 바뀌지 않지만, 같은 콜백 안에서 `MaxHeight`가 재조정될 여지를 방어적으로 차단한다. 이 화해는 D19(측정)와 D4-b(순서 규약)를 나란히 읽으면 자명하지만, 어느 문서도 문장으로 남기지 않았다 — §13-13에 등재한다.
+
+**신규 D-SH7. `SizeToContent`와 `HeightMode`의 대응표**
+
+| `HeightMode` | 이동 모드 | `SizeToContent` | `MaxHeight` |
+|---|---|---|---|
+| `Auto` | Off | `Height`(콘텐츠 주도) | §4.4.1 상한 적용 |
+| `Explicit` | Off | `Manual` | §4.4.1 상한을 그대로 `MaxHeight`에 반영(사용자 높이도 화면을 넘으면 잘려야 하므로) |
+| 어느 쪽이든 | On | `Manual`(D4-b 2번) | 해제(래칫 제거) |
+
+이동 모드를 끄면: 그립으로 실제 높이를 조절했으면(세션 플래그로 판정) `HeightMode=Explicit`로 전환하고 그 값을 커밋 후 위 표의 `Explicit`/`Off` 행으로 복귀. 손대지 않았으면 `HeightMode`는 진입 전 값 그대로 복귀한다. "높이 자동으로 되돌리기"는 이동 모드가 꺼져 있을 때만 활성화한다 — 켜진 채로 그립과 경합하게 두지 않는다.
+
+**성장 시 미도색 띠 — E4, 알려진 현상으로 기록만 한다.** 측정(`00-shell-measurements.md` §9)에 따르면 자동 높이가 성장할 때 새로 추가된 한 행 크기와 정확히 일치하는 영역(예: 380×26px)이 1~3캡처 프레임(약 6~11ms) 동안 배경(컬러키 또는 데스크톱)으로 비친다. 축소 시에는 0프레임, 발생하지 않는다. `SizeToContent=Height`가 명시 `Height` 갱신보다 낫다(1프레임 대 2~3프레임) — §4.0에서 `SizeToContent=Height`를 채택 구성으로 고정한 이유 중 하나다. 두 레이어드 방식(알파 키/컬러 키) 사이에 차이가 없으므로 이 현상은 방식 선택의 근거가 되지 못한다. **재적용 코드를 넣지 않는다** — 확장 스타일과 `Topmost`는 리사이즈·모니터 이동 16단계 내내 불변임이 측정됐다(`0x08080028`, z-순서 유실 0회). 이 사실을 기록해 향후 누군가 "방어적으로" 재적용 코드를 추가하지 못하게 막는다. 모니터 간 이동 시에는 창 전체가 1프레임 공백을 보인다(기록만, 방어 불필요). 자동 높이의 물리 정확도는 측정으로 확인됐다 — `ActualHeight × scale == GetWindowRect` 높이(234dip에서 234px, 두 모니터 모두) — D19의 전제가 물리적으로도 성립한다.
+
+**4.4.1 클리핑 상한**
+
+```
+maxHeight = min(콘텐츠 높이 또는 명시 높이, workArea.Bottom - window.Top - margin)
+```
+
+HLD D19의 공식을 그대로 쓰되, `workArea`는 창이 실제로 걸쳐 있는 작업영역 하나를 §4.5의 "최소 가시 면적" 판정이 고른 것을 쓴다. 남은 공간이 한 행+푸터도 못 담으면 창을 위로 옮긴다. 푸터는 클리핑 제외 고정 영역(불변식, HLD D19). `외 n개 더` 마커는 먼저 마커 높이를 확보한 뒤 남은 공간으로 개수를 계산하고, 개수는 실제 레이아웃 결과(패널이 배치하지 못한 행)에서 뽑는다 — 추정치 금지(HLD D19).
+
+**재계산 트리거**: `watchlist`, `language`, `window.width`, `defaultDisplayCurrency`, 항목별 `displayCurrency`, 스냅샷 갱신(HLD D19). `Presentation`은 "행이 몇 개인지"만 안다(S2 §10.7) — 트리거를 받아 행 컬렉션을 갱신하는 것은 뷰모델의 일이고, 그 갱신이 레이아웃 패스를 유발해 `Shell`의 첨부 동작이 클리핑을 재계산하는 것은 WPF 레이아웃 시스템이 알아서 한다. `Shell`이 별도로 "재계산하라"는 명령을 뷰모델에 내리지 않는다 — 그러면 §2.3 규칙 2가 깨진다.
+
+**4.4.2 `heightMode=explicit`의 잘림 표식 — M9, 신규 D-SH16**
+
+FR-01-3("개수 제한 없음 + 자동 높이")은 `heightMode=auto`에서만 완전히 성립한다. 사용자가 `explicit`로 높이를 고정하면 행이 `외 n개 더` 뒤로 잘리는데, 오버레이는 스크롤도 회전도 없다. **결정**: `외 n개 더` 마커는 두 원인(화면 여백 부족 vs 사용자가 명시적으로 정한 높이)을 문구로 구별한다. 최소한 마커에 "설정에서 높이를 조절할 수 있습니다"류 한 줄을 덧붙여 잘림이 사용자 선택의 결과임을 알린다. 설정 창은 이미 관심목록 전체를 스크롤로 보여준다(FR-08-5, §5.4) — "최소한 설정 창에서 전체 목록을 볼 수 있어야 한다"는 요구는 그 기존 화면으로 이미 충족된다. 정확한 문구·조건 판정(`heightMode==Explicit && hiddenCount>0`일 때만 이 변형 문구)은 S4로 유예한다.
+
+### 4.5 기하 검증 완화 — "완전 포함"에서 "최소 가시 면적"으로
+
+**신규 D-SH8.** S2 §12-6이 지적한 과잉을 해소한다. HLD §7은 "하나의 작업영역에 완전히 포함"을 요구했는데, 창이 작업영역보다 살짝 크거나 두 모니터 경계에 걸치면 정당한 배치가 기본 위치로 되돌려진다.
+
+**결정**: 창이 유효하려면 어느 한 작업영역과의 교집합이 최소한 "푸터 전체 폭 × 푸터 높이" 만큼은 되어야 한다. 그 외에는 기본 위치로 클램프.
+
+**근거**: 푸터는 이미 "절대 잘리지 않는 고정 영역"(HLD D19의 불변식)으로 정해져 있다 — 그 자체가 "이 오버레이가 최소한으로 기능하려면 반드시 보여야 하는 영역"의 정의다. 완전 포함을 요구하면 시세 행 몇 줄이 화면 밖으로 나가는 정당한 배치까지 거부하지만, 푸터 가시성을 요구하면 사용자가 최소한 출처 표기와 갱신 상태는 볼 수 있는 배치만 통과시키면서, 화면을 살짝 벗어나는 큰 창을 부당하게 리셋하지 않는다. 두 모니터에 걸친 배치도 그 중 하나에 푸터가 온전히 들어가면 유효하다.
+
+### 4.6 위치 이동 모드 — 상태 기계
+
+**신규 D-SH9.**
+
+```
+Off --(설정 창에서 켜기)--> Entering
+Entering: 1.기하 재검증(D22와 동일 루틴, 4.7)  2.MaxHeight 해제  3.SizeToContent=Manual
+          4.TRANSPARENT 비트 해제(NOACTIVATE 유지)  5.안쪽 테두리·그립 표시
+          --> Active (즉시, 사용자 입력 대기 없음)
+Active: 드래그·리사이즈 가능. 각 종료 시 4.3의 값-포착 커밋.
+        워치독 타이머(4.6.1) 구동
+Active --(설정 창 끄기 | 트레이 이동 모드 끄기 | 워치독 만료 | 캡처 취소 후 유예 종료)--> Exiting
+Exiting: 역순 - 어피던스 숨김 -> 4.4 표에 따라 SizeToContent·MaxHeight 복귀 -> TRANSPARENT 비트 재설정
+         --> Off
+```
+
+**4.6.1 워치독과 캡처 불변식의 상호작용 — 이 문서가 채우는 구멍**
+
+HLD D4-b는 "비활동 워치독"을, D4-c는 "마우스 버튼이 눌려 있거나 캡처 중일 때 확장 스타일을 토글하지 않는다"는 캡처 불변식을 각각 정의했지만 둘이 동시에 걸리는 경우를 정의하지 않았다. 워치독이 만료되는 순간 사용자가 그립을 붙잡고 정지해 있으면(끌지 않고 누르고만 있으면) 워치독의 자동 OFF가 캡처 불변식을 직접 위반한다.
+
+**결정**: 워치독 만료 시점에 캡처가 걸려 있으면 즉시 `Exiting`으로 가지 않고 "만료됨" 플래그만 세운 채 `Active`에 머문다. `LostMouseCapture`(정상 해제든 취소든)가 발생하는 시점에 그 플래그를 확인해 `Exiting`을 개시한다. 이중 워치독 재시작(만료 직후 다시 활동이 있었다고 착각하는 것)을 막기 위해 플래그가 서면 타이머는 더 이상 리셋되지 않는다.
+
+**스레딩 — M3, 이 판이 정정한다.** `TimeProvider.CreateTimer` 콜백은 스레드풀 스레드에 도착한다. 초판은 그 콜백 안에서 캡처 상태를 직접 읽고 `WS_EX_TRANSPARENT`를 토글한다고 암묵적으로 적었는데, HLD D4-b는 `IOverlayModeService`를 UI 스레드 전속으로 선언했다. **정정**: 워치독 콜백의 유일한 동작은 `IUiDispatcher.Post(...)`이며, 모드 상태(캡처 여부, "만료됨" 플래그, `Active`/`Exiting` 전이, 확장 스타일 토글)의 모든 읽기·쓰기는 그 post된 델리게이트 안에서만 일어난다. 콜백 자신은 상태를 만지지 않는다.
+
+**캡처 불변식의 실제 파손 양상 — N7.** 측정에 따르면 프로브가 캡처 보유 중 `WS_EX_TRANSPARENT`를 켜 본 결과, OS 수준에서는 조용히 성공했고 `GetCapture()`도 불변이었다(`SetCapture` 경유 입력은 애초에 히트 테스트를 우회하므로 클릭 통과 스타일 토글의 영향을 받지 않는다). 즉 이 불변식을 어겨도 입력 경로가 즉시 깨지는 것은 아니다. 그런데도 이 문서는 불변식을 완화하지 않는다 — 실제 위험은 입력 유실이 아니라 시각적 불일치다: `Active` 유지 중에 스타일을 되돌리면 안쪽 테두리·그립(§4.6.2)이 아직 그려진 상태에서 클릭 통과가 켜져, 사용자가 잡고 있는데 창을 놓친 것처럼 느끼는 자리가 생긴다. 결정을 뒤집을 근거는 아니지만, 다음 리뷰가 같은 질문을 반복하지 않도록 이 판단을 문장으로 남긴다.
+
+**4.6.2 가시성 채널 — 오버레이에 툴팁 표면이 없을 때**
+
+**신규 D-SH10.** 두 채널을 병행한다.
+
+| 채널 | 성격 | 근거 |
+|---|---|---|
+| 안쪽 테두리(D4-c) | 1차, 상시 | 오버레이 자체에 그려지는 유일한 시각 신호. 바깥 테두리는 클릭이 닿지 않는 컬러키 영역이라 애초에 어피던스를 둘 수 없다 — §4.0.1의 이진 경계 제약과 일치한다 |
+| 트레이 아이콘 툴팁 텍스트(D21이 조립하는 문자열에 한 줄 추가) | 2차, 마우스오버 시에만 | `TrayViewModel`은 이미 `IOverlayModeService`의 상태 변경 이벤트를 구독한다(HLD D4-b, "트레이 메뉴 체크 표시도 같은 이벤트를 구독"). 툴팁 조립 규칙(D21)에 한 줄을 추가하는 것은 새 아이콘 변형을 요구하지 않는다 — D21이 이미 확정한 3변형(정상/주의/오류)에 이동 모드는 4번째 변형이 아니라 툴팁의 한 줄일 뿐이다 |
+
+트레이 컨텍스트 메뉴의 "이동 모드 끄기" 항목 노출 자체(꺼져 있으면 항목이 비활성 또는 숨김)도 우클릭 시점의 3차 신호이나, 상시 신호가 아니므로 표에 넣지 않는다.
+
+**앱 종료 시**: 이동 모드는 저장되지 않으므로(FR-05-6) 다음 기동에서는 항상 Off다. 종료 teardown(§3.3)에 이동 모드 전용 정리 단계는 필요 없다 — HWND가 파괴되면 캡처·확장 스타일 전부 OS가 회수한다. 유일하게 신경 쓸 것은 mid-drag 상태에서 강제 종료돼도 캡처가 프로세스와 함께 해제된다는 것뿐이며, 이는 OS 보장이지 설계 대상이 아니다.
+
+### 4.7 디스플레이 변경 재검증 (D22)
+
+`SystemEvents.DisplaySettingsChanged` 구독은 `Startup/`에서 마샬링해 §4.5의 검증 루틴을 그대로 재사용한다. **신규 D-SH11.** 이동 모드 진입 시 재검증(§4.6 Entering 1번)과 디스플레이 변경 재검증은 동일 루틴이다 — 별도로 두 벌 두면 한쪽만 고쳐지는 사고가 난다. 실패하면 기본 위치로 되돌리고 그 사실을 오버레이 한 줄로 알린다(조용히 옮기면 사용자가 자기가 옮긴 줄 안다 — HLD D22).
+
+**마샬링 대상의 명명 — M3.** 초판은 "`Startup/`에서 마샬링"이라고만 적어 대상 디스패처가 이름조차 없었다. **정정**: 마샬링 대상은 §7.2의 `IUiDispatcher`다 — `SystemEvents` 콜백 스레드(HLD §3.1)에서 도착한 이벤트를 `IUiDispatcher.Post(...)`로 UI 스레드에 넘긴 뒤에야 재검증 루틴을 부른다. `Dispatcher`를 직접 캡처하지 않는다 — `Startup/`도 `Interop/`과 마찬가지로 `IUiDispatcher` 뒤에 숨는다.
+
+**이동 모드 `Active` 중 재검증이 발화하면 — N8-①, 이 판이 결정한다.** 디스플레이 변경은 `Active` 상태에서도 발생할 수 있다(예: 사용자가 드래그 도중 노트북을 도킹 스테이션에 꽂는 것은 드물지만 배제할 수 없다). 재검증이 그 자리에서 즉시 창을 기본 위치로 되돌리면 사용자가 붙잡고 있는 창이 손 밑에서 튕겨 나가는 사고가 된다 — §4.6.1이 캡처 불변식을 지키기 위해 워치독을 지연시킨 것과 정확히 같은 성격의 문제다. **결정**: `Active` 상태에서 재검증 트리거가 오면 즉시 적용하지 않고 "재검증 보류" 플래그를 세운다. `Exiting`이 `Off`로 완료되는 시점에 그 플래그를 확인해 재검증을 수행한다. 캡처 중이 아니라 `Entering`/`Off` 상태에서 트리거가 오면 즉시 적용한다(원래 규칙대로). 이 규칙은 §4.6.1의 "만료됨 플래그" 패턴과 동형이며, D-SH11 아래 하위 규칙으로 등재한다.
+
+---
+
+## 5. `Shell` — 설정 창
+
+### 5.1 생성 정책과 `Owner`
+
+D18-b(transient 창·뷰모델 — 단 이제 뷰모델 transient는 `SettingsViewModel`에만 해당한다, §3.1)를 그대로 채택한다. `Owner = 오버레이`로 지정한다 — S2 시절 HLD D18-b는 "Owner 미지정"을 불변식화했으나, `00-shell-measurements.md` §2가 그 전제를 반증했다.
+
+**측정.** `Owner`를 지정하지 않으면 `owned > overlay > unowned` 순서에서 설정 창이 항상 위에 뜨는 오버레이 뒤로 숨는다. `Owner`를 지정하면 exstyle에 `WS_EX_TOPMOST`가 전파되어(값은 `0x40108`, `owned.Topmost` 속성은 `false`로 읽혀도 실제 z-순서는 전파된 비트가 결정) 설정 창이 오버레이 위에 뜬다.
+
+**HLD 개정**: D18-b의 "Owner 금지"는 `00-shell-measurements.md` §2로 뒤집힌다. 구 HLD D18-b가 근거로 든 실측("`Owner`를 오버레이로 지정하면 `WS_EX_TOPMOST`가 켠 적 없는데 전파되어 게임 위로 뜬다")은 오버레이가 항상 `Topmost=true`인 이 앱에서는 그 자체가 원하는 동작이다 — 설정 창이 게임 위로 뜨는 것이 아니라 오버레이 위로 뜨는 것이 목적이었고, 두 문장은 같은 관측을 다르게 해석한 것뿐이다. 4판 시점에는 설정 창의 z-순서 요구가 명시되지 않아 "전파 자체가 위험"으로 읽혔지만, 지금은 §6.0이 "설정 창이 항상 조작 가능해야 한다"를 요구하므로 전파가 필요조건이다.
+
+### 5.2 활성화 — Q17 종결
+
+측정(`00-shell-measurements.md` §1.1–1.4): 트레이 클릭 핸들러에서 `Show(); Activate();`만으로 활성화가 성공한다. 테두리 없는 전체화면 `Topmost` 창이 직전까지 포그라운드를 쥐고 있어도, 우회 기법(`AttachThreadInput` 등) 없이 성공한다. §3(NOACTIVATE 오버레이는 명시적 `Activate()`도 무해)까지 합쳐, 활성화 재시도 로직도, 폴백 `Topmost` 임시 부여도 설계하지 않는다.
+
+**HLD 개정**: Q17의 "폴백: 첫 활성화가 성공할 때까지 설정 창을 `Topmost`로 띄운다"(HLD §10)는 철회한다. 필요 없다.
+
+**남은 진짜 문제는 활성화가 아니라 도달성이다** — `00-shell-measurements.md` §1.5, 게임이 화면을 덮은 동안 작업 표시줄이 강등되어 트레이 아이콘 좌표를 클릭할 수 없다. 이것은 REQUIREMENTS §2/E1이 이미 "감수한 비용"으로 결정했고, S2/S3가 설계할 항목이 아니다("S3는 두 번째 진입점을 설계하지 않는다"). 이 문서는 그 결정을 그대로 받아들이고 §6.5의 첫 실행 안내로 사용자에게 전달한다. **§3.2의 신호 핸들러(신규 D-SH14)가 트레이 도달 불가 상태의 폴백을 이미 맡는다** — 이 절이 새로 여는 경로는 아니다.
+
+`Owner` 사용 시 활성화 성공률도 §5.1의 측정(코드 예시가 `Owner`를 지정한 채로 활성화를 시도했다)에 이미 포함되어 있으므로 별도 측정이 필요 없다.
+
+**【확인】** DirectX 독점 전체화면은 미측정이다(`00-shell-measurements.md` §5). 이 앱은 NFR-04가 "테두리 없는 창(Windowed Fullscreen)"을 전제하므로 설계 대상이 아니지만, 독점 전체화면에서 실행되면 설정 창이 아예 렌더되지 않거나 게임이 강제로 최소화될 수 있다. 구현 착수 시 실물 1회 확인.
+
+### 5.3 닫기 처리
+
+HLD §3.6의 5단계를 그대로 구현한다. 순서가 의미를 가진다.
+
+```
+1. FlushAsync()  (디바운스 무시, 대기 중 전체 변경 즉시 쓴다)
+2. 창 범위 CancellationTokenSource.Cancel()  (진행 중 사용자 개시 조회를 끊는다)
+3. 진행·오류·선택 상태를 초기화 (검색어는 살아남는다 - D18-b)
+4. 이동 모드는 그대로 둔다 (D4-b - 창 닫힘이 강제 OFF 사유가 아니다)
+5. SnapshotFanout에서 SettingsViewModel의 attach 해제, SettingsViewModel 폐기
+```
+
+1이 2보다 먼저인 이유: 진행 중인 조회를 먼저 취소하면 그 조회가 남긴 `SetFetchedListing` 커밋이 스토어에 반영되기 전에 flush가 지나갈 수 있어(무해하지만) 로그 순서가 헷갈린다. 순서 자체가 안전을 좌우하지는 않지만 로그 판독성을 위해 고정한다.
+
+**5단계의 정정(B5) — `OverlayViewModel`/`TrayViewModel`은 여기서 폐기되지 않는다.** §3.1/§3.3의 결정에 따라 그 둘은 컴포지션 루트 소유 싱글턴이다. 이 5단계에서 폐기되는 것은 `SettingsViewModel`(§8.0의 attach 계약에서 detach된 뒤 `Dispose()`) 하나뿐이다.
+
+### 5.4 레이아웃 개요 — S2 §12-10
+
+시그니처·XAML은 S4지만, 구역 분할은 여기서 확정한다(개념 수준).
+
+| 구역 | 내용 | 스크롤 |
+|---|---|---|
+| 검색 바 | 자유 텍스트, 디바운스(§7.4) | - |
+| 검색/카테고리 결과 | `ISearchSource` 결과 또는 카테고리 드롭다운 브라우징 결과 | 예 |
+| 관심목록 | 추가된 항목, 항목별 통화 선택, 제거 버튼, 미해결/드롭 항목 강조(D-D4/S2 §10.5). **`heightMode=explicit`로 오버레이에서 잘린 행이 있으면 여기서 전체를 볼 수 있다는 사실이 §4.4.2 표식의 근거다** | 예(FR-08-5) |
+| 리그·주기·언어·표시통화·투명도 | 즉시 적용 설정 컨트롤 | - |
+| 이동 모드 토글 | 유일하게 저장되지 않는 항목이라는 라벨 명시(D18-b, "즉시 적용 모델"의 예외) | - |
+| 높이 자동으로 되돌리기 / 위치·크기 초기화 | 이동 모드 Off일 때만 활성. **§4.3.1의 `IOverlayGeometryService`를 통해 커밋된다**(B6) | - |
+| **출처 표기**(NFR-05, M8) | HLD §6.6이 요구하는 `ui.footer.attribution`과 같은 키를 재사용한 문구. 투명도를 낮추면 오버레이 푸터가 잘 안 보일 수 있고 리그를 고르는 화면이라 출처를 밝히기에 자연스럽다 | - |
+| 상태 배너 | `SettingsCorrupt`/`SettingsReadOnly`/`SettingsWriteFailed`/`SettingsUnreadable`/`PollingStopped`/`TrayUnavailable`/**`LoggingUnavailable`**(M5) - §5.5 | - |
+| 오류 상세·로그 열기 | 최근 오류 링(`Diagnostics`, S2 §9.3) 열람. **`LoggingUnavailable`이 활성이면 이 버튼 자체가 무의미해지므로 배너 문구가 그 사실을 함께 알린다** | 예 |
+| 첫 실행 안내 배너 | §6.5 | - |
+
+### 5.5 실패 상태 소비 — HLD §6.4 표의 설정 창 열
+
+**조립자는 `SettingsViewModel`이다(N2).** 초판은 이 절을 "`Shell` 장"에 두고 "…배너를 조립한다"로 주어 없이 적어, 조립 책임이 `SettingsViewModel`(뷰모델의 일)인지 `SettingsWindow`(뷰의 일)인지 불분명했다 — `Store.Current.Conditions`를 `SnapshotFanout`을 통해 읽어 배너 컬렉션을 만드는 로직은 순수 표시 상태 계산이므로 뷰모델의 일이다(§7.1의 책임 분담과 일치). **조립 규칙 자체는 §7.6으로 옮겼다** — Presentation 레이어의 배선(SnapshotFanout, Refresh 계약)과 나란히 두는 것이 자연스럽기 때문이다. 이 절은 소비되는 배너의 목록과 각 배너의 행동 버튼만 확정한다: HLD §6.4 표 그대로 — `LeagueUnresolved`는 리그 드롭다운+목록 재조회+자유 입력+지금 재시도, `FetchFailed`는 실패 목록+지금 재시도(쿨다운 무시, §7.7)+최근 오류, `PollingStopped`는 §2.2에 따라 갈래별로 다른 문구(로그 폴더 열기+재시작 안내, 또는 지연 안내), `SettingsCorrupt`/`SettingsWriteFailed`는 편집 차단 표시(D17)와 확인 버튼(`Corrupt`에서만, D-SE2). `SettingsUnreadable`(D-SE1, S2 §12-32)도 같은 배너 계열에 추가한다 — 확인 버튼 없이(S2 §8.7) 원인·마지막 시도 시각만 표시. `TrayUnavailable`은 §6.2의 재등록 버튼을 갖는다(B2).
+
+**`LoggingUnavailable` — M5, 신규.** 초판은 이 상태에 표시 표면이 없었다 — 다른 모든 조용한 실패 방어가 딛고 선 기반(파일 로거)이 관측 불가하게 실패하는 자리였다. 진입: `Diagnostics` 파일 로거 오픈 실패(Main 1번). 해제: 이 세션에서는 해제되지 않는다(재기동만 로거를 다시 연다) — 로그 파일 자체가 진단 채널이므로 "로거가 살아났다"를 로거로 알릴 수 없기 때문이다. 표시: 설정 창 배너("로그 파일을 열 수 없습니다 — 경로: …"). 오버레이·트레이에는 표시하지 않는다(오버레이 배너 슬롯은 §10.1의 우선순위를 따르고, 이 조건은 사용자가 직접 조치할 수 있는 일이 거의 없어 낮은 우선순위로 둔다) — **개정 요구로 HLD §6.4에 행을 추가한다**(§13).
+
+---
+
+## 6. `Shell` — 트레이 아이콘
+
+### 6.1 `NotifyIcon` 래핑
+
+D18-c 그대로. `TrayIconHost`는 `System.Windows.Forms.NotifyIcon`을 감싸고 `TrayViewModel`(D21, `Presentation`)이 계산한 `Icon`/`Text`/`ShowBalloonTip` 요청을 바인딩만 한다 — 로직은 `TrayViewModel`에 있다(§2 규칙과 동형).
+
+측정: 클릭 핸들러는 이미 WPF UI 스레드에서 돈다(`00-shell-measurements.md` §4 D2) — `Dispatcher.Invoke` 불필요.
+
+### 6.2 등록과 재시도 — 동기 백오프, 그리고 펌프 도는 시점의 재등록
+
+**신규 D-SH5. 트레이 등록의 초기 재시도는 `Task.Delay` 기반 비동기가 아니라 짧은 동기 `Thread.Sleep` 백오프로 구현한다.**
+
+**이 결정이 막는 구체적 사고 — 근거는 §1.4에서 R1로 정정됐다.** HLD §3.5의 순서상 `host.Start()`(5번)는 동기화 컨텍스트 없는 스레드에서 불리고, 트레이 등록(10번)은 `Application` 생성(7번)과 `app.Run()`(11번) 사이에서 일어난다. 이 구간은 `DispatcherSynchronizationContext`가 아직 서지 않은 채로 남아 있다(§1.4 R1) — 펌프가 없다는 사실은 초판과 같지만, "교착한다"는 초판의 진단은 틀렸다. **실제 위험은 이 구간에서 `await`를 쓰면 컨티뉴에이션이 스레드풀 스레드에서 재개되고, 그 스레드가 `Window`·`NotifyIcon` 같은 `DispatcherObject`를 건드리는 순간 `InvalidOperationException`이 난다는 것이다.** 이 경로는 첫 `NIM_ADD`가 실패해야만 도는, 정상 기동에서는 결코 밟히지 않는 경로다.
+
+**해결**: `NIM_ADD` 자체는 동기 Win32 호출이다. 실패 시 짧고 유한한 횟수(예: 3회, 총 대기 시간이 초 단위)만큼 `Thread.Sleep`으로 STA 스레드를 그대로 블로킹한다. 이 구간에는 어차피 펌프할 메시지가 없으므로(창이 아직 없거나 메시지를 보낼 대상이 없다) 블로킹은 무해하다. 최종 실패 시 Error 기록 + `TrayUnavailable` 조건(`IConditionSink` 경유, §9) + 설정 창 즉시 표시(D18-c) — 이 표시는 `Run()` 이전에 `Show()`만 호출해 두면 된다(펌프가 없어도 `Show()`는 창을 큐에 등록할 뿐 즉시 렌더를 요구하지 않고, `Run()` 시작과 동시에 렌더된다).
+
+**정상 가동 중 재등록**은 이 로직을 타지 않는다 — 측정에 따르면 `NotifyIcon`이 `TaskbarCreated`를 자체 처리하므로(§1.5 금지 목록) 수동 재시도가 아예 필요 없다.
+
+**신규 D-SH12(B2). `TrayUnavailable`의 사용자 개시 재등록 — 펌프가 도는 시점 전용.** 초판은 `TrayUnavailable`에 진입 조건만 두고 해제 생산자를 두지 않았다 — 배너가 세션 내내 박히는, HLD §6.4가 금지하는 "진입만 있고 해제가 없는 미정의 상태"였다. 게다가 §5.5는 이 상태의 배너 동작을 아예 누락했는데 HLD §6.4는 재시도 버튼을 요구한다. **주의: D-SH5의 동기 백오프를 그대로 재사용하지 않는다.** 그 코드는 `app.Run()` 이전이라 막을 펌프가 없다는 이유로 정당화된 것이고, 설정 창의 재시도 버튼 클릭은 펌프가 도는 한복판에서 일어나므로 같은 방식으로 부르면 그 시간만큼 UI 스레드와 오버레이가 얼어붙는다. 대신: 재시도 버튼 클릭 → `async` 핸들러(§1.4의 `Shell` 전체 CA2007 면제가 이 핸들러에도 적용된다) → `NIM_ADD` 1회 시도(펌프가 돌고 있으므로 실패해도 `await Task.Delay`로 짧게 대기 후 재시도해도 안전 — 이 구간은 R1이 정정한 "펌프 없는 구간"이 아니다) → 성공 시 `IConditionSink.Set(TrayUnavailable, false, null)`로 조건 해제, 배너가 사라진다.
+
+### 6.3 아이콘 변형과 툴팁
+
+D21 그대로. `TrayViewModel`이 조립하고 `TrayIconHost`는 바인딩만 한다.
+
+### 6.4 클릭 라우팅
+
+좌클릭/더블클릭 = 설정 창 열기(이미 열려 있으면 `Activate()`만, §5.1). 우클릭 = 컨텍스트 메뉴(`ui.tray.openSettings` / `ui.tray.movePositionOff`(끄기 전용, 활성 상태에서만 노출) / `ui.tray.exit`). D12의 "트레이→창 표시 경로는 자체 try/catch" — §10.1에서 구체화.
+
+### 6.5 첫 실행 안내 (FR-08-6)
+
+**신규 D-SH6.** 첫 실행 안내는 별도 창이나 벌룬이 아니라, 설정 창을 자동으로 열고 상단에 닫을 수 없는(확인 전까지) 배너를 얹는 것으로 구현한다.
+
+**기각한 대안**
+
+| 대안 | 기각 사유 |
+|---|---|
+| 벌룬 팁으로 안내 | D21이 이미 "벌룬을 유일한 통지 수단으로 삼지 않는다"고 결정했다 — 게임 중 집중 지원이 벌룬을 숨긴다. 게다가 벌룬은 트레이 아이콘 자체에 도달해야 뜨는데, 첫 실행 안내의 목적이 바로 "아이콘을 찾는 법을 알려주는 것"이다 — 알려줄 방법이 알려줘야 할 대상에 종속되는 순환이다 |
+| `Shell_NotifyIconGetRect`로 좌표를 얻어 화살표로 가리키기 | 측정에 따르면 이 API는 `S_OK`와 함께 틀린 좌표(셰브론 사각형)를 반환한다(`00-shell-measurements.md` §4.1). 신뢰할 수 없는 좌표로 화살표를 그리면 엉뚱한 곳을 가리킨다 |
+| 새 독립 창 | D18-a가 정의한 세 표면(오버레이/설정 창/트레이) 밖에 네 번째 표면을 만드는 것이며, D18-c가 이미 "트레이 최종 실패 시 설정 창을 즉시 표시"로 같은 패턴을 확립해 두었다 — 그 패턴을 재사용하는 것이 새 표면보다 일관적이다 |
+
+**내용**: "트레이 아이콘이 오버플로(숨김 항목)에 있을 수 있습니다 — 화살표(^)를 눌러 찾은 뒤 고정하세요"와 "게임 중에는 Win 키나 Alt+Tab으로 작업 표시줄을 먼저 띄워야 트레이에 닿을 수 있습니다"(`00-shell-measurements.md` §1.5, §4.1 — REQUIREMENTS FR-08-6이 인용한 두 실측 그대로). 확인 버튼으로 닫으면 플래그를 `Settings.Update`로 커밋한다.
+
+**영속 필드 — B7, 이 판이 확정한다.** 초판은 §12가 FR-08-6을 이 절로 매핑하면서도 이 절 자신이 "`AppSettings`에 이 플래그를 담을 필드가 없다"고 적어 CLAIMED-ONLY 상태였다 — 요구사항 본문("안내는 1회성이며 표시 여부는 설정에 영속한다")이 배너 절반만으로는 충족되지 않는다. **결정**: `AppSettings`에 최상위 `bool` 필드를 하나 추가한다. **타입 `bool`, 기본값 `false`(= 아직 안내를 보지 않음), 정확한 JSON 키 이름은 S4로 유예한다.** `window.*` 아래가 아니라 최상위에 둔다 — 창 기하와 무관한 1회성 플래그이기 때문이다. HLD §7 스키마와 S2 §8.1 `AppSettings` 레코드 양쪽에 개정 요구로 등재한다(§13).
+
+**첫 실행 판정**: 파일이 없어 `Defaulted(NoFile)`로 로드된 경우(S2 §8.4의 1번 경로)와 동치가 아니다 — 사용자가 설정 파일을 지웠다가 재생성해도 다시 안내를 보게 되는 것은 무해하지만, 역으로 안내 플래그만 없는 구버전 파일(스키마 마이그레이션 이전)에서는 안내를 다시 띄우지 않는 것이 낫다. 판정은 플래그의 부재 자체로 한다(파일 존재 여부와 무관) — 필드가 없거나 `false`면 안내를 띄운다.
+
+---
+
+## 7. `Presentation` — 개요
+
+### 7.1 세 뷰모델의 책임 재확인
+
+HLD §2.2/§3.4가 이미 확정한 것을 이 문서는 뒤집지 않는다. `OverlayViewModel`(표시), `SettingsViewModel`(조작), `TrayViewModel`(상태 신호) 셋 다 `SnapshotFanout`에 붙고, 서로를 참조하지 않는다. 공유가 필요한 상태(캐시 교차 검색 결과, 카테고리별 실패 상태, 미해결 슬러그, 최근 오류 링)는 각자 `Store`/`Diagnostics`에서 직접 읽는다(HLD §3.4). **수명은 §3.1/§3.3의 결정에 따라 갈린다** — `OverlayViewModel`/`TrayViewModel`은 컴포지션 루트 소유 싱글턴, `SettingsViewModel`만 창과 함께 나고 죽는 transient다(B5).
+
+### 7.2 `IUiDispatcher` — 신설
+
+**신규 D-PS1.** S2 §10.8은 `IUiTicker`(30초 타이머 추상)를 신설했지만, HLD §3.4가 요구하는 "`IUiDispatcher`로 UI 스레드에 post"의 인터페이스 자체가 어디에도 선언되지 않았다. `SnapshotFanout`은 `net8.0`(`Presentation`)에 있고 `Dispatcher` 타입은 `WindowsBase`(`net8.0-windows`)에 있으므로 `IUiTicker`와 같은 이유로 추상이 필요하다.
+
+```
+Presentation/Fanout/
+    interface IUiDispatcher
+        bool CheckAccess()
+        void Post(Action action, DispatcherPriority priority = DispatcherPriority.Normal)
+        bool HasShutdownStarted { get; }
+```
+
+구현은 `Shell`이 `Dispatcher.CurrentDispatcher`를 감싼다(`Post` → `BeginInvoke(action, priority)`, `HasShutdownStarted` → `Dispatcher.HasShutdownStarted`). 테스트는 동기 스텁으로 대체한다(HLD §3.4가 이미 "테스트용 동기 `IUiDispatcher`가 발신→핸들러→커밋을 재귀로 만든다"고 재진입 위험을 언급했으므로, 그 스텁의 존재는 이미 전제되어 있었다 — 이름만 없었다).
+
+**우선순위 매개변수 — N8-②, 이 판이 결정한다.** 초판의 `Post(Action)`에는 `DispatcherPriority` 매개변수도 기본값도 없어, `Republish`가 `Normal`인지 `Background`/`Render`인지가 §9의 30초 틱 + 스냅샷 변경 팬인 하에서 체감 지연을 좌우하는데도 인터페이스가 그 선택을 표현할 수조차 없었다. **결정**: 매개변수를 추가하고 기본값은 WPF의 관용적 기본과 같은 `DispatcherPriority.Normal`로 둔다. `Republish`(§8.1)는 명시적으로 `Normal`을 쓴다 — §0 E5가 확인했듯 프레임 비용은 문제가 아니므로(165Hz에서 드롭 0), `Background`로 낮춰야 할 측정된 근거가 없다. 근거 없이 우선순위를 낮추는 것은 §0 E5가 이미 걷어낸 "성능을 근거로 한 설계 타협"을 다른 이름으로 재도입하는 것이다. 값 자체는 **확인** — 실사용에서 설정 창 타이핑과 경합하는 정황이 발견되면 그때 `Background`로 낮추되, 그 경우에도 측정을 먼저 남긴다.
+
+### 7.3 `IOverlayModeService` 배치
+
+인터페이스는 `Presentation`(HLD §2.2 그대로), 구현은 `Shell`(§4.6). 순서 규약(캡처 해제→기하 확정→스타일 비트 복원)은 구현 내부에 갇힌다 — `SettingsViewModel`의 토글은 `EnterMoveMode()`/`ExitMoveMode(reason)`를 부를 뿐 순서를 모른다(HLD D4-b).
+
+### 7.4 검색 표면 소비
+
+`ISearchSource`(S2 §10.6)를 `SettingsViewModel`이 소비한다. 입력 디바운스는 `Presentation`이 소유한다(아래).
+
+**신규 D-PS6.** 검색어 디바운스는 `TimeProvider.CreateTimer`로 구현한다(S2 §1.3의 규약과 동일한 수단 — `Settings`의 디바운스가 이미 이 패턴이다). `IUiTicker`(30초 고정 주기)를 재사용하지 않는다 — 용도와 주기가 다른 타이머를 억지로 공유하면 한쪽 변경이 다른 쪽 임계를 흔든다. 창 250ms 【확인】.
+
+### 7.5 `IOverlayGeometryService` 배치 (B6)
+
+인터페이스는 `Presentation`(§4.3.1, 신규 D-PS7), 구현은 `Shell`(§4.3.1). `IOverlayModeService`(§7.3)와 같은 패턴 — 순서·값 계산은 구현 내부에 갇히고, `SettingsViewModel`은 `ResetPlacement()`/`RevertHeightToAuto()`를 부를 뿐이다.
+
+### 7.6 실패 상태 배너 조립 — `SettingsViewModel` (N2)
+
+**초판은 이 절을 §5.5(`Shell` 장)에 두고 주어 없이 "…배너를 조립한다"고 적었다.** 조립 로직은 `Store.Current.Conditions`(§9)를 `SnapshotFanout`을 통해 읽어 화면에 뿌릴 배너 컬렉션과 각 배너의 활성 버튼 상태를 계산하는 **순수 표시 상태 계산**이다 — §7.1이 이미 확정한 `SettingsViewModel`의 책임("조작") 범주에 정확히 들어간다. **조립자는 `SettingsViewModel`이다.** `Refresh(snapshot, now)`(§8.1) 안에서 이 계산도 함께 수행한다. 소비되는 배너의 목록·행동 버튼 확정은 §5.5에 남긴다(구역·레이아웃 관점이므로 그쪽이 더 자연스럽다) — 이 절은 "누가 조립하는가"만 답한다.
+
+---
+
+## 8. `SnapshotFanout` — 스레딩 계약
+
+### 8.0 구독자 계약 — B4, 신규 D-PS9
+
+초판 §8.1은 세 뷰모델의 `Refresh`를 못박아 호출하는데, §3.1은 뷰모델이 transient라 했고(구 판) §5.3은 창을 닫을 때 폐기한다고 했다 — attach/detach API도, 어느 스레드에서 부르는지도, 패스 도중 detach가 안전한지도, 패스 사이에 팬아웃이 무엇을 쥐고 있는지도 정의되지 않아 구현자마다 다른(그러나 둘 다 §8.1을 "만족하는") 배선을 만들 수 있었다. **이 판은 §3.1에서 `OverlayViewModel`/`TrayViewModel`을 싱글턴으로 바꾸어 문제의 절반을 없앴다** — 남은 절반(`SettingsViewModel`의 창별 attach/detach)에 계약을 명시한다.
+
+**계약**:
+
+- `Attach(IRefreshable)`/`Detach(IRefreshable)`는 **UI 스레드 전용**이다(호출자가 이미 UI 스레드 — 창 생성·닫기가 UI 스레드에서 일어나므로 자연히 성립한다).
+- `Republish` 패스(§8.1)는 **패스 시작 시점에 뜬 구독자 목록의 복사본**을 순회한다 — 패스 도중 `Attach`/`Detach`가 걸려도(예: 순회 중 창이 닫혀 `Detach`가 불려도) 그 패스는 패스 시작 시점의 목록으로 완주하고, 다음 패스부터 새 목록이 반영된다. **패스 도중 `Detach`된 뷰모델도 그 패스 안에서는 마지막으로 한 번 `Refresh`를 받는다** — 이것이 무해한 이유: `Refresh`는 순수 표시 상태 계산이고(§8.4의 재진입 가드 근거와 동일), 뷰가 이미 사라진 뒤의 계산 결과는 버려질 뿐 부작용이 없다.
+- 팬아웃은 **`Attach`로 받지 않은 뷰모델을 쥐지 않는다** — 고정 슬롯이 아니라 동적 목록이다. `OverlayViewModel`/`TrayViewModel`은 §3.1에서 컴포지션 루트가 기동 시 한 번 attach하고 프로세스 종료까지 유지한다(§3.3 a단계에서 명시적으로 detach). `SettingsViewModel`은 창 생성 시 attach, §5.3 5단계에서 detach.
+
+### 8.1 신호 경로
+
+```
+[Store 소비 루프 스레드]  Volatile.Write(스냅샷) -> SnapshotChanged 발신(동기, 데이터 없음)
+        |
+        v  (같은 스레드에서 동기 호출됨 - Fanout의 핸들러가 여기서 실행된다)
+[SnapshotFanout.OnSnapshotChanged]
+        |  HasShutdownStarted 검사 (M4 - CAS보다 먼저)
+        |    true면 아무것도 하지 않는다
+        |  postPending 플래그를 Interlocked.CompareExchange(1, 0)로 시도
+        |    이미 1이면 아무것도 하지 않는다 (병합)
+        |    0->1로 바뀌면:
+        v
+    uiDispatcher.Post(Republish)      <- 여기서 스레드가 넘어간다. 실패/예외 시 postPending을 리셋하고 Error 기록(M4)
+        |
+        v  (UI 스레드, 나중 시점)
+[Republish]
+    Interlocked.Exchange(postPending, 0)     <- 실행을 시작하는 순간 리셋 (실행 중 새 신호는 다시 postPending을 세워 다음 패스를 예약)
+    now = timeProvider.GetUtcNow()           <- 이 패스의 유일한 now (D-PR7)
+    snapshot = store.Current                 <- Volatile.Read, 이 시점의 최신값(중간 버전은 건너뛸 수 있다)
+    구독자 목록의 복사본을 순회 (8.0)
+        각 구독자.Refresh(snapshot, now)를 독립적으로 try/catch (10.1)
+```
+
+### 8.2 병합 규약 — 신규 D-PS2 (실측 승인 — R2, §0 참조. 정상 경로는 재설계하지 않았다)
+
+- **대기 중인 post는 최대 1개.** `postPending`은 `Store` 소비 루프 스레드(설정 자)와 UI 스레드(리셋 자)가 서로 다른 스레드에서 같은 변수를 건드리므로 `Interlocked`가 필수다 — 단순 `bool` 필드는 눈에 보이는 순서를 보장하지 않는다.
+- **병합의 의미**: `Store`가 짧은 시간에 스냅샷을 N번 교체해도 UI는 최대 1번만 깨어나고, 그 1번이 실행되는 시점의 최신 `store.Current`를 읽는다. 중간 버전은 결코 렌더되지 않는다.
+- **측정 승인(R2)**: 생산자 8스레드 × 2만 회 × 5회 반복(총 80만 회) 스트레스 하네스에서 병합 유실 0건. 플래그를 `store.Current` 읽기 **전에** 리셋하는 순서가 옳고 압박에서도 버틴다. **정상 경로 알고리즘은 재설계하지 않는다.**
+- **예외 경로만 정정한다 — M4.** 초판은 CAS가 `HasShutdownStarted` 검사보다, 그리고 `Post`보다 앞에 있어, 플래그만 세우고 `Republish`에 도달하지 못하는 경로(종료 경합, `BeginInvoke` 예외)가 있으면 이후 모든 `SnapshotChanged`와 30초 틱이 조용히 삼켜졌다. **정정**: ① `HasShutdownStarted` 검사를 CAS **앞으로** 옮긴다(§8.1 의사코드 반영). ② `Post`를 수행하지 못했거나 `Post` 자체가 예외를 던지면 `postPending`을 리셋하고 Error를 기록한다.
+- **UI 스레드가 발행 속도보다 느릴 때**: 큐가 자라지 않는다. 밀린 신호는 유실되는 것이 아니라 처리할 필요가 없어진다 — 마지막 신호가 도착했을 때의 상태가 이미 그 이전 모든 신호가 알리려던 것의 상위집합이기 때문이다(`Store.Current`는 불변 스냅샷 통째 교체이지 diff가 아니다).
+- `Dispatcher.HasShutdownStarted`이면 `Post` 자체를 하지 않는다(no-op) — HLD §3.4에 이미 명시.
+
+### 8.3 예외 격리
+
+Republish 안의 각 구독자 `Refresh` 호출은 독립적으로 `try/catch(Exception)`한다 — 한 뷰모델의 버그가 다른 둘의 갱신을 막으면 안 된다. catch는 §10.1에서 정의하는 관측 가능한 결과를 낸다. `Polling` 루프로는 어떤 예외도 새지 않는다(HLD §3.4가 이미 요구).
+
+### 8.4 재진입 가드
+
+**신규 D-PS4.** `Republish` 실행 구간에 스레드 정적(또는 앰비언트) 플래그를 세운다. 그 구간 안에서 `IConditionSink.Set`/`IErrorSink.Report`/`Settings.Update`가 호출되면 **Debug 빌드에서 `Debug.Assert`로 잡는다.** **N3, 정정.** 초판은 Release 빌드에서 이 가드를 완전히 무연산으로 두었다 — 격리 논증 자체가 `Refresh`의 순수성에 기대는데, Release에서 그 전제가 깨져도 아무 흔적이 남지 않는다. **정정**: Release에서도 `IErrorSink.Report`/로그 한 줄은 남긴다(단언·크래시는 하지 않는다) — 재진입이 데이터 정합성을 깨지는 않으므로 프로세스를 흔들 만큼은 아니지만, 조용히 지나가서는 안 된다. 뷰모델의 `Refresh` 메서드는 순수 읽기+표시상태 계산이어야 하며 이 가드가 그 계약을 강제한다.
+
+---
+
+## 9. 파생 조건 계산 — S2 §10.5 구현
+
+### 9.1 재계산을 일으키는 두 트리거
+
+S2 §10.5는 `RatePending`·`PollingStopped` 등이 "전부 §4.5.6의 같은 `now`를 쓴다"고 요구했다. 그런데 이 상태들은 데이터가 바뀌지 않아도 시간만 지나면 값이 바뀔 수 있다(하트비트 정체, rate 만료). `SnapshotChanged`만 구독하면 카테고리가 전부 성공적으로 갱신되는 동안에는 문제없지만, 폴링이 죽어 스냅샷이 더 이상 바뀌지 않는 바로 그 상황에서 파생 상태도 갱신을 멈춘다 — `PollingStopped`를 감시해야 할 순간에 감시 트리거 자체가 사라지는 역설이다.
+
+**신규 D-PS3. `SnapshotFanout`은 `Store.SnapshotChanged`와 `IUiTicker.Tick`(30초, HLD §3.3) 둘 다 구독하고, 둘 다 §8.1의 같은 `Republish` 경로로 합류시킨다.** 병합 플래그(§8.2)도 공유한다 — 30초 틱과 스냅샷 변경이 거의 동시에 일어나도 UI 갱신은 1회로 합쳐진다.
+
+이렇게 하면: 데이터가 멈춰도 30초 틱이 `now`를 새로 포착해 `Republish`를 구동하므로 `PollingStopped`·`RatePending`·행 노후 표식이 시간 경과만으로도 올바르게 갱신된다. `IUiTicker`는 하나뿐(HLD §3.3, "새 타이머를 추가하지 않는다")이고 `SnapshotFanout`이 그 유일한 구동원이다.
+
+### 9.2 파생 규칙 — 재확인과 소유
+
+S2 §10.5의 표(`PollingStopped`, `RatePending`, `RateInherited`, `CommitRejected`, 행 4갈래, 행 노후, `최근 갱신 N분 전`, 실패 배지, `DisplayState`)를 그대로 구현한다. 계산 자체는 순수 함수(`Heartbeat`/`DivineRate`/`interval`/`now` → bool)이므로 `Presentation`의 정적 헬퍼에 둔다 — `Pricing.StalenessPolicy`(S2 §4.5.3)를 그대로 호출해 임계를 얻는다(D-C2가 이미 이 의존을 허용했다).
+
+`OverlayViewModel`은 이 헬퍼들을 `Refresh(snapshot, now)` 안에서 호출해 배너·행 상태·푸터 문자열을 갱신한다. `TrayViewModel`은 같은 `now`로 아이콘 변형·툴팁을 갱신한다(D21). 한 `Republish` 패스 안에서 `now`를 두 번 얻지 않는다 — 헬퍼 시그니처가 `now`를 인자로만 받고 내부에서 `TimeProvider`를 갖지 않는 것으로 강제한다(`Pricing`이 이미 이 패턴이다, S2 §1.3).
+
+### 9.3 상수 폴백 — `ui.state.*`/`ui.tray.*`로 범위 확장 (M7, 신규 D-PS8)
+
+**초판은 이 절을 빠뜨렸다.** S2 §4.6.4는 명문으로 결정했다 — "자리표시자를 가진 모든 `ui.*` 키는 상수 폴백을 갖는다. `Pricing`이 쓰는 것은 S2가 확정하고, `ui.state.*`·`ui.tray.*`는 S3가 같은 기법으로 확정한다. **이는 권고가 아니라 S2의 결정이다.**" 이행하지 않으면 `환율 대기 3분째`류 문구가 사전 조회 실패 시 키 문자열로 퇴화하며 **숫자가 조용히 사라진다** — S2 §4.6.1이 "기능의 소멸"이라 부른 바로 그것이 상태 문구에서도 재현된다.
+
+**결정**: S2 §4.6.2의 3층 구조(① `TryGetTemplate` 실패 시 상수 폴백 ② 센티널 검증 ③ `FormatException` 시 상수 폴백 재시도)를 `Presentation`이 그대로 상속한다.
+
+```
+Presentation/Fanout/
+    static class UiStateTemplates      // const 만, PriceTemplates(S2 §4.6.2)와 동형
+        const RatePendingWithDuration     = "환율 대기 {0}분째" 류 - 정확한 문구는 S4
+        const PollingStoppedWithDuration  = ...
+        const TrayTooltipSummary          = ...
+        (자리표시자를 가진 ui.state.*/ui.tray.* 키 전부)
+
+    Ui(key, fallbackConst, args) -> S2 §4.6.2의 Tmpl과 동일한 세 층
+```
+
+`ITemplateSource.TryGetTemplate`(S2 §10.3, `Pricing` 전용으로 분리됐던 그 표면)을 `Presentation`도 재사용한다 — 원시 템플릿을 얻는 경로가 이미 있으므로 새 표면이 필요 없다. S2 §4.6.3의 "상수와 내장 사전의 이중화 테스트"도 같은 방식으로 `ui.state.*`/`ui.tray.*` 키에 확장한다(→ S4, 테스트 프로젝트 배치는 범위 밖). 자리표시자가 **없는** `ui.state.*` 키(예: 단순 라벨)는 이 대상이 아니다 — 초판이 옳게 짚었듯 그 경우는 체인 ⑤(키 문자열 그대로)로도 진단 목적을 해치지 않는다.
+
+---
+
+## 10. 진단 통합 — 오류 허용목록 마감
+
+### 10.1 S2 §9.5 표 8번 — 세 자리의 관측 가능한 결과
+
+| 자리 | catch 처리 |
+|---|---|
+| `SnapshotFanout`의 `Republish` 내 각 구독자 `Refresh` (§8.3) | Error 기록(`Diagnostics`) + `IErrorSink.Report`(§1.2가 연 경로로, `Domain`을 통해 새 간선 없이 접근 가능) — 그 뷰모델만 이번 패스에서 갱신 실패, 다음 패스에서 재시도된다. **B3, 신규 D-PS10 — 초판은 여기서 "상태를 별도로 남기지 않아도 다음 트리거가 자연 재시도다"로 끝났는데, 연속 실패가 오버레이에서만 나면 자연 재시도가 계속 실패해도 아무도 모른다.** 뷰모델별 연속 실패 카운터를 둔다. **N회(→ S4, 예 5회) 연속 실패 시** 저장 조건(`ViewModelRefreshFailing`류, `IConditionSink` 경유)을 세운다 — **그 조건은 고장 나지 않은 다른 두 채널로 드러난다**: 트레이 툴팁에 한 줄, 설정 창 배너 한 줄(§5.5 계열에 추가). 오버레이 자신이 멈춰 있으므로 오버레이에는 표시하지 않는다 — 표시해도 보이지 않을 신호를 오버레이에 두는 것은 무의미하다. 한 번이라도 성공하면 카운터를 리셋하고 조건을 해제한다. **비대칭의 근거**: 트레이→설정 창 경로에는 이미 3회 실패 시 네이티브 `MessageBox` 승격이 있는데(아래 행), 더 중요한(상시 표시되는 유일한 표면인) 오버레이 갱신 경로에는 초판에 승격도 상태 기록도 없었다 — S2에서 잡은 `Store.Apply` 결함과 같은 모양의 결함이었다 |
+| 트레이 클릭 → 설정 창 표시 경로(§6.4) | Error 기록 + 실패 카운터 증가. 연속 3회 실패 시 네이티브 `MessageBox`로 로그 경로 안내(D12) — WPF도 트레이도 못 미더울 때 남는 유일한 채널 |
+| `DispatcherUnhandledException`(§10.2) | 아래 |
+
+### 10.2 `DispatcherUnhandledException` 허용 목록 — 빈 집합으로 시작한다
+
+**신규 D-SH13. 1차 릴리스의 허용 목록은 공집합이다.** 즉 이 문서는 "무해하다고 알려진 예외 타입"을 하나도 지정하지 않는다.
+
+**근거**: HLD D12가 허용 목록을 도입한 동기는 "무조건 `Handled=true`가 유일한 진입점을 죽은 버튼으로 만든다"였다 — 즉 막는 것보다 알리는 것이 우선이라는 취지였지, "일부는 삼켜도 안전하다"가 핵심이 아니었다. 그럴듯한 예외 타입(바인딩 변환 실패 등)을 근거 없이 나열하면 실제로는 정상 동작하는 경로의 버그를 조용히 감추는 새 구멍을 만들 뿐이다. HLD/S2 어디에도 구체적인 허용 후보 하나가 실제로 명명된 적이 없다 — "그런 것이 있을 것"이라는 추정만 있었다. 이 문서는 그 추정을 실행하지 않는다.
+
+**M11, NFR-03과의 긴장 — 이 판이 명시한다.** 빈 허용목록은 UI 스레드의 **모든** 미처리 예외가 프로세스를 종료시킨다는 뜻이다. 이것은 NFR-03("네트워크 실패가 앱을 종료시키지 않는다")과 문면상 긴장 관계에 있다 — 다만 그 긴장은 겉보기일 뿐이다: NFR-03이 방어하는 것은 **네트워크 실패**(`Polling`/`Market` 경로)이고, 그 경로는 이미 S2 §7.9(최외곽 `finally`)와 S2 §5.10(D-MK4 경계 catch), HLD D12(`BackgroundServiceExceptionBehavior.Ignore`)로 UI 스레드에 닿기 전에 흡수된다(§12의 정정된 NFR-03 인용 참조). `DispatcherUnhandledException`의 빈 허용목록이 잡는 것은 그 방어선을 넘어온 **진짜 프로그래밍 오류**뿐이다 — "추측해서 삼키느니 크게 죽는 편이 낫다"는 D-SH13의 논증은 유효하다. **다만 B1이 지적하듯, 크게 죽는 것과 트레이가 영구히 도달 불가능해지는 상태가 겹치면 사용자에게 남는 표면이 없다** — 이 자리는 B1의 도달성 문제(§3.2, 신규 D-SH14)와 함께 읽어야 한다.
+
+**동작**: `Handled`를 세우지 않는다(`false`로 둔다). 그 전에: Error 기록(전체 스택트레이스 포함, 그래야 크래시해도 원인이 로그에 남는다) → §3.3의 트레이 폐기 가드(멱등)를 호출 → `Handled=false`로 반환하면 WPF가 예외를 다시 던지고 프로세스가 크래시하며, 그 크래시는 정상적인 프로세스 종료 경로를 타므로 `AppDomain.UnhandledException`(HLD §3.5 6번)이 최종 수신자가 되어 같은 로깅·폐기 로직과 합류한다(멱등 가드가 중복 폐기를 막는다).
+
+**허용 목록에 항목을 추가하는 절차**: S4 구현 중 재현 가능한 무해 사례를 발견하면, 그 타입과 재현 조건을 코드 주석으로 남기고 추가한다. 근거 없는 사전 등재는 하지 않는다.
+
+---
+
+## 11. 지역화 소비 — 언어 전환
+
+**신규 D-PS5.** `ILocalizer.LanguageChanged`(S2 §3.5, 게시 후 발생)를 세 뷰모델이 각자 구독한다(팬아웃을 거치지 않는다 — 언어 변경은 `Store`의 신호가 아니라 `Localization`의 신호이므로 별도 채널이 맞다).
+
+| 뷰모델 | 재계산 범위 |
+|---|---|
+| `OverlayViewModel` | 모든 행의 `Pricing.Format`/`Change`/`Relative` 재호출(숫자 자체는 불변, 템플릿과 상대 시각 단위만 바뀐다), 배너 문구, 푸터 |
+| `SettingsViewModel` | 라벨·상태 문구. 검색 결과의 아이템 이름(`ItemName` 폴백 체인이 언어에 의존, S2 §3.4) |
+| `TrayViewModel` | 툴팁·메뉴 항목 문자열(D21) |
+
+**스레드와 I/O**: `SetLanguage`는 UI 스레드 전용(S2 §3.5)이므로 트리거 자체가 이미 UI 스레드다. 재계산은 파일 I/O를 하지 않는다 — D-L1이 기동 시 전 사전을 로드해 두었으므로 `Ui`/`ItemName` 조회는 이미 메모리에 동결된 `FrozenDictionary` 접근일 뿐이다. 이것이 D-L1의 존재 이유였다(S2 §3.2, "그 경로에 파일 I/O가 있어서는 안 된다").
+
+**높이 재계산**: HLD D10 표가 이미 "`language` 변경 → 전 문자열 재계산 + 높이 재계산"을 요구했다 — §4.4의 재계산 트리거 목록에 `language`가 들어 있는 이유가 이것이다.
+
+**팬아웃과의 관계**: 언어 전환 자체는 `SnapshotFanout`을 거치지 않지만, 재계산에 쓰는 `now`는 다음 정기 `Republish` 패스를 기다리지 않고 즉시 `timeProvider.GetUtcNow()`로 새로 얻는다 — D-PR7의 "패스당 하나"는 한 패스 내부의 일관성을 위한 것이지, 언어 전환처럼 팬아웃 밖에서 일어나는 별도 갱신까지 그 패스에 묶으라는 뜻이 아니다.
+
+---
+
+## 12. 요구사항 ↔ 결정 대응표
+
+`FR-05-*`·`FR-08-*` 전량과, 이 문서에서 처음 만족이 완결되는 나머지 요구사항. **N4 — 초판이 빠뜨린 행(FR-04/FR-04-1/FR-04-3)을 추가하고, 잘못 인용된 행(FR-08-4/NFR-02/NFR-03) 및 M8의 NFR-05를 정정했다.**
+
+| ID | 요약 | 이 문서의 결정 |
+|---|---|---|
+| FR-01-1 | 개별 검색 추가 | §7.4(`ISearchSource` 소비), §5.4(레이아웃), §7.4 디바운스 |
+| FR-01-2 | 관심목록 제거 | §5.4(레이아웃 구역) |
+| FR-01-3 | 오버레이 자동 높이 + `외 n개 더`, 설정 창 스크롤. **`explicit` 모드의 잘림 표식** | §4.4, §4.5, §4.4.2(M9, 신규 D-SH16) |
+| FR-03-4 | 마지막 갱신 시각 | §9.2(파생 표시) |
+| **FR-04** | **행 구성 + 배너 + 푸터 — N4, 신규 등재** | `OverlayViewModel` + 오버레이 View. §5.4(레이아웃), §9.2(파생 표시), §4.4(클리핑) |
+| **FR-04-1** | **volume 미표시 — N4, 신규 등재** | 정책. `Domain`은 보존하되 이 문서 범위의 뷰모델이 노출하지 않음으로써 성립(HLD §8과 동일 논리) |
+| **FR-04-3** | **표시통화 auto/chaos/divine — N4, 신규 등재** | `SettingsViewModel`(항목별·전역 선택 UI, §5.4) + `Pricing`(S2 §6.2, 해석은 S2 소관) |
+| FR-05-1 | Topmost | §4.1(상시 스타일, 변경 없음) |
+| FR-05-2 | 전체 클릭 통과 | §4.1, 이동 모드 예외는 §4.6. **컬러키 영역의 이진 클릭 통과는 §4.0.1** |
+| FR-05-3 | 절대 포커스 없음 | §4.1, §5.2(NOACTIVATE가 Activate조차 무해화함을 재확인) |
+| FR-05-4 | 위치·크기 저장·복원 | §4.3(값-포착 큐잉, R3로 `ActualHeight` 정정), §4.3.1(`IOverlayGeometryService`, B6), §4.7(D22 재검증) |
+| FR-05-5 | 투명도 조절 | §4.3(예외적 기록자 `SettingsViewModel`), §4.0.1(전환 후에도 무관함을 확인) |
+| FR-05-6 | 위치 이동 모드 | §4.6(상태 기계), §4.6.1(워치독×캡처 상호작용, M3로 스레딩 정정), §4.6.2(가시성 채널) |
+| FR-06 | 설정 저장, 이동 모드 저장 제외 | §4.6(비저장 재확인) |
+| FR-07-4 | UI 문구 ID 조회 (트레이 포함) | §6.3, §11, §9.3(M7, `ui.state.*`/`ui.tray.*` 상수 폴백 상속) |
+| FR-08-1 | 트레이 상주, 유일한 진입점 | §6.1, §6.2(등록·재시도, D-SH12로 해제 경로 추가) |
+| FR-08-2 | 설정 창 (Owner, 활성화) | §5.1, §5.2 |
+| FR-08-3 | 설정 창 조작 일체 | §5.4, §7.3(이동 모드 배선), §7.5(기하 명령 배선) |
+| FR-08-4 | 닫아도 종료 안 됨 — **인용 정정(N4)** | 소유 결정은 `Composition`/`Shell`(`ShutdownMode=OnExplicitShutdown`, HLD D12·§3.6). 이 문서는 §3.1(등록 순서 재확인)·§5.3(설정 창 닫기가 종료가 아님을 구현)만 담당한다 |
+| FR-08-5 | 설정 창 스크롤 | §5.4 |
+| **FR-08-6** | **첫 실행 안내** | **§6.5(영속 필드 존재·타입·기본값 확정, B7)** |
+| NFR-01 | 유휴 CPU | §9.1(타이머 1개만 추가 소비, 새 지속 타이머 없음) |
+| NFR-02 | 과도한 요청 금지 — **인용 정정(N4)** | 이 문서에서 실제로 기대는 것은 §3.3-d의 뮤텍스 가드(단일 인스턴스, 트래픽 2배 방지)다. §3.2는 신호 채널의 존재를 규정할 뿐 요청 억제 자체를 담당하지 않는다 |
+| NFR-03 | 네트워크 실패가 앱을 죽이지 않음 — **인용 정정(M11)** | 실제 충족처는 S2 §7.9(최외곽 `finally`), S2 §5.10(D-MK4 경계 catch), HLD D12(`BackgroundServiceExceptionBehavior.Ignore`)다. 이 문서의 §2(`PollingStopped` 해제 경로)와 §10.2(빈 허용목록)는 **복원력을 낮추는 절**이므로 충족처가 아니라 **긴장 관계**로 인용해야 한다 — §10.2에 그 긴장을 명시했다. B1의 도달성 문제와 함께 읽는다 |
+| NFR-05 | 출처 표기 — **행 추가(M8)** | §4.4(오버레이 푸터는 클리핑 제외 고정 영역이자 §4.5의 최소 가시 면적 기준) + **§5.4(설정 창의 출처 표기 영역, HLD §6.6이 요구하는 "양쪽" 중 빠졌던 절반)** |
+
+---
+
+## 13. S2/HLD 미비점
+
+이 문서가 새로 발견했거나, S2가 "S3에서 처리"로 넘긴 항목의 처분이다. S2 §12와 같은 형식. **개정 요구**로 표시한 행은 동결 문서(HLD/S2)를 여는 것이며, 이 문서는 그 문서들을 직접 고치지 않는다 — 호출자가 적용한다.
+
+| # | 항목 | 성격 | 처분 |
+|---|---|---|---|
+| 1 | `PollingStopped` 해제 경로에 의존 간선이 필요하다는 S2의 전제가 틀렸다 | S2 오류 정정 | §2. 프로세스 재시작(LoopExited 갈래)으로 해제된다는 결정으로 간선 없이 닫았다. **개정 요구(HLD §6.4, PollingStopped 행, 해제 열)** — 현재: "라운드 재개"(원문) 또는 초판이 정정한 "애플리케이션 재시작"(과잉). 교체: **"라운드 재개(하트비트 갱신). 단 `LoopExited`는 애플리케이션 재시작"**(M1, 범위 축소) |
+| 2 | `IUiDispatcher`가 어디에도 선언되지 않았다 | HLD/S2 누락 | §7.2에서 신설(D-PS1). 이 판에서 `DispatcherPriority` 매개변수도 추가(N8-②) |
+| 3 | D18-b "Owner 금지"가 이 문서로 뒤집힌다 | **개정 요구(HLD D18-b)** | §5.1. `00-shell-measurements.md` §2가 반증. 현재: "**`Owner` 금지**". 교체: "**`Owner = 오버레이`** — exstyle `WS_EX_TOPMOST` 전파를 설정 창이 오버레이 위에 뜨는 데 이용한다" |
+| 4 | Q17 폴백(설정 창 임시 Topmost)이 불필요해졌다 | **개정 요구(HLD §10, Q17)** | §5.2. `00-shell-measurements.md` §1로 종결. 현재: "폴백: 첫 활성화 성공까지 Topmost". 교체: 폴백 문구 삭제, "활성화는 우회 없이 성공(§1) — 폴백 불필요"로 종결 |
+| 5 | 트레이 등록 재시도를 async/`Task.Delay`로 구현하면 **스레드 친화성 오염** 위험이 있다 | 이 문서가 발견한 신규 위험 (**R1로 근거 정정 — 초판은 "교착"이라 썼으나 틀렸다**) | §6.2(D-SH5). `host.Start()`~`app.Run()` 구간에 동기화 컨텍스트 자체가 없어 `await`가 스레드풀로 재개된다는 사실을 §1.4에서 실측으로 정정했다. 동기 백오프로 우회 |
+| 6 | 워치독 만료와 캡처 불변식이 동시에 걸리는 경우 미정의 | HLD 내부 공백 | §4.6.1(D-SH9 세부). D4-b(워치독)와 D4-c(캡처 불변식)가 서로를 언급하지 않았다. "만료 플래그를 세우고 캡처 해제 시점에 처리"로 닫았다. **N7 — 위반 시 실제 파손 양상(시각적 불일치, 입력 유실 아님)을 §4.6.1에 측정과 함께 기록했다** |
+| 7 | 기하 검증 "완전 포함"의 과잉 (S2 §12-6) | **개정 요구(HLD §7, `window.x`/`.y` 검증 열 및 §8 FR-05-4 행)** | §4.5(D-SH8). "푸터 완전 가시"로 완화. 현재: "**하나의 작업영역에 완전히 포함**되어야 한다". 교체: "**어느 한 작업영역과의 교집합이 최소 '푸터 전체 폭 × 푸터 높이' 이상**" |
+| 8 | 워치독 타이머의 §3.3 등재 (S2 §12-8) | S3에서 처리하기로 예정 | §4.6.1에서 조건부 존재로 기술, **§3.3 a단계에 `IUiTicker.Stop()`과 함께 정지 시점을 명시(B5)**. HLD §3.3(타이머 예산 표)에 조건부 행으로 추가하는 것은 뼈대를 채우는 것이므로 개정 아님 |
+| 9 | 설정 창 레이아웃 절 신설 (S2 §12-10) | S3에서 처리하기로 예정 | §5.4에서 구역 수준으로 확정. 세부 XAML은 S4 |
+| 10 | 주기를 늘리면 대기 중 라운드가 그만큼 늘어난다 (S2 §12-31) | S3와 함께 판단하기로 예정 | §2.2 말미(N5) — 이 문서는 판단하지 않는다. 초판 §0이 "§4.6에서 처리"라 주장했던 것을 **철회**했다. §13-10의 명시적 거절을 유지하며 S2 차기 개정 대상으로 재확인 |
+| 11 | `AppSettings`에 첫 실행 안내 확인 플래그가 없다(B7) | **개정 요구(HLD §7 스키마 + S2 §8.1 `AppSettings`)** | §6.5. **이 판이 존재·타입·기본값을 확정했다** — `bool`, 기본 `false`, 최상위 키(정확한 이름은 S4). HLD §7: 표에 새 행 추가("`traySeen`류" — 이름은 예시). S2 §8.1: `record AppSettings(...)`에 위치 매개변수 추가, §8.2 검증표에 "값 그대로 신뢰(bool이라 클램프 불필요)" 행 추가, §8.4 키 판독 경로에 포함 |
+| 12 | `DispatcherUnhandledException` 허용 목록이 실제로는 한 번도 채워진 적이 없었다 | 이 문서가 발견 | §10.2(D-SH13). 공집합으로 시작하는 것을 명시적 결정으로 승격했다. **M11 — NFR-03과의 문면상 긴장을 명시하고, 실제 충족처(S2 §7.9/§5.10, HLD D12)로 인용을 옮겼다(§12)** |
+| 13 | "그립 드래그 종료 시점에만 `Height` 스칼라 읽기가 안전하다"는 화해가 D19/D4-b 어디에도 명시적으로 진술되지 않았다 | 이 문서가 발견 | §4.4. **R3 — 이 판에서 "안전한 스칼라"의 정의 자체를 `Height`에서 `ActualHeight`로 정정했다** — 화해의 결론은 살아 있으나 어느 필드를 읽는지가 바뀌었다 |
+| 14 | 결정 ID 중복 — `D-SH1`이 §1.4(CA2007 면제)와 §2.2(폴링 재개 없음) 두 곳에 부여됐다(N1) | 이 문서가 발견·수정 | §2.2에서 후자를 `D-SH2`로 재번호했다. `D-SH2`·`D-SH12`는 초판에서 정의된 적이 없던 빈 자리였다 — `D-SH2`는 이 재번호로, `D-SH12`는 B2의 신규 결정으로 채웠다. 이후 `D-SH1`은 §1.4만을 가리킨다 |
+| 15 | 트레이 영구 도달 불가 시 회수 수단이 없다(B1) | **개정 요구(HLD D18-d)** | §3.2(D-SH14). 현재: "**회수 수단이 아니라 정합성 때문에 유지한다**". 교체: "**정합성 때문에 유지하며, 트레이가 도달 불가능해진 경우의 유일한 회수 경로이기도 하다**" — 신호 핸들러가 이미 이 역할을 겸한다는 사실이 이 판에서 처음 확정됨 |
+| 16 | HLD §6.4에 `LoggingUnavailable` 행이 없다(M5) | **개정 요구(HLD §6.4)** | §5.5. 현재: 8개 상태 행. 교체: 진입(파일 로거 오픈 실패)/해제(없음, 재기동만)/오버레이(-)/설정 창(배너)/트레이(-) 행 추가 |
+| 17 | HLD §8 매핑 표의 결함 3건(N6) | **개정 요구(HLD §8)** | ① FR-08-6 행 부재 → 추가(소유 `Shell`+`Settings`, 단계 S3). ② FR-08-2 행이 반증된 "**Owner 금지**(D18-b)"를 유지 → "**Owner = 오버레이**"로 교체(§5.1과 동일 문구, 3번 항목과 연동). ③ FR-05-4 행이 "**완전히 포함**"을 유지 → "**최소 가시 면적**(D-SH8)"으로 교체(7번 항목과 연동) |
+| 18 | HLD D4-a/D4-c의 "둥근 모서리" 문구가 §4.0의 전환으로 무효화됐다(E2) | **개정 요구(HLD D4-a, D4-c)** | §4.0.1. D4-a 표 행: 현재 "`AllowsTransparency` \| `True` \| 배경 투명·둥근 모서리". 교체: "`AllowsTransparency` \| `False` + `WS_EX_LAYERED` \| 배경 투명(컬러키, 이진 경계) — 둥근 모서리 불가(00-shell-measurements.md §8)". D4-c 문구: 현재 "그립은 도색된 본문 안쪽으로 들여 배치한다 — 둥근 모서리의 우하단은 투명 픽셀이라 클릭이 닿지 않는다". 교체: "그립은 도색된 본문 안쪽으로 들여 배치한다 — 컬러키(클릭 통과) 영역은 어떤 모양이든 클릭이 닿지 않는다" |
+| 19 | `SnapshotFanout`의 구독자 계약 부재(B4) | 이 문서가 발견·해결 | §8.0(신규 D-PS9). 동결 문서 개정 불필요 — S2가 정의한 `SnapshotChanged` 신호 자체는 바뀌지 않았다 |
+| 20 | 장수명 객체(메시지 전용 창·`SnapshotFanout`·`IUiTicker`·뷰모델·워치독)에 소유자·폐기 시점이 없다(B5) | 이 문서가 발견·해결 | §3.1/§3.3(신규 D-SH15). HLD §3.5 12단계는 S3가 채우도록 남긴 뼈대이므로 개정 요구 아님 |
+| 21 | 설정 창 기하 명령에 통로가 없다(B6) | 이 문서가 발견·해결 | §4.3.1/§7.5(신규 D-PS7). 기존 `Shell → Presentation` 간선 재사용, 그래프 변경 없음 |
+| 22 | `heightMode=explicit`의 잘림이 화면 여백 부족과 구별되지 않는다(M9) | 이 문서가 발견·결정 | §4.4.2(신규 D-SH16) |
+| 23 | 이동 모드 `Active` 중 디스플레이 변경 재검증, `IUiDispatcher.Post` 우선순위 — 구현자가 추측해야 했던 두 자리(N8) | 이 문서가 결정 | §4.7(D-SH11 하위 규칙), §7.2(D-PS1 확장, `DispatcherPriority` 매개변수) |
+
+---
+
+## 14. 유예한 미결 항목
+
+**주의(E6 말미) — Q5·Q19는 HLD §10이 S3에 배정한 측정 항목이었는데 S3 초판은 측정도 유예도 하지 않고 누락했다.** 이 개정본은 §4.0/§4.4/§4.2에서 그 둘을 실측으로 닫았다. 아래는 그 측정이 남긴 **진짜 잔여 미결**과, 그 외 초판부터 있던 유예 항목이다.
+
+1. 【확인】 DirectX 독점 전체화면(`00-shell-measurements.md` §5, HLD Q9류 위험) — 설정 창 렌더링·게임 최소화 여부 미검증. 구현 착수 시 실물 1회 확인.
+2. 【확인】 DPI 경계를 가로지르는 수동 드래그(HLD Q21) — `WM_DPICHANGED`와 수동 `Left`/`Top` 갱신의 프레임 경합 여부. §4.2에서 대응 없이 유예.
+3. 【확인】 `NotifyIcon.Text` 길이 한계(HLD Q20) — 정확한 문자 수 상한. `TrayViewModel`의 조립기가 사전에 자르는 것은 확정했으나(D21) 자르는 기준 길이 자체는 S4 확인.
+4. 검색 디바운스 창 250ms는 【확인】 값이다 — 실사용 조정 대상.
+5. Q18(설정 창 활성화의 게임 프레임 끊김 상시 비용)은 이 문서에서 설계로 대응하지 않는다 — 실사용 체감으로 판단하고, 심하면 자주 쓰는 토글(이동 모드 끄기 등)을 트레이 메뉴로 옮기는 것을 향후 검토(HLD 원안 그대로 유지).
+6. 첫 실행 안내 플래그의 정확한 스키마 키 이름과 위치(§13-11) — S4.
+7. `Polling.Period` 재설정 시 즉시 1회 라운드를 돌릴지(S2 §12-31) — S2 다음 판으로 넘김(§2.2 말미, §13-10).
+8. **【미측정, E6】 DPI 변경.** 개발 장비는 두 모니터 모두 96 DPI라 `WM_DPICHANGED`가 발생하지 않는다(`00-shell-measurements.md` §9.1). 배율 변경은 시스템 설정이라 측정 중 금지됐다. PerMonitorV2 매니페스트 외 처리가 필요한지 UNVERIFIED — §4.2.
+9. **【미측정, E6】 `UseLayoutRounding`/`SnapsToDevicePixels`** — 100% 배율에서 효과 전무(바이트 단위 동일, `00-shell-measurements.md` §8.7). 분수 배율에서는 UNVERIFIED. 무해하므로 유지만 하고 별도 대응은 하지 않는다.
+10. **【미측정, E6】 60Hz 화면** — 프레임 비용 측정(§0 E5)은 165Hz에서만 이뤄졌다. 60Hz에서 재측정하지 않는다(성능이 이미 165Hz에서도 여유가 크므로 우선순위 낮음).
+11. **【미측정, E6】 독점 전체화면**(항목 1과 동일 사안, 오버레이 렌더링 관점에서도 재확인 필요) — DX 독점 전체화면에서 레이어드 창이 아예 합성되지 않을 가능성.
+12. **【미측정, E6】 사람의 판독 실험.** §4.0의 픽셀 데이터가 증명하는 것은 ClearType 대비 정보량이 1/3로 준다는 것이지, 사람이 실제로 못 읽는다는 것이 아니다. 체감 판독성 검증은 실사용 후 판단으로 미룬다 — 이 판단을 뒤집을 근거가 나오면 §4.0의 색 팔레트·폰트 크기 선택(→ S4)에 반영한다.
