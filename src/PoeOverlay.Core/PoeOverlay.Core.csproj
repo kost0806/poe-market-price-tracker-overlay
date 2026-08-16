@@ -27,6 +27,13 @@
          Localization/en.json, matching {AppContext.BaseDirectory}/Localization/ (S2 3.2). -->
     <EmbeddedResource Include="Localization\Localization\en.json" LogicalName="PoeOverlay.Core.Localization.en.json" />
     <None Update="Localization\Localization\en.json" Link="Localization\en.json" CopyToOutputDirectory="PreserveNewest" />
+
+    <!-- ko.json is copied and not embedded (S2 3.3, S4 2.1). The chain's floor is en and only
+         en: a second embedded dictionary would not add a level, it would blur which one is the
+         floor, and level ③ is by definition never missed. Discovery is by file name, so this
+         entry is the whole of what shipping a language costs (FR-07-3).
+         The item-name half is generated — tools/build-ko-dictionary.py, S4 2.5. -->
+    <None Update="Localization\Localization\ko.json" Link="Localization\ko.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

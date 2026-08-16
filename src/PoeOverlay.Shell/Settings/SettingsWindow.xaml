@@ -2,9 +2,8 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:rows="clr-namespace:PoeOverlay.Core.Presentation.ViewModels.Rows;assembly=PoeOverlay.Core"
-        xmlns:domain="clr-namespace:PoeOverlay.Core.Domain;assembly=PoeOverlay.Core"
         xmlns:diag="clr-namespace:PoeOverlay.Core.Diagnostics;assembly=PoeOverlay.Core"
-        Title="PoE Market Price Tracker — Settings"
+        Title="{Binding Strings.Title}"
         Width="620"
         Height="720"
         WindowStartupLocation="CenterScreen"
@@ -302,11 +301,11 @@
                 Visibility="{Binding ShowFirstRunBanner, Converter={StaticResource BoolToVisibility}}">
             <StackPanel>
                 <TextBlock TextWrapping="Wrap"
-                           Text="The tray icon may be hidden in the overflow area — click the chevron (^) to find it, then pin it." />
+                           Text="{Binding Strings.FirstRunOverflow}" />
                 <TextBlock TextWrapping="Wrap"
                            Margin="0,4,0,0"
-                           Text="While a game is covering the screen, press the Windows key or Alt+Tab first to raise the taskbar; the tray cannot be clicked otherwise." />
-                <Button Content="Got it"
+                           Text="{Binding Strings.FirstRunTaskbar}" />
+                <Button Content="{Binding Strings.FirstRunDismiss}"
                         HorizontalAlignment="Left"
                         Margin="0,8,0,0"
                         Command="{Binding DismissFirstRunBannerCommand}" />
@@ -325,7 +324,7 @@
 
         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="0,0,8,0">
-                <GroupBox Header="Search">
+                <GroupBox Header="{Binding Strings.SearchHeader}">
                     <StackPanel>
                         <TextBox Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}" />
 
@@ -334,19 +333,20 @@
                              the design gives it (S2 6.7): "nothing has been fetched yet", which is
                              not the same claim as "not in the cache" and must not send the user off
                              to fetch categories by hand. While the box is empty there is no search
-                             to report on, so the line is not shown at all. -->
-                        <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Foreground="{StaticResource MutedInk}">
+                             to report on, so the line is not shown at all.
+
+                             The three sentences used to be Setter values here, which is the reason
+                             no dictionary could reach them (S3 5.4.4). The view model composes them
+                             now; only the emphasis stays a trigger. -->
+                        <TextBlock Margin="0,6,0,0"
+                                   TextWrapping="Wrap"
+                                   Text="{Binding SearchStatusText, Mode=OneWay}">
                             <TextBlock.Style>
                                 <Style TargetType="TextBlock">
                                     <Setter Property="Foreground" Value="{StaticResource MutedInk}" />
-                                    <Setter Property="Text" Value="Waiting for the first refresh — nothing has been fetched yet." />
                                     <Style.Triggers>
                                         <DataTrigger Binding="{Binding SearchOutcome}" Value="Found">
-                                            <Setter Property="Text" Value="Matches found." />
                                             <Setter Property="Foreground" Value="{StaticResource Ink}" />
-                                        </DataTrigger>
-                                        <DataTrigger Binding="{Binding SearchOutcome}" Value="NotInCache">
-                                            <Setter Property="Text" Value="No match in the data fetched so far — try a category below." />
                                         </DataTrigger>
                                         <DataTrigger Binding="{Binding SearchQuery}" Value="">
                                             <Setter Property="Visibility" Value="Collapsed" />
@@ -378,26 +378,29 @@
                                         <TextBlock Grid.Column="1"
                                                    Margin="8,0,0,0"
                                                    Foreground="{StaticResource MutedInk}"
-                                                   Text="{Binding Category, Mode=OneWay}" />
+                                                   Text="{Binding CategoryLabel, Mode=OneWay}" />
                                     </Grid>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
-                        <Button Content="Add to watchlist"
+                        <Button Content="{Binding Strings.AddToWatchlist}"
                                 HorizontalAlignment="Left"
                                 Margin="0,6,0,0"
                                 Command="{Binding AddToWatchlistCommand}"
                                 CommandParameter="{Binding SelectedItem, ElementName=SearchResultsList}" />
                         <ItemsControl ItemsSource="{Binding UnfetchedCategories}" Margin="0,6,0,0">
                             <ItemsControl.ItemTemplate>
-                                <DataTemplate DataType="{x:Type domain:ExchangeCategory}">
-                                    <Button Content="{Binding}"
+                                <!-- The row carries both halves: the caption to draw and the enum
+                                     the command takes. Binding the bare enum put "AllflameEmber"
+                                     on a button (S3 5.4.3 E13). -->
+                                <DataTemplate DataType="{x:Type rows:CategoryRowViewModel}">
+                                    <Button Content="{Binding Label}"
                                             HorizontalAlignment="Left"
                                             Margin="0,2,0,0"
                                             Padding="8,2"
                                             Command="{Binding DataContext.FetchCategoryCommand,
                                                               RelativeSource={RelativeSource AncestorType=Window}}"
-                                            CommandParameter="{Binding}" />
+                                            CommandParameter="{Binding Category}" />
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
@@ -406,20 +409,24 @@
 
                 <!-- FR-08-5: the full watchlist is reachable here, which is what makes the
                      overlay's "+n more" marker acceptable (S3 4.4.2). -->
-                <GroupBox Header="Watchlist">
+                <GroupBox Header="{Binding Strings.WatchlistHeader}">
                     <ListBox ItemsSource="{Binding Watchlist}" MaxHeight="200">
                         <ListBox.ItemTemplate>
-                            <DataTemplate DataType="{x:Type domain:WatchlistEntry}">
+                            <!-- DisplayName, not Id.Value. This was the last list still drawing the
+                                 raw slug after the search rows were moved onto the name chain
+                                 (S3 5.4.3 E14). -->
+                            <DataTemplate DataType="{x:Type rows:WatchlistRowViewModel}">
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
                                     <TextBlock Grid.Column="0"
-                                               Text="{Binding Id.Value, Mode=OneWay}"
+                                               Text="{Binding DisplayName, Mode=OneWay}"
                                                TextTrimming="CharacterEllipsis" />
                                     <Button Grid.Column="1"
-                                            Content="Remove"
+                                            Content="{Binding DataContext.Strings.WatchlistRemove,
+                                                              RelativeSource={RelativeSource AncestorType=Window}}"
                                             Margin="8,0,0,0"
                                             Padding="8,1"
                                             Command="{Binding DataContext.RemoveFromWatchlistCommand,
@@ -431,7 +438,7 @@
                     </ListBox>
                 </GroupBox>
 
-                <GroupBox Header="League, period, language, currency, opacity">
+                <GroupBox Header="{Binding Strings.PreferencesHeader}">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
@@ -448,7 +455,7 @@
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="League" Margin="0,3,8,3" />
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="{Binding Strings.League}" Margin="0,3,8,3" />
                         <ComboBox Grid.Row="0" Grid.Column="1"
                                   Margin="0,3"
                                   IsEditable="True"
@@ -459,26 +466,30 @@
                         <!-- Empty is the ordinary state of the box above: it holds an override, and
                              with no override the league is resolved from the list. This row is what
                              says which one that is. -->
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="In use" Margin="0,3,8,3" />
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="{Binding Strings.LeagueInUse}" Margin="0,3,8,3" />
                         <TextBlock Grid.Row="1" Grid.Column="1"
                                    Margin="0,3"
                                    Foreground="{StaticResource MutedInk}"
                                    TextTrimming="CharacterEllipsis"
                                    Text="{Binding ActiveLeague, Mode=OneWay}" />
 
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="League list" Margin="0,3,8,3" />
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="{Binding Strings.LeagueList}" Margin="0,3,8,3" />
                         <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,3">
-                            <TextBlock Text="{Binding LeaguesStatus, Mode=OneWay}" VerticalAlignment="Center" />
-                            <Button Content="Reload" Margin="8,0,0,0" Padding="8,2" Command="{Binding ReloadLeaguesCommand}" />
-                            <Button Content="Retry now" Margin="6,0,0,0" Padding="8,2" Command="{Binding RetryNowCommand}" />
+                            <!-- A sentence, not the LeagueListStatus member. "Suspicious" on its own
+                                 never said what was suspicious about it (S3 5.4.3 E13). -->
+                            <TextBlock Text="{Binding LeagueStatusText, Mode=OneWay}"
+                                       VerticalAlignment="Center"
+                                       TextWrapping="Wrap" />
+                            <Button Content="{Binding Strings.LeagueReload}" Margin="8,0,0,0" Padding="8,2" Command="{Binding ReloadLeaguesCommand}" />
+                            <Button Content="{Binding Strings.RetryNow}" Margin="6,0,0,0" Padding="8,2" Command="{Binding RetryNowCommand}" />
                         </StackPanel>
 
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Refresh (min)" Margin="0,3,8,3" />
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="{Binding Strings.RefreshMinutes}" Margin="0,3,8,3" />
                         <TextBox Grid.Row="3" Grid.Column="1"
                                  Margin="0,3"
                                  Text="{Binding Editor.RefreshIntervalMinutes, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=LostFocus}" />
 
-                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Language" Margin="0,3,8,3" />
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="{Binding Strings.Language}" Margin="0,3,8,3" />
                         <ComboBox Grid.Row="4" Grid.Column="1"
                                   Margin="0,3"
                                   ItemsSource="{Binding Editor.Languages, RelativeSource={RelativeSource AncestorType=Window}}"
@@ -486,13 +497,13 @@
                                   SelectedValuePath="Tag"
                                   SelectedValue="{Binding Editor.Language, RelativeSource={RelativeSource AncestorType=Window}}" />
 
-                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Display currency" Margin="0,3,8,3" />
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="{Binding Strings.DisplayCurrency}" Margin="0,3,8,3" />
                         <ComboBox Grid.Row="5" Grid.Column="1"
                                   Margin="0,3"
                                   ItemsSource="{Binding Editor.DisplayCurrencies, RelativeSource={RelativeSource AncestorType=Window}}"
                                   SelectedItem="{Binding Editor.DefaultDisplayCurrency, RelativeSource={RelativeSource AncestorType=Window}}" />
 
-                        <TextBlock Grid.Row="6" Grid.Column="0" Text="Opacity" Margin="0,3,8,3" />
+                        <TextBlock Grid.Row="6" Grid.Column="0" Text="{Binding Strings.Opacity}" Margin="0,3,8,3" />
                         <Grid Grid.Row="6" Grid.Column="1" Margin="0,3">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
@@ -519,33 +530,34 @@
                         <TextBlock Grid.Row="7" Grid.Column="1"
                                    Margin="0,3"
                                    Foreground="{StaticResource ErrorInk}"
-                                   Text="Settings cannot be saved right now."
+                                   Text="{Binding Strings.WritesBlocked}"
                                    Visibility="{Binding WritesBlocked, Converter={StaticResource BoolToVisibility}}" />
                     </Grid>
                 </GroupBox>
 
-                <GroupBox Header="Overlay placement">
+                <GroupBox Header="{Binding Strings.PlacementHeader}">
                     <StackPanel>
                         <!-- The one setting that is deliberately not persisted (FR-05-6). -->
-                        <CheckBox Content="Move mode (not saved — always off at next start)"
+                        <CheckBox Content="{Binding Strings.MoveMode}"
                                   IsChecked="{Binding IsMoveModeActive}" />
                         <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                            <Button Content="Revert height to automatic" Command="{Binding RevertHeightCommand}" />
-                            <Button Content="Reset position and size" Margin="6,0,0,0" Command="{Binding ResetPlacementCommand}" />
+                            <Button Content="{Binding Strings.RevertHeight}" Command="{Binding RevertHeightCommand}" />
+                            <Button Content="{Binding Strings.ResetPlacement}" Margin="6,0,0,0" Command="{Binding ResetPlacementCommand}" />
                         </StackPanel>
                     </StackPanel>
                 </GroupBox>
 
-                <GroupBox Header="Diagnostics">
+                <GroupBox Header="{Binding Strings.DiagnosticsHeader}">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
-                            <Button Content="Open log folder" Command="{Binding OpenLogFolderCommand}" />
-                            <Button Content="Retry tray registration" Margin="6,0,0,0" Command="{Binding RetryTrayRegistrationCommand}" />
-                            <Button Content="Acknowledge corrupt settings" Margin="6,0,0,0" Command="{Binding AcknowledgeCorruptionCommand}" />
+                            <Button Content="{Binding Strings.OpenLogFolder}" Command="{Binding OpenLogFolderCommand}" />
+                            <Button Content="{Binding Strings.RetryTrayRegistration}" Margin="6,0,0,0" Command="{Binding RetryTrayRegistrationCommand}" />
+                            <Button Content="{Binding Strings.AcknowledgeCorrupt}" Margin="6,0,0,0" Command="{Binding AcknowledgeCorruptionCommand}" />
                         </StackPanel>
                         <TextBlock Margin="0,8,0,0"
+                                   TextWrapping="Wrap"
                                    Foreground="{StaticResource MutedInk}"
-                                   Text="Recent warnings and errors — a warning is something the app worked around." />
+                                   Text="{Binding Strings.RecentErrorsHeader}" />
                         <ListBox ItemsSource="{Binding RecentErrors}" MaxHeight="160" Margin="0,4,0,0">
                             <ListBox.ItemTemplate>
                                 <DataTemplate DataType="{x:Type diag:LogEntry}">
@@ -590,14 +602,14 @@
         <!-- NFR-05: attribution on both surfaces. Lowering the overlay's opacity can make its
              footer hard to read, and this is the screen where the league is chosen. -->
         <TextBlock Grid.Row="3"
-                   x:Name="Attribution"
                    Margin="0,10,0,0"
                    Foreground="{StaticResource MutedInk}"
-                   TextWrapping="Wrap" />
+                   TextWrapping="Wrap"
+                   Text="{Binding Strings.Attribution}" />
 
         <TextBlock Grid.Row="4"
                    Margin="0,6,0,0"
                    Foreground="{StaticResource FaintInk}"
-                   Text="Closing this window does not exit the application." />
+                   Text="{Binding Strings.CloseNotice}" />
     </Grid>
 </Window>

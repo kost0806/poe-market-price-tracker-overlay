@@ -80,7 +80,9 @@ internal sealed class SettingsWindowFactory
         // The overlay's raw parent HWND, not a WPF Window — there is no Window to hand over any
         // more (S3 4.0 D-SH20). WindowInteropHelper.Owner sets GWLP_HWNDPARENT, which is what the
         // z-order measurement of §2 actually depended on (00-shell-measurements.md §11.6).
-        var window = new SettingsWindow(_viewModel, _editor, _localizer.Ui("ui.footer.attribution"), _overlay.Handle);
+        // The attribution line is no longer passed in: it is one of the strings the view model
+        // resolves, so it follows a language change like every other label (S3 5.4.4).
+        var window = new SettingsWindow(_viewModel, _editor, _overlay.Handle);
         window.Closing += OnClosing;
         _window = window;
 
