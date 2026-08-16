@@ -21,9 +21,22 @@ public sealed partial class Store
     public void CommitCategory(DataTag tag, CategorySnapshot snapshot)
         => Post(new StoreCommand.CommitCategory(tag, snapshot));
 
-    /// <summary>Records one category failure without touching its data.</summary>
-    public void RecordCategoryFailure(DataTag tag, ExchangeCategory category, FailureRecord failure)
-        => Post(new StoreCommand.RecordCategoryFailure(tag, category, failure));
+    /// <summary>
+    /// Records one category failure without touching its data.
+    /// </summary>
+    /// <param name="cooldownUntil">
+    /// The instant computed by <c>Polling</c> (S2 7.7). This module cannot compute it: the formula
+    /// takes <c>refreshIntervalMinutes</c> and S2 1.2 forbids <c>Store → Settings</c>. Without the
+    /// parameter <see cref="CategoryStatus.CooldownUntil"/> would have no producer at all and
+    /// <c>ResolveCategorySet</c>, whose S4 9.2 signature takes only the statuses and the clock,
+    /// would have nothing to read.
+    /// </param>
+    public void RecordCategoryFailure(
+        DataTag tag,
+        ExchangeCategory category,
+        FailureRecord failure,
+        DateTimeOffset? cooldownUntil = null)
+        => Post(new StoreCommand.RecordCategoryFailure(tag, category, failure, cooldownUntil));
 
     /// <summary>Sets or clears the divine rate.</summary>
     public void CommitRate(DataTag tag, DivineRate? rate)

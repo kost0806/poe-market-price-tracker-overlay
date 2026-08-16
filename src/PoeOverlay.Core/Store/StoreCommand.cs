@@ -46,8 +46,20 @@ public abstract record StoreCommand
     /// <summary>Replaces one category's data. Validated.</summary>
     public sealed record CommitCategory(DataTag Tag, CategorySnapshot Snapshot) : StoreCommand;
 
-    /// <summary>Records a category failure. Validated. Touches only the status — never the data (D-D4).</summary>
-    public sealed record RecordCategoryFailure(DataTag Tag, ExchangeCategory Category, FailureRecord Failure) : StoreCommand;
+    /// <summary>
+    /// Records a category failure. Validated. Touches only the status — never the data (D-D4).
+    /// </summary>
+    /// <param name="CooldownUntil">
+    /// When the category becomes eligible again (S2 7.7). Supplied by the producer because the
+    /// formula needs <c>refreshIntervalMinutes</c> and S2 1.2 forbids <c>Store → Settings</c>;
+    /// null leaves the previous cooldown in place, which is what a failure recorded outside a
+    /// round means.
+    /// </param>
+    public sealed record RecordCategoryFailure(
+        DataTag Tag,
+        ExchangeCategory Category,
+        FailureRecord Failure,
+        DateTimeOffset? CooldownUntil = null) : StoreCommand;
 
     /// <summary>Sets or clears the divine rate slot. Validated.</summary>
     public sealed record CommitRate(DataTag Tag, DivineRate? Rate) : StoreCommand;

@@ -148,7 +148,7 @@ public sealed partial class Store
                     CategoryStatuses = With(
                         current.CategoryStatuses,
                         c.Category,
-                        FailStatus(StatusFor(current, c.Category), c.Failure, now)),
+                        FailStatus(StatusFor(current, c.Category), c.Failure, now, c.CooldownUntil)),
                 });
                 break;
 
@@ -328,11 +328,16 @@ public sealed partial class Store
             NeverNonEmpty = false,
         };
 
-    private static CategoryStatus FailStatus(CategoryStatus previous, FailureRecord failure, DateTimeOffset now)
+    private static CategoryStatus FailStatus(
+        CategoryStatus previous,
+        FailureRecord failure,
+        DateTimeOffset now,
+        DateTimeOffset? cooldownUntil)
         => previous with
         {
             ConsecutiveFailures = previous.ConsecutiveFailures + 1,
             LastAttemptAt = now,
+            CooldownUntil = cooldownUntil ?? previous.CooldownUntil,
             LastFailure = failure,
             ConsecutiveMedianJumps = failure.Kind == FailureKind.MedianJump
                 ? previous.ConsecutiveMedianJumps + 1
@@ -407,9 +412,17 @@ public sealed partial class Store
         // debounced edits (S2 7.7) would reach the threshold and raise CommitRejected with a null
         // Detail, because Validate never ran. Commits that landed before the cancellation are real
         // evidence that the round reached the store, so they still reset it.
+        //
+        // LeagueUnresolved is the same shape and was found by following the same argument once
+        // Polling existed to produce it (S2 7.3 step 4): a round that ends before a league is
+        // settled makes no request and issues no commit, so two of them in a row would raise
+        // CommitRejected — with a stale Detail naming a code from some earlier round — on top of
+        // the LeagueUnresolved condition that is already saying the true thing. The user would be
+        // told their data is being rejected while the truth is that nobody has decided which
+        // league to ask about.
         var emptyRounds = landed > 0
             ? 0
-            : outcome == RoundOutcome.Canceled
+            : outcome is RoundOutcome.Canceled or RoundOutcome.LeagueUnresolved
                 ? current.ConsecutiveEmptyCommitRounds
                 : current.ConsecutiveEmptyCommitRounds + 1;
 
