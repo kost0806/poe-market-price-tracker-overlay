@@ -1,0 +1,27 @@
+{
+ "generatedFor": "Allflame",
+ "date": "2026-08-16",
+ "sources": {
+  "ko": "poe.kakaogames.com/api/trade/data/static -> data/statics.json",
+  "en": "www.pathofexile.com/api/trade/data/static -> data/statics.en.json",
+  "slugs": "poe.ninja/poe1/api/economy/exchange/current/overview"
+ },
+ "joinKey": "GGG static entry id (positional identity verified), then EN display name -> poe.ninja slug",
+ "counts": {
+  "ninjaItems": 970,
+  "resolved": 968,
+  "unresolved": 2
+ },
+ "unresolved": [
+  {
+   "slug": "message-in-a-bottle",
+   "en": "Message in a Bottle",
+   "cat": "Fragment"
+  },
+  {
+   "slug": "reflection-of-the-heart",
+   "en": "Reflection of the Heart",
+   "cat": "DivinationCard"
+  }
+ ]
+}
