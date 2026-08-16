@@ -1,0 +1,5 @@
+# Test code catches broadly on purpose when asserting that a failure is contained, and awaits
+# without ConfigureAwait because xunit supplies no synchronisation context worth returning to.
+[*.cs]
+dotnet_diagnostic.CA2007.severity = none
+dotnet_diagnostic.CA1031.severity = none

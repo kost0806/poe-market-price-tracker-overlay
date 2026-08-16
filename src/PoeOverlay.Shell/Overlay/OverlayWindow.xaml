@@ -1,0 +1,123 @@
+<Window x:Class="PoeOverlay.Overlay.OverlayWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:overlay="clr-namespace:PoeOverlay.Overlay"
+        xmlns:rows="clr-namespace:PoeOverlay.Core.Presentation.ViewModels.Rows;assembly=PoeOverlay.Core"
+        Title="PoE Market Price Tracker"
+        WindowStyle="None"
+        AllowsTransparency="False"
+        ResizeMode="NoResize"
+        ShowActivated="False"
+        ShowInTaskbar="False"
+        Topmost="True"
+        SizeToContent="Height"
+        Width="420"
+        Background="#FF1E1E1E"
+        TextOptions.TextFormattingMode="Display"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        FontSize="12">
+
+    <!-- Everything that carries text sits on this opaque panel, and it never overlaps the window
+         background. Glyphs drawn straight onto the colour key pick up a magenta halo — 73%
+         chromatic pixels even in Grayscale and Aliased rendering modes
+         (00-shell-measurements.md 8.6, trap 1). The window background starts opaque and only
+         becomes the colour key if the layered style is actually accepted (see the code-behind). -->
+    <Border x:Name="Body" Background="#FF1E1E1E" Padding="6,4">
+        <Border x:Name="MoveModeBorder"
+                BorderBrush="#FF7FB2FF"
+                BorderThickness="1"
+                Visibility="Collapsed"
+                Padding="1">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <ItemsControl Grid.Row="0" ItemsSource="{Binding Banners}" Focusable="False">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type rows:BannerViewModel}">
+                            <TextBlock Text="{Binding Text}"
+                                       Foreground="#FFFFC35C"
+                                       TextWrapping="Wrap"
+                                       Margin="0,0,0,3" />
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <ItemsControl Grid.Row="1" x:Name="RowsHost" ItemsSource="{Binding Rows}" Focusable="False">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <overlay:ClippingRowsPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate DataType="{x:Type rows:PriceRowViewModel}">
+                            <Grid Margin="0,1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0"
+                                           Text="{Binding DisplayName}"
+                                           Foreground="#FFEDEDED"
+                                           TextTrimming="CharacterEllipsis" />
+                                <TextBlock Grid.Column="1"
+                                           Text="{Binding Price.Text}"
+                                           Foreground="#FFEDEDED"
+                                           Margin="8,0,0,0" />
+                                <TextBlock Grid.Column="2"
+                                           Foreground="#FFA0A0A0"
+                                           Margin="8,0,0,0">
+                                    <Run Text="{Binding Change.Glyph, Mode=OneWay}" />
+                                    <Run Text="{Binding Change.Text, Mode=OneWay}" />
+                                </TextBlock>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <TextBlock Grid.Row="2"
+                           x:Name="MoreRows"
+                           Text="{Binding MoreRowsText}"
+                           Foreground="#FFA0A0A0"
+                           Margin="0,2,0,0" />
+
+                <!-- The footer is the clipping-exempt fixed region (D19) and the unit of the
+                     minimum-visible-area rule (S3 4.5 D-SH8). -->
+                <Grid Grid.Row="3" Margin="0,3,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding FooterAttribution}"
+                               Foreground="#FF808080"
+                               FontSize="10"
+                               TextTrimming="CharacterEllipsis" />
+                    <TextBlock Grid.Column="1"
+                               Text="{Binding FooterRelativeTime}"
+                               Foreground="#FF808080"
+                               FontSize="10"
+                               Margin="6,0,0,0" />
+                </Grid>
+
+                <!-- Move-mode grip. Inset into painted pixels: the colour-keyed region passes
+                     clicks through whatever shape it is (HLD D4-c, restated in S3 4.0.1). -->
+                <Rectangle Grid.Row="3"
+                           x:Name="ResizeGrip"
+                           Width="12"
+                           Height="12"
+                           Fill="#FF7FB2FF"
+                           HorizontalAlignment="Right"
+                           VerticalAlignment="Bottom"
+                           Cursor="SizeNWSE"
+                           Visibility="Collapsed" />
+            </Grid>
+        </Border>
+    </Border>
+</Window>

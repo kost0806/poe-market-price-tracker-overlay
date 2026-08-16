@@ -13,6 +13,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{81B23845
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PoeOverlay.Core.Tests", "tests\PoeOverlay.Core.Tests\PoeOverlay.Core.Tests.csproj", "{326FC129-631D-4844-A26D-6F53CD4D894A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PoeOverlay.Shell.Tests", "tests\PoeOverlay.Shell.Tests\PoeOverlay.Shell.Tests.csproj", "{CE89C356-BB1F-446E-AD78-796465E0DD0F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,10 +36,15 @@ Global
 		{326FC129-631D-4844-A26D-6F53CD4D894A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{326FC129-631D-4844-A26D-6F53CD4D894A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{326FC129-631D-4844-A26D-6F53CD4D894A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CE89C356-BB1F-446E-AD78-796465E0DD0F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CE89C356-BB1F-446E-AD78-796465E0DD0F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CE89C356-BB1F-446E-AD78-796465E0DD0F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CE89C356-BB1F-446E-AD78-796465E0DD0F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{C397D7A2-39F0-4C1F-AB61-420E34AC6343} = {5D389949-21CC-407B-9D44-0B61AFD480A5}
 		{F91FDAF3-D07E-466D-AAC4-BCBF1F13579E} = {5D389949-21CC-407B-9D44-0B61AFD480A5}
 		{326FC129-631D-4844-A26D-6F53CD4D894A} = {81B23845-785E-4DB4-8F0D-A7971CE17CA4}
+		{CE89C356-BB1F-446E-AD78-796465E0DD0F} = {81B23845-785E-4DB4-8F0D-A7971CE17CA4}
 	EndGlobalSection
 EndGlobal

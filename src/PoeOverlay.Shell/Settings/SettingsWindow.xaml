@@ -1,0 +1,250 @@
+<Window x:Class="PoeOverlay.Settings.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:rows="clr-namespace:PoeOverlay.Core.Presentation.ViewModels.Rows;assembly=PoeOverlay.Core"
+        xmlns:store="clr-namespace:PoeOverlay.Core.Store;assembly=PoeOverlay.Core"
+        xmlns:domain="clr-namespace:PoeOverlay.Core.Domain;assembly=PoeOverlay.Core"
+        xmlns:diag="clr-namespace:PoeOverlay.Core.Diagnostics;assembly=PoeOverlay.Core"
+        Title="PoE Market Price Tracker — Settings"
+        Width="620"
+        Height="720"
+        WindowStartupLocation="CenterOwner"
+        Background="#FF232323"
+        Foreground="#FFEDEDED"
+        FontSize="12">
+
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#FFEDEDED" />
+        </Style>
+        <Style TargetType="GroupBox">
+            <Setter Property="Foreground" Value="#FFB0B0B0" />
+            <Setter Property="Margin" Value="0,0,0,8" />
+            <Setter Property="Padding" Value="6" />
+        </Style>
+    </Window.Resources>
+
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- First-run guidance (FR-08-6). Not a balloon: a balloon needs the tray icon the guidance
+             exists to help find, and not a fourth window either (S3 6.5 D-SH6). -->
+        <Border Grid.Row="0"
+                Background="#FF2F3B4C"
+                BorderBrush="#FF7FB2FF"
+                BorderThickness="1"
+                Padding="8"
+                Margin="0,0,0,8"
+                Visibility="{Binding ShowFirstRunBanner, Converter={StaticResource BoolToVisibility}}">
+            <StackPanel>
+                <TextBlock TextWrapping="Wrap"
+                           Text="The tray icon may be hidden in the overflow area — click the chevron (^) to find it, then pin it." />
+                <TextBlock TextWrapping="Wrap"
+                           Margin="0,4,0,0"
+                           Text="While a game is covering the screen, press the Windows key or Alt+Tab first to raise the taskbar; the tray cannot be clicked otherwise." />
+                <Button Content="Got it"
+                        HorizontalAlignment="Left"
+                        Margin="0,6,0,0"
+                        Padding="10,2"
+                        Command="{Binding DismissFirstRunBannerCommand}" />
+            </StackPanel>
+        </Border>
+
+        <ItemsControl Grid.Row="1" ItemsSource="{Binding Banners}" Margin="0,0,0,8">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type rows:BannerViewModel}">
+                    <Border Background="#FF3A2E20" Padding="6" Margin="0,0,0,4">
+                        <TextBlock Text="{Binding Text}" TextWrapping="Wrap" Foreground="#FFFFC35C" />
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <GroupBox Header="Search">
+                    <StackPanel>
+                        <TextBox Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}" />
+                        <TextBlock Margin="0,4,0,0">
+                            <Run Text="Result:" />
+                            <Run Text="{Binding SearchOutcome, Mode=OneWay}" />
+                        </TextBlock>
+                        <ListBox x:Name="SearchResultsList"
+                                 ItemsSource="{Binding SearchResults}"
+                                 MaxHeight="160"
+                                 Margin="0,4,0,0">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate DataType="{x:Type store:SearchHit}">
+                                    <TextBlock>
+                                        <Run Text="{Binding ApiName, Mode=OneWay}" />
+                                        <Run Text=" · " />
+                                        <Run Text="{Binding Category, Mode=OneWay}" />
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                        <Button Content="Add to watchlist"
+                                HorizontalAlignment="Left"
+                                Margin="0,4,0,0"
+                                Padding="10,2"
+                                Command="{Binding AddToWatchlistCommand}"
+                                CommandParameter="{Binding SelectedItem, ElementName=SearchResultsList}" />
+                        <ItemsControl ItemsSource="{Binding UnfetchedCategories}" Margin="0,4,0,0">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate DataType="{x:Type domain:ExchangeCategory}">
+                                    <Button Content="{Binding}"
+                                            HorizontalAlignment="Left"
+                                            Margin="0,2,0,0"
+                                            Padding="8,1"
+                                            Command="{Binding DataContext.FetchCategoryCommand,
+                                                              RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </GroupBox>
+
+                <!-- FR-08-5: the full watchlist is reachable here, which is what makes the
+                     overlay's "+n more" marker acceptable (S3 4.4.2). -->
+                <GroupBox Header="Watchlist">
+                    <ListBox ItemsSource="{Binding Watchlist}" MaxHeight="200">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate DataType="{x:Type domain:WatchlistEntry}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{Binding Id.Value, Mode=OneWay}" />
+                                    <Button Grid.Column="1"
+                                            Content="Remove"
+                                            Padding="8,0"
+                                            Command="{Binding DataContext.RemoveFromWatchlistCommand,
+                                                              RelativeSource={RelativeSource AncestorType=Window}}"
+                                            CommandParameter="{Binding Id}" />
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </GroupBox>
+
+                <GroupBox Header="League, period, language, currency, opacity">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="League" Margin="0,3,8,3" />
+                        <ComboBox Grid.Row="0" Grid.Column="1"
+                                  Margin="0,3"
+                                  IsEditable="True"
+                                  ItemsSource="{Binding Leagues}"
+                                  DisplayMemberPath="Name"
+                                  Text="{Binding Editor.League, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=LostFocus}" />
+
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="League list" Margin="0,3,8,3" />
+                        <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="0,3">
+                            <TextBlock Text="{Binding LeaguesStatus, Mode=OneWay}" VerticalAlignment="Center" />
+                            <Button Content="Reload" Margin="8,0,0,0" Padding="8,1" Command="{Binding ReloadLeaguesCommand}" />
+                            <Button Content="Retry now" Margin="6,0,0,0" Padding="8,1" Command="{Binding RetryNowCommand}" />
+                        </StackPanel>
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Refresh (min)" Margin="0,3,8,3" />
+                        <TextBox Grid.Row="2" Grid.Column="1"
+                                 Margin="0,3"
+                                 Text="{Binding Editor.RefreshIntervalMinutes, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=LostFocus}" />
+
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Language" Margin="0,3,8,3" />
+                        <ComboBox Grid.Row="3" Grid.Column="1"
+                                  Margin="0,3"
+                                  ItemsSource="{Binding Editor.Languages, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  DisplayMemberPath="DisplayName"
+                                  SelectedValuePath="Tag"
+                                  SelectedValue="{Binding Editor.Language, RelativeSource={RelativeSource AncestorType=Window}}" />
+
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Display currency" Margin="0,3,8,3" />
+                        <ComboBox Grid.Row="4" Grid.Column="1"
+                                  Margin="0,3"
+                                  ItemsSource="{Binding Editor.DisplayCurrencies, RelativeSource={RelativeSource AncestorType=Window}}"
+                                  SelectedItem="{Binding Editor.DefaultDisplayCurrency, RelativeSource={RelativeSource AncestorType=Window}}" />
+
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Opacity" Margin="0,3,8,3" />
+                        <Slider Grid.Row="5" Grid.Column="1"
+                                Margin="0,3"
+                                Minimum="0.2"
+                                Maximum="1.0"
+                                TickFrequency="0.05"
+                                IsSnapToTickEnabled="True"
+                                Value="{Binding Editor.Opacity, RelativeSource={RelativeSource AncestorType=Window}}" />
+
+                        <TextBlock Grid.Row="6" Grid.Column="1"
+                                   Margin="0,3"
+                                   Foreground="#FFFF8A8A"
+                                   Text="Settings cannot be saved right now."
+                                   Visibility="{Binding WritesBlocked, Converter={StaticResource BoolToVisibility}}" />
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox Header="Overlay placement">
+                    <StackPanel>
+                        <!-- The one setting that is deliberately not persisted (FR-05-6). -->
+                        <CheckBox Content="Move mode (not saved — always off at next start)"
+                                  IsChecked="{Binding IsMoveModeActive}" />
+                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
+                            <Button Content="Revert height to automatic" Padding="8,2" Command="{Binding RevertHeightCommand}" />
+                            <Button Content="Reset position and size" Margin="6,0,0,0" Padding="8,2" Command="{Binding ResetPlacementCommand}" />
+                        </StackPanel>
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="Diagnostics">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <Button Content="Open log folder" Padding="8,2" Command="{Binding OpenLogFolderCommand}" />
+                            <Button Content="Retry tray registration" Margin="6,0,0,0" Padding="8,2" Command="{Binding RetryTrayRegistrationCommand}" />
+                            <Button Content="Acknowledge corrupt settings" Margin="6,0,0,0" Padding="8,2" Command="{Binding AcknowledgeCorruptionCommand}" />
+                        </StackPanel>
+                        <ListBox ItemsSource="{Binding RecentErrors}" MaxHeight="160" Margin="0,6,0,0">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate DataType="{x:Type diag:LogEntry}">
+                                    <TextBlock Text="{Binding Message}" TextWrapping="Wrap" />
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- NFR-05: attribution on both surfaces. Lowering the overlay's opacity can make its
+             footer hard to read, and this is the screen where the league is chosen. -->
+        <TextBlock Grid.Row="3"
+                   x:Name="Attribution"
+                   Margin="0,8,0,0"
+                   Foreground="#FF9A9A9A"
+                   TextWrapping="Wrap" />
+
+        <TextBlock Grid.Row="4"
+                   Margin="0,6,0,0"
+                   Foreground="#FF6F6F6F"
+                   Text="Closing this window does not exit the application." />
+    </Grid>
+</Window>

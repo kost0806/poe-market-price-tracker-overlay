@@ -5,14 +5,29 @@
     <TargetFramework>net8.0-windows</TargetFramework>
     <UseWPF>true</UseWPF>
     <UseWindowsForms>true</UseWindowsForms>
-    <!-- S4 2.1 names the shell assembly "PoeOverlay". The project file lives beside the legacy
-         src/PoeOverlay skeleton rather than on top of it, so the identity is restated here. -->
+    <!-- S4 2.1 names the shell assembly "PoeOverlay". The project directory is
+         src/PoeOverlay.Shell rather than src/PoeOverlay, so the identity is restated here. -->
     <RootNamespace>PoeOverlay</RootNamespace>
     <AssemblyName>PoeOverlay</AssemblyName>
+    <!-- HLD 3.2 requires an explicit [STAThread] Main, so there is no App.xaml: an
+         ApplicationDefinition would generate a second entry point. -->
+    <StartupObject>PoeOverlay.Composition.Program</StartupObject>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\PoeOverlay.Core\PoeOverlay.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The Shell tests reach the internal composition surface: the registration table, the
+         interop helpers' pure parts and the adapters. -->
+    <InternalsVisibleTo Include="PoeOverlay.Shell.Tests" />
   </ItemGroup>
 
 </Project>
