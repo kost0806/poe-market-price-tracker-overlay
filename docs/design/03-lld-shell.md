@@ -96,6 +96,19 @@
 
 **요구사항 42/42는 이 판에서도 재논증하지 않았다.**
 
+### 0.5 제6판 — 오버레이를 생 Win32 레이어드 부모 + WPF 자식으로 재구축한다. §4가 다시 바뀜다
+
+구현 단계가 D-SH17을 **구현 불가능**으로 반증하면서 시작됐다. WPF `Window`는 `AllowsTransparency=false`에서 `WS_EX_LAYERED`를 가질 수 없고(`00-shell-measurements.md` §11.1), 그래서 동결된 설계대로 구현한 오버레이는 **불투명한 사각형으로 출하되고 투명도 슬라이더가 죽어 있었다.**
+
+| # | 항목 | 처분 |
+|---|---|---|
+| E7 | D-SH17은 도달 불가능한 구성이다(§11.1) | **신규 D-SH20** — 생 `CreateWindowEx` 레이어드 부모 + `HwndSource` 자식으로 전면 교체(§4.0). `Window`가 사라지면서 자동 높이(§4.4)·드래그(§4.6)·소유자 지정(§5.1)을 손으로 다시 쓴다 |
+| E8 | 알파를 낮추면 ClearType의 서브픽셀 spread가 비례해 줄어든다(α=128에서 절반, §11.3) | **신규 D-SH21** — `window.opacity` 하한을 0.2에서 **0.5**로 올린다(§4.0). HLD §7·S2 §8.2·S4 §15.1 표를 함께 고친다 |
+| E9 | `Popup`·`ToolTip`·`ContextMenu`는 자기 최상위 HWND를 만들어 부모의 레이어드 경로 밖에 있다(§11.4) | §4.0.1 함정 4번으로 등재. **현 오버레이에는 해당 요소가 없음을 확인했다** |
+| E10 | 실물 앱 측정(`00-shell-measurements.md` §12)이 동결된 빌드의 선행 결함 둘을 드러냈다 — 콘텐츠 전체가 `Collapsed` 테두리 안에 감겨 오버레이가 빈 띄였고, 이동 모드 높이 고정이 `외 n개 더`를 래치시킨다 | §4.6·§4.4에서 각각 닫았다 |
+
+**바뀌지 않은 것**: §1–§3, §4.1(게이트 규율), §4.3(값-포착 큐잉), §4.5(최소 가시 면적), §4.6.1(워치도그·캡처 불변식), §4.7, §6–§11. `AttachThreadInput` 금지·스타일 재적용 금지·`GetForegroundWindow()` 오라클·센티넬 ack은 전부 그대로다.
+
 ---
 
 ## 1. 공통 규약 — `Shell`/`Presentation`에 추가되는 제약
@@ -283,29 +296,41 @@ HLD §3.5의 12번(a→f)을 그대로 채택하고, 순서를 바꾸면 무엇�
 | 일반 창(`AllowsTransparency=false`) | 90.4% | ClearType 켜짐 |
 | `WindowStyle=None` + `AllowsTransparency=true` | **0.0%** | ClearType 꺼짐 |
 | 위 + `WS_EX_LAYERED\|TRANSPARENT\|NOACTIVATE` | **0.0%** | ClearType 꺼짐 |
-| `AllowsTransparency=false` + `WS_EX_LAYERED` + `SetLayeredWindowAttributes` | **90.29~90.46%** | ClearType 켜짐 |
+| ~~`AllowsTransparency=false` + `WS_EX_LAYERED` + `SetLayeredWindowAttributes`~~ | ~~90.29~90.46%~~ | **⚠ 반증됨 → `00-shell-measurements.md` §11.1.** WPF `Window`는 이 구성에 **도달할 수 없다**. 이 행이 잰 것은 레이어드 창이 아니라 **비트가 조용히 걸러진 불투명 창**이었다 |
 
 **복구 불가**(`00-shell-measurements.md` §8.2) — 배경 불투명화, `#C0000000`/`#01000000`, 투명 창 안의 불투명 `Border`, `TextOptions.TextRenderingMode="ClearType"` 명시, 전부 **0.00%**다. `AllowsTransparency=true`는 창 전체의 래스터화 경로를 바꾸며 창 내부의 어떤 요소로도 되돌릴 수 없다.
 
 **손실의 성격**(`00-shell-measurements.md` §8.5) — 총 잉크 커버리지는 사실상 같다(402.2 대 402.5). 손실은 획이 뭉개지는 것이 아니라 **획 위치의 정밀도**다 — ClearType의 3배 수평 표본 해상도가 사라진다. 이 앱은 작은 글자의 숫자·소수점을 읽는 것이 존재 이유이고, 그 구별(`8`/`6`, `3`/`9`, 소수점 위치)이 정확히 그 해상도에서 나온다. **결정 — 전환한다.** 시각적 세련미보다 판독성이 우선이다.
 
-**【신규 D-SH17】 채택 구성**:
+**~~【D-SH17】~~ 폐기 — WPF `Window`로는 도달할 수 없는 구성이었다.** 네 경로(`SourceInitialized`, `Show()` 이후, `ContentRendered`, 비트를 미리 넣어 만든 `HwndSource`) 전부에서 스타일 쓰기가 **성공을 반환하는데 `GWL_EXSTYLE`은 변하지 않고**, 이어진 `SetLayeredWindowAttributes`가 87(`ERROR_INVALID_PARAMETER`)로 실패한다(`00-shell-measurements.md` §11.1). 같은 프로세스의 생 Win32 팝업은 즉시 받아들인다.
+
+**【신규 D-SH20】 채택 구성 — 생 Win32 레이어드 부모 + WPF `HwndSource` 자식.** `00-shell-measurements.md` §11.5. **오버레이에 WPF `Window`는 없다.**
 
 ```
-WindowStyle        = None
-AllowsTransparency = false
-ResizeMode         = NoResize
-ShowInTaskbar      = false
-Topmost            = true
-SizeToContent      = Height
-TextOptions.TextFormattingMode = Display
+부모 — CreateWindowEx, WPF를 거치지 않는다
+  exStyle : WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_TOPMOST | WS_EX_NOACTIVATE
+            (+ 클릭 통과가 필요한 동안만 WS_EX_TRANSPARENT — 런타임 토글로 이동 모드 전환)
+  style   : WS_POPUP | WS_CLIPCHILDREN          ← WS_CLIPCHILDREN이 없으면 부모의 지우기가 자식을 덮어 그린다
+  클래스 배경 브러시 = 컬러키. 자식이 덮지 않는 픽셀은 전부 키로 빠진다
+  SetLayeredWindowAttributes(hwnd, 0x00FF00FF, alpha, LWA_COLORKEY | LWA_ALPHA)   // 1회면 된다
+  ShowWindow(SW_SHOWNOACTIVATE)
 
-SourceInitialized 이후, 4.1의 읽고-고쳐-쓰기 게이트를 통해
-SetWindowLong(GWL_EXSTYLE, ex | WS_EX_LAYERED | WS_EX_TRANSPARENT | WS_EX_NOACTIVATE)
-SetLayeredWindowAttributes(hwnd, key, alpha, LWA_COLORKEY | LWA_ALPHA)
+자식 — HwndSourceParameters
+  ParentWindow = 부모, WindowStyle = WS_CHILD|WS_VISIBLE|WS_CLIPSIBLINGS
+  UsesPerPixelOpacity = false
+  RootVisual = OverlayView (UserControl)
+  TextOptions.TextFormattingMode = Display
 ```
 
-이 구성은 `LWA_ALPHA`·`LWA_COLORKEY`·둘의 조합 전부에서 90.29~90.46%를 유지한다(10·11·12·14px 전부 동일). 프레임 비용은 문제가 아니다 — 165Hz에서 두 구성(`AllowsTransparency` 참/거짓) 모두 p50/p95=6.06ms, 드롭 0(§0 E5). **성능을 근거로 이 결정을 다시 열지 않는다.**
+**이 구조의 존재 이유는 §11.3 한 줄이다** — 자식 안에서 ClearType이 **불투명 WPF `Window`와 비트 단위로 같다**(양쪽 모두 잉크 3,010px, 색수차 90.8%, 평균 spread 111.11). 부모의 키·알파는 자식이 그린 픽셀에 **부모가 그린 것과 구별되지 않게** 적용되고 알파는 1회만 적용된다(§11.2). 클릭 통과는 자식이 있어도 창 전체에 걸린다 — 자식의 EXSTYLE이 `0x0`인데도 히트를 삼키지 않는다(§11.4).
+
+**`TextFormattingMode`는 `Display`를 유지한다.** §11.5의 프로브는 `Ideal`이었으나, `Display`는 §8.6이 부분 커버리지(55.7% 대 58.3%)를 근거로 채택한 값이고 §11.3의 발견(레이어드 경로가 ClearType을 보존한다)은 서식 모드와 직교한다. 두 실측이 충돌하는 것이 아니라 서로 다른 것을 재고 있다 — 다만 **채택 구성이 측정된 구성과 이 한 속성에서 다르다는 사실은 기록해 둔다**(§14).
+
+프레임 비용은 문제가 아니다 — 165Hz에서 두 구성(`AllowsTransparency` 참/거짓) 모두 p50/p95=6.06ms, 드롭 0(§0 E5). **성능을 근거로 이 결정을 다시 열지 않는다.**
+
+**【신규 D-SH21】 투명도 슬라이더의 하한은 0.5다 — 알파는 공짜가 아니다.** §11.3의 단서: α를 낮추면 색수차 **개수는 그대로**(2,732, 90.8%)인데 평균 spread가 **55.74 = 111.11 × 0.502**로 절반이 된다. 즉 글자는 여전히 ClearType이지만 서브픽셀이 나르는 수평 표본 해상도가 알파에 비례해 줄어든다. 이 앱의 존재 이유가 12px 숫자에서 `8`과 `6`을 가르는 것이므로 이것은 순수한 미관 손실이 아니다.
+
+**결정**: `window.opacity`의 하한을 **0.2에서 0.5로 올린다**(α=128). 0.5는 **실측된 가장 낮은 알파**이며, 그 아래는 측정이 없다. 판독성이 선형으로 나빠질지 더 급격히 무너질지 알지 못하는 구간을 슬라이더로 열어 두지 않는다 — 하한을 측정 지점에 두고, 그 너머는 재측정의 대상으로 남긴다. HLD §7의 클램프 표, S2 §8.2, S4 §15.1이 같은 값을 쓴다.
 
 #### 4.0.1 전환의 대가 — 새 설계 제약 (E2)
 
@@ -324,6 +349,7 @@ SetLayeredWindowAttributes(hwnd, key, alpha, LWA_COLORKEY | LWA_ALPHA)
 1. **키(컬러키) 영역 위에 텍스트를 직접 그리지 않는다.** 키 영역 위 글리프는 안티에일리어싱이 키 색으로 오염된다 — `Grayscale`·`Aliased` 렌더링 모드조차 73% 색수차(자홍색 후광, ClearType과 무관한 오염)를 보였다. 텍스트는 반드시 **불투명한 비-키 패널** 위에 앉는다. §1.5 금지 목록에 등재했다.
 2. 콘텐츠 픽셀이 우연히 키 색과 같으면 **구멍이 된다.** 팔레트가 절대 쓰지 않는 색을 키로 고른다 — 정확한 값은 S4로 유예한다.
 3. `AllowsTransparency=false`에서 `Background="Transparent"`는 **불투명 검정**으로 렌더된다(실측 RGB=(0,0,0)). "비침"이 아니다 — 배경을 실제로 클릭 통과시키려면 반드시 키 색 그 자체를 칠해야 한다.
+4. **【신규, D-SH20이 추가하는 네 번째】 오버레이 안에 `Popup`·`ToolTip`·`ContextMenu`를 두지 않는다.** WPF `Popup`은 열리기는 하지만 **자기 최상위 HWND를 만들어 부모의 레이어드 경로 밖에 있다** — 키도 알파도 적용되지 않는다(`00-shell-measurements.md` §11.4/§11.6). 오버레이가 키를 필요로 하는 내용을 팝업에 올리면 그 부분만 불투명하게 튀어나온다. **현 XAML·뷰모델 감사 결과 오버레이에는 팝업 계열이 하나도 없다**(`ComboBox`는 설정 창에만 있고 설정 창은 일반 창이므로 이 제약 밖이다). §1.5 금지 목록에 등재한다.
 
 #### 4.0.2 렌더링 품질 검증 도구를 못박는다 (E3)
 
@@ -383,13 +409,17 @@ Presentation/Overlay/
 
 **핵심 화해**: "`SizeToContent`가 `Height`를 덮어쓴다"는 측정과 "그립으로 조절한 높이를 저장해야 한다"는 요구는 동시에 참일 수 없어 보이지만, 실제로는 시점이 겹치지 않는다. 이동 모드에 진입하는 순간 D4-b의 2번째 단계가 이미 `SizeToContent=Manual`로 바꾼다 — 그 순간부터 `Height` DP는 덮어써지지 않는 평범한 값이 된다. `Height`를 스칼라로 읽어도 안전한 유일한 창은 "이동 모드가 켜져 있고 그립 드래그가 막 끝난" 창뿐이며, D19는 정확히 그 창에서만 읽는다. §4.3의 R3 정정에 따라 그 자리에서도 이제 `ActualHeight`를 우선한다 — `Manual` 모드라 값이 안정적이라는 사실은 바뀌지 않지만, 같은 콜백 안에서 `MaxHeight`가 재조정될 여지를 방어적으로 차단한다. 이 화해는 D19(측정)와 D4-b(순서 규약)를 나란히 읽으면 자명하지만, 어느 문서도 문장으로 남기지 않았다 — §13-13에 등재한다.
 
-**신규 D-SH7. `SizeToContent`와 `HeightMode`의 대응표**
+**신규 D-SH7. `SizeToContent`와 `HeightMode`의 대응표** — D-SH20이 `Window`를 없애면서 **표현만** 바뀌었고 규칙은 그대로다. `Window.SizeToContent`가 사라진 자리에 **루트 비주얼(`OverlayView`)의 `Height`/`MaxHeight`** 가 들어온다.
 
-| `HeightMode` | 이동 모드 | `SizeToContent` | `MaxHeight` |
+| `HeightMode` | 이동 모드 | 루트 `Height` | `MaxHeight` |
 |---|---|---|---|
-| `Auto` | Off | `Height`(콘텐츠 주도) | §4.4.1 상한 적용 |
-| `Explicit` | Off | `Manual` | §4.4.1 상한을 그대로 `MaxHeight`에 반영(사용자 높이도 화면을 넘으면 잘려야 하므로) |
-| 어느 쪽이든 | On | `Manual`(D4-b 2번) | 해제(래칫 제거) |
+| `Auto` | Off | `NaN`(콘텐츠 주도) | §4.4.1 상한 적용 |
+| `Explicit` | Off | `window.height` | §4.4.1 상한을 그대로 반영(사용자 높이도 화면을 넘으면 잘려야 하므로) |
+| 어느 쪽이든 | On | **손대지 않는다** | 해제(래칫 제거) |
+
+**부모는 자식을 따라간다 — D-SH20이 손으로 구현하는 절반.** `HwndSource.SizeToContent`는 **자식 HWND만** 줄인다(측정: 640×400 → 88×16, 부모는 640×460 그대로, `00-shell-measurements.md` §11.6). 따라서 자식의 `WM_SIZE`를 후킹해 부모를 `SetWindowPos`로 같은 크기에 맞춘다. 되먹임은 없다 — 부모를 리사이즈해도 자식은 리사이즈되지 않는다.
+
+**이동 모드 진입 시 `Height`를 현재 값으로 고정하지 않는다 — 실측된 함정.** 「`SizeToContent=Manual`」의 직역은 「그 순간의 `ActualHeight`를 `Height`에 박는다」이지만, `ActualHeight`는 레이아웃 라운딩을 거친 값이라 콘텐츠보다 **1픽셀 미만 작을 수 있다.** 그러면 마지막 행이 안 들어가고 → `외 n개 더` 마커가 뜨고 → 마커 자신의 높이가 여유를 더 깎아 → 개수가 1에 **래치된다.** 실제로 화면에서 관측됐다(관심목록 1건인데 그 행 옆에 `+1 more`). `MaxHeight`만 해제하고 `Height`는 건드리지 않으면 발생하지 않으며, 그립이 실제로 높이를 쓰는 순간 `Height`가 명시값이 되는 것은 동일하다.
 
 이동 모드를 끄면: 그립으로 실제 높이를 조절했으면(세션 플래그로 판정) `HeightMode=Explicit`로 전환하고 그 값을 커밋 후 위 표의 `Explicit`/`Off` 행으로 복귀. 손대지 않았으면 `HeightMode`는 진입 전 값 그대로 복귀한다. "높이 자동으로 되돌리기"는 이동 모드가 꺼져 있을 때만 활성화한다 — 켜진 채로 그립과 경합하게 두지 않는다.
 
@@ -423,7 +453,7 @@ FR-01-3("개수 제한 없음 + 자동 높이")은 `heightMode=auto`에서만 �
 
 ```
 Off --(설정 창에서 켜기)--> Entering
-Entering: 1.기하 재검증(D22와 동일 루틴, 4.7)  2.MaxHeight 해제  3.SizeToContent=Manual
+Entering: 1.기하 재검증(D22와 동일 루틴, 4.7)  2.MaxHeight 해제  3.(루트 Height는 손대지 않는다 — §4.4)
           4.TRANSPARENT 비트 해제(NOACTIVATE 유지)  5.안쪽 테두리·그립 표시
           --> Active (즉시, 사용자 입력 대기 없음)
 Active: 드래그·리사이즈 가능. 각 종료 시 4.3의 값-포착 커밋.
@@ -432,6 +462,12 @@ Active --(설정 창 끄기 | 트레이 이동 모드 끄기 | 워치독 만료 
 Exiting: 역순 - 어피던스 숨김 -> 4.4 표에 따라 SizeToContent·MaxHeight 복귀 -> TRANSPARENT 비트 재설정
          --> Off
 ```
+
+**드래그는 손으로 구현한다 — `DragMove()`가 없다.** D-SH20에는 `Window`가 없으므로 `DragMove()`도 없다(`00-shell-measurements.md` §11.6). `WM_NCHITTEST` → `HTCAPTION`은 이 구조에서 쓸 수 없다 — 자식이 클라이언트 영역 전체를 덮으므로 히트 테스트가 부모에 도달하지 않는다(§11.4: 클릭 통과가 꺼져 있으면 `WindowFromPoint`가 **자식 hwnd**를 반환한다). 따라서 **수동 캡처 + `SetWindowPos`** 로 구현한다: 누를 때 `GetCursorPos`와 부모 좌상단을 기록하고 캡처를 잡는다, 움직이는 동안 커서 델타만큼 부모를 옮긴다, `LostMouseCapture`에서 위치를 커밋하고 `CaptureReleased`를 올린다.
+
+**이 교체가 바꾸는 것 하나 — 커밋 시점.** `DragMove()`는 제스처가 끝날 때까지 **블록**했으므로 그 다음 줄이 곧 종료 지점이었다. 수동 드래그는 즉시 반환하므로 커밋과 `CaptureReleased`가 `LostMouseCapture` 핸들러로 옮겨간다 — 그립 리사이즈가 이미 쓰고 있던 경로와 같아져, §4.6.1의 캡처 불변식이 **두 제스처에서 같은 한 자리로** 표현된다.
+
+**어피던스는 테두리의 `Visibility`가 아니라 `BorderBrush`로 켠다 — 실측된 결함의 수정.** 이동 모드 테두리는 오버레이 콘텐츠 전체를 감싸는 `Border`다. 이것을 `Collapsed`로 두면 **오버레이 전체가 접힌다.** 동결 직전 빌드가 정확히 그 상태였고, 오버레이는 420×8px의 빈 띠로 렌더됐다(화면 실측). 두께는 상시 1로 고정하고 색만 바꾼다 — 진입할 때 콘텐츠가 재배치되지 않는다.
 
 **4.6.1 워치독과 캡처 불변식의 상호작용 — 이 문서가 채우는 구멍**
 
@@ -473,6 +509,10 @@ HLD D4-b는 "비활동 워치독"을, D4-c는 "마우스 버튼이 눌려 있거
 D18-b(transient 창·뷰모델 — 단 이제 뷰모델 transient는 `SettingsViewModel`에만 해당한다, §3.1)를 그대로 채택한다. `Owner = 오버레이`로 지정한다 — S2 시절 HLD D18-b는 "Owner 미지정"을 불변식화했으나, `00-shell-measurements.md` §2가 그 전제를 반증했다.
 
 **측정.** `Owner`를 지정하지 않으면 `owned > overlay > unowned` 순서에서 설정 창이 항상 위에 뜨는 오버레이 뒤로 숨는다. `Owner`를 지정하면 exstyle에 `WS_EX_TOPMOST`가 전파되어(값은 `0x40108`, `owned.Topmost` 속성은 `false`로 읽혀도 실제 z-순서는 전파된 비트가 결정) 설정 창이 오버레이 위에 뜬다.
+
+**D-SH20 이후의 지정 방법 — 관리형 `Window.Owner`가 아니라 HWND다.** 오버레이에는 WPF `Window`가 없으므로 넘길 `Window`가 없다. `new WindowInteropHelper(설정창).Owner = 오버레이_부모_HWND`가 `GWLP_HWNDPARENT`를 설정하며, 이것이 §2가 실제로 재고 있던 그 값이다(`00-shell-measurements.md` §11.6 — 일치 확인). 소스가 만들어지기 **전에** 지정한다. 실행 중인 앱에서 설정 창의 exstyle을 읽어 `0x00040108`을 확인했다 — §2가 예측한 `0x40108` 그대로다.
+
+**대가 하나 — `WindowStartupLocation`.** `CenterOwner`는 관리형 `Owner` 속성을 읽는데 그 값이 이제 `null`이므로, 설정 창은 `CenterScreen`으로 연다. z-순서와 무관한 순수 배치 문제이며 §14에 유예로 등재한다.
 
 **HLD 개정**: D18-b의 "Owner 금지"는 `00-shell-measurements.md` §2로 뒤집힌다. 구 HLD D18-b가 근거로 든 실측("`Owner`를 오버레이로 지정하면 `WS_EX_TOPMOST`가 켠 적 없는데 전파되어 게임 위로 뜬다")은 오버레이가 항상 `Topmost=true`인 이 앱에서는 그 자체가 원하는 동작이다 — 설정 창이 게임 위로 뜨는 것이 아니라 오버레이 위로 뜨는 것이 목적이었고, 두 문장은 같은 관측을 다르게 해석한 것뿐이다. 4판 시점에는 설정 창의 z-순서 요구가 명시되지 않아 "전파 자체가 위험"으로 읽혔지만, 지금은 §6.0이 "설정 창이 항상 조작 가능해야 한다"를 요구하므로 전파가 필요조건이다.
 
@@ -910,3 +950,9 @@ Presentation/Fanout/
 11. **【미측정, E6】 독점 전체화면**(항목 1과 동일 사안, 오버레이 렌더링 관점에서도 재확인 필요) — DX 독점 전체화면에서 레이어드 창이 아예 합성되지 않을 가능성.
 12. **【미측정, E6】 사람의 판독 실험.** §4.0의 픽셀 데이터가 증명하는 것은 ClearType 대비 정보량이 1/3로 준다는 것이지, 사람이 실제로 못 읽는다는 것이 아니다. 체감 판독성 검증은 실사용 후 판단으로 미룬다 — 이 판단을 뒤집을 근거가 나오면 §4.0의 색 팔레트·폰트 크기 선택(→ S4)에 반영한다.
 13. **렌더링 품질 검증 도구 — §13-31이 재처분.** 렌더링 품질 검증은 화면 캡처로만 한다. `RenderTargetBitmap`은 화면 안티에일리어싱을 반영하지 않으므로(`00-shell-measurements.md` §8.4, §4.0.2) RTB 기반 단언은 무효다. 이 프로젝트는 오버레이 렌더링 품질을 자동 테스트 대상으로 아직 삼지 않는다 — 테스트 프로젝트 배치·자동화 여부는 S4.
+14. **【D-SH20 잔여】 `TextFormattingMode`가 측정된 값과 다르다.** §11.5의 프로브는 `Ideal`, 채택은 `Display`(§4.0의 근거 참조). 두 값 사이의 차이를 이 구조에서 다시 재지는 않았다 — 재측정하면 §8.6과 §11.3을 한 표에서 비교할 수 있다.
+15. **【D-SH20 잔여, 미측정】 둥근 투명 모서리.** 측정된 키 영역은 전부 축 정렬 정수 사각형이었다. 둥근 모서리의 블렌드된 가장자리 픽셀은 `0xFF00FF`와 같지 않으므로 **마젠타 헤일로가 보일 것**이나 UNVERIFIED(`00-shell-measurements.md` §11.7). 현 오버레이는 직각이므로 지금은 문제가 아니다.
+16. **【D-SH20 잔여, 미측정】 다중 모니터·혼합 DPI에서의 부모/자식 좌표.** 부모는 물리 픽셀, 자식은 DIP이며 변환은 자식의 합성 대상에서 얻는다. 단일 96 DPI 모니터에서만 확인했다.
+17. **【D-SH20 잔여, 미측정】 실물 PoE 클라이언트 위에서의 레이어드 합성**과 장시간 안정성(프로브 수명 약 10초, §11.7).
+18. **【D-SH21 잔여】 α=128 미만의 판독성.** 하한을 0.5로 정한 것은 그 아래에 **측정이 없기 때문**이지, 0.5가 임계라는 근거가 있어서가 아니다. 사람 판독 실험(항목 12)을 하게 되면 함께 잰다.
+19. **설정 창의 `CenterOwner` 상실**(§5.1). HWND 소유로 바뀌면서 관리형 `Owner`가 `null`이 되어 `CenterScreen`으로 열린다. 오버레이 기준 중앙 배치가 필요하면 부모 사각형에서 직접 계산해야 한다.

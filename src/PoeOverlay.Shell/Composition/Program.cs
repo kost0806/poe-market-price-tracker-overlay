@@ -142,8 +142,8 @@ internal static class Program
             services.GetRequiredService<ILogger<InstanceSignal>>());
         signal.StartReceiving();
 
-        // 9 — the overlay.
-        var overlay = services.GetRequiredService<OverlayWindow>();
+        // 9 — the overlay. A raw layered parent hosting a WPF child, not a Window (S3 4.0 D-SH20).
+        var overlay = services.GetRequiredService<OverlayHost>();
         overlay.Show();
         fanout.Attach(overlayViewModel);
         fanout.Attach(trayViewModel);
@@ -167,11 +167,12 @@ internal static class Program
         // (S3 3.2 B4, 9.1).
         uiTicker.Start(ShellConstants.UiTickPeriod);
 
-        // 11
-        _ = application.Run(overlay);
+        // 11 — no main window is passed: there is no Window to pass. ShutdownMode is
+        // OnExplicitShutdown, so the pump runs until the tray's Exit item calls Shutdown (FR-08-4).
+        _ = application.Run();
 
         // 12
-        RunShutdownSequence(host, trayHost, guard, signal, settings, fanout, overlayViewModel, trayViewModel, uiTicker, displayWatcher, modeService, diagnostics);
+        RunShutdownSequence(host, trayHost, guard, signal, settings, fanout, overlayViewModel, trayViewModel, uiTicker, displayWatcher, modeService, overlay, diagnostics);
         return 0;
     }
 
@@ -297,6 +298,7 @@ internal static class Program
         IUiTicker uiTicker,
         DisplayChangeWatcher displayWatcher,
         OverlayModeService modeService,
+        OverlayHost overlay,
         BootDiagnostics diagnostics)
     {
         if (Interlocked.Exchange(ref _teardownStarted, 1) != 0)
@@ -311,6 +313,10 @@ internal static class Program
         fanout.Detach(trayViewModel);
         displayWatcher.Dispose();
         modeService.Dispose();
+
+        // The overlay's parent HWND, its class registration and its colour-key brush are this
+        // process's, not the framework's: no Window means nothing else closes them.
+        overlay.Dispose();
 
         // b — before (c), so a write failure still has a surface to be reported on.
         FlushSettings(settings);

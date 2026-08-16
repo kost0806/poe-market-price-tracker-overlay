@@ -15,13 +15,13 @@ namespace PoeOverlay.Overlay;
 /// </remarks>
 internal sealed class OverlayGeometryService : IOverlayGeometryService
 {
-    private readonly OverlayWindow _window;
+    private readonly OverlayHost _window;
     private readonly ISettingsSource _settings;
 
     /// <summary>Wires the service.</summary>
     /// <param name="window">The overlay, so the new geometry takes effect immediately.</param>
     /// <param name="settings">Where the values are queued.</param>
-    internal OverlayGeometryService(OverlayWindow window, ISettingsSource settings)
+    internal OverlayGeometryService(OverlayHost window, ISettingsSource settings)
     {
         ArgumentNullException.ThrowIfNull(window);
         ArgumentNullException.ThrowIfNull(settings);

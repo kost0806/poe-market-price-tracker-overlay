@@ -34,8 +34,18 @@ public static partial class SettingsValidation
     /// <inheritdoc cref="MinWindowExtent"/>
     public const double MaxWindowExtent = 4000d;
 
-    /// <summary>S2 8.2 / S4 15.1 — opacity is clamped into this closed interval.</summary>
-    public const double MinOpacity = 0.2d;
+    /// <summary>
+    /// S2 8.2 / S4 15.1 — opacity is clamped into this closed interval.
+    /// </summary>
+    /// <remarks>
+    /// The floor is 0.5 and not 0.2 because the alpha is not free. Lowering it attenuates
+    /// ClearType: at α=128 the fringe count is unchanged (2,732 pixels, 90.8%) but the average
+    /// subpixel spread halves, 55.74 against 111.11 (<c>00-shell-measurements.md</c> §11.3). α=128
+    /// is 0.502 of the range, and it is the lowest alpha at which legibility has actually been
+    /// measured; below it the design would be extrapolating on a surface whose only purpose is
+    /// telling `8` from `6` at 12px. The floor is set at the measurement, not past it.
+    /// </remarks>
+    public const double MinOpacity = 0.5d;
 
     /// <inheritdoc cref="MinOpacity"/>
     public const double MaxOpacity = 1.0d;
@@ -54,7 +64,7 @@ public static partial class SettingsValidation
     public static int ClampRefreshInterval(int raw)
         => Math.Clamp(raw, MinRefreshIntervalMinutes, MaxRefreshIntervalMinutes);
 
-    /// <summary>Clamps into <c>[0.2, 1.0]</c>; a non-finite value becomes the default.</summary>
+    /// <summary>Clamps into <c>[0.5, 1.0]</c>; a non-finite value becomes the default. See <see cref="MinOpacity"/>.</summary>
     public static double ClampOpacity(double raw)
         => double.IsFinite(raw) ? Math.Clamp(raw, MinOpacity, MaxOpacity) : WindowSettings.Default.Opacity;
 

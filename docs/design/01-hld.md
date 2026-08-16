@@ -1100,7 +1100,7 @@ sequenceDiagram
 | `window.width` | double | 420 | 최소·최대 범위 | 클램프 |
 | `window.height` | double | 500 | 최소·최대 범위 | 클램프. **`heightMode=explicit`일 때만 의미를 갖는 높이 값**이다 (D19) |
 | **`window.heightMode`** | enum | `auto` | `auto` \| `explicit` | `auto` 폴백 |
-| `window.opacity` | double | 0.87 | **[0.2, 1.0]** | 클램프 — 오버레이가 보이지 않게 저장되는 것을 막는다 |
+| `window.opacity` | double | 0.87 | **[0.5, 1.0]** | 클램프 — 하한 0.5는 S3 D-SH21. α를 낮추면 ClearType의 서브픽셀 spread가 비례해 줄어들고(α=128에서 절반, `00-shell-measurements.md` §11.3) 그 아래는 측정이 없다 |
 | `watchlist[]` | array | `[]` | — | 중복 `id` 제거 |
 | `watchlist[].id` | string | — | 비지 않음 | 무효 항목은 **버리지 않고** 미해결 행으로 보존 (D17) |
 | `watchlist[].category` | string | — | 18종 열거 (§7.3) | 미지 문자열도 **보존**하고 미해결 행으로 표시 |
@@ -1153,7 +1153,7 @@ sequenceDiagram
 | FR-05-2 | **전체 클릭 통과** | `Shell` — `WS_EX_TRANSPARENT` 상시 (D4-a) | S3 |
 | FR-05-3 | 절대 포커스 없음 | `Shell` — `WS_EX_NOACTIVATE` **상시, 이동 모드 포함**. 【측정】 캡처가 정상 동작하므로 예외 조항 없음 (D4-b) | S3 |
 | FR-05-4 | 창 위치·크기 저장·복원 | `Shell`(기하 검증·**디스플레이 변경 재검증**·초기화 명령 D22) + `Settings`. 높이는 D19 정책 | S2, S3 |
-| FR-05-5 | 투명도 조절 — 설정 창에서 | `SettingsViewModel` + `Settings`(0.2 하한) + `Shell`(적용) | S3 |
+| FR-05-5 | 투명도 조절 — 설정 창에서 | `SettingsViewModel` + `Settings`(0.5 하한, S3 D-SH21) + `Shell`(적용) | S3 |
 | FR-05-6 | **위치 이동 모드** | `IOverlayModeService`(단일 진실원, UI 스레드 친화) + `SettingsViewModel`(켜기·끄기) + 트레이(끄기 전용) + `Shell`(스타일·테두리·드래그·크기·워치독) (D4-b/c) | S3 |
 | FR-06 | 설정 항목 저장, 이동 모드 **저장 제외** | `Settings` (§7 정본 스키마) | S2 |
 | FR-07-1 | 모든 문자열 ID 조회 | `Localization` + 전 사용처(**트레이 툴팁·메뉴 포함**) | S2+S3 |

@@ -16,8 +16,11 @@ public enum ExtendedStyleBits : uint
     /// <summary><c>WS_EX_NOACTIVATE</c>.</summary>
     NoActivate = Win32Constants.WsExNoActivate,
 
-    /// <summary><c>WS_EX_TOPMOST</c> — read only; WPF's <c>Topmost</c> owns this bit.</summary>
+    /// <summary><c>WS_EX_TOPMOST</c> — read only; the raw parent is created with it.</summary>
     Topmost = Win32Constants.WsExTopmost,
+
+    /// <summary><c>WS_EX_TOOLWINDOW</c> — read only; the raw parent is created with it.</summary>
+    ToolWindow = Win32Constants.WsExToolWindow,
 }
 
 /// <summary>Which fields of <c>SetLayeredWindowAttributes</c> are meaningful.</summary>
@@ -91,7 +94,13 @@ public sealed class ExtendedStyleGate
     /// <param name="colorKeyRgb">The key colour as <c>0x00BBGGRR</c> (a COLORREF, not a hex RGB literal).</param>
     /// <param name="alpha">Uniform window alpha, 0–255.</param>
     /// <param name="flags">Which of the two are meaningful.</param>
-    public void SetLayered(uint colorKeyRgb, byte alpha, LwaFlags flags)
+    /// <returns>
+    /// True when the call succeeded. The result is returned rather than discarded because the one
+    /// configuration this application ever shipped that could not be layered failed exactly here,
+    /// with <c>ERROR_INVALID_PARAMETER</c>, while every preceding style write reported success
+    /// (<c>00-shell-measurements.md</c> §11.1).
+    /// </returns>
+    public bool SetLayered(uint colorKeyRgb, byte alpha, LwaFlags flags)
     {
         uint native = 0;
         if ((flags & LwaFlags.ColorKey) != 0)
@@ -104,6 +113,6 @@ public sealed class ExtendedStyleGate
             native |= Win32Constants.LwaAlpha;
         }
 
-        _ = NativeMethods.SetLayeredWindowAttributes(_hwnd, colorKeyRgb, alpha, native);
+        return NativeMethods.SetLayeredWindowAttributes(_hwnd, colorKeyRgb, alpha, native);
     }
 }

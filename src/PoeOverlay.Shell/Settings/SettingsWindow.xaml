@@ -8,7 +8,7 @@
         Title="PoE Market Price Tracker — Settings"
         Width="620"
         Height="720"
-        WindowStartupLocation="CenterOwner"
+        WindowStartupLocation="CenterScreen"
         Background="#FF232323"
         Foreground="#FFEDEDED"
         FontSize="12">
@@ -189,7 +189,7 @@
                         <TextBlock Grid.Row="5" Grid.Column="0" Text="Opacity" Margin="0,3,8,3" />
                         <Slider Grid.Row="5" Grid.Column="1"
                                 Margin="0,3"
-                                Minimum="0.2"
+                                Minimum="0.5"
                                 Maximum="1.0"
                                 TickFrequency="0.05"
                                 IsSnapToTickEnabled="True"

@@ -1625,7 +1625,7 @@ HLD §7 스키마와 1:1이며 **`heightMode`**(D19)와 **`FirstRunAcknowledged`
 | `window.x/y` | **유한수인지만** 본다 | 기본값 |
 | `window.width/height` | 유한수 + `[240, 4000]` | 클램프 |
 | `window.heightMode` | `auto｜explicit` | `auto` |
-| `window.opacity` | `[0.2, 1.0]` | 클램프 |
+| `window.opacity` | `[0.5, 1.0]` | 클램프 — 하한은 S3 D-SH21(판독성) |
 | `watchlist[].id` | `Trim()` 후 비지 않음 | **항목 파기 — 유일한 파기 사유** |
 | 중복 `id` | 유일 | 첫 항목 우선 |
 | `watchlist[].category` | 18종 | **`CategoryRef(raw, null)`로 보존** |
@@ -2151,7 +2151,7 @@ IUiTicker { event EventHandler Tick;  void Start(TimeSpan period);  void Stop();
 | SE5 | `category: "Chisel"` | `CategoryRef("Chisel", null)` **보존** |
 | SE6 | `id: "  "` | 항목 파기 (유일한 파기) |
 | SE7 | 중복 `id` | 첫 항목 우선, 순서 보존 |
-| SE8 | `interval` 1 / 999, `opacity` 0.05 / 2.0 | 5 / 60, 0.2 / 1.0 + 기록 |
+| SE8 | `interval` 1 / 999, `opacity` 0.05 / 2.0 | 5 / 60, 0.5 / 1.0 + 기록 |
 | SE9 | `schemaVersion: 2` | `ReadOnly` + 쓰기 차단, **격리하지 않음** |
 | **SE10** | 읽기 I/O 실패 | `IoFailed` + **`SettingsUnreadable` 조건** + 쓰기 차단 |
 | SE11 | 내용이 같은 새 배열로 `Update` | `SettingsChanged` **발화하지 않음** |

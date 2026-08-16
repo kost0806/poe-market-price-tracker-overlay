@@ -17,7 +17,7 @@ namespace PoeOverlay.Overlay;
 /// </remarks>
 internal sealed class OverlayModeService : IOverlayModeService, IDisposable
 {
-    private readonly OverlayWindow _window;
+    private readonly OverlayHost _window;
     private readonly ISettingsSource _settings;
     private readonly MoveModeWatchdog _watchdog;
     private readonly ILogger<OverlayModeService> _logger;
@@ -34,7 +34,7 @@ internal sealed class OverlayModeService : IOverlayModeService, IDisposable
     /// <param name="settings">Read to restore the height policy on exit.</param>
     /// <param name="logger">Diagnostics.</param>
     internal OverlayModeService(
-        OverlayWindow window,
+        OverlayHost window,
         IUiDispatcher dispatcher,
         TimeProvider timeProvider,
         ISettingsSource settings,

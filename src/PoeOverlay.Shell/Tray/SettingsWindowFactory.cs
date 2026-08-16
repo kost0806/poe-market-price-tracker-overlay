@@ -22,7 +22,7 @@ internal sealed class SettingsWindowFactory
 {
     private static readonly TimeSpan CloseFlushTimeout = TimeSpan.FromSeconds(2);
 
-    private readonly OverlayWindow _overlay;
+    private readonly OverlayHost _overlay;
     private readonly SnapshotFanout _fanout;
     private readonly Func<CancellationToken, SettingsViewModel> _viewModelFactory;
     private readonly ISettingsSource _settings;
@@ -35,14 +35,14 @@ internal sealed class SettingsWindowFactory
     private CancellationTokenSource? _windowScope;
 
     /// <summary>Wires the factory.</summary>
-    /// <param name="overlay">Becomes the window's <c>Owner</c>.</param>
+    /// <param name="overlay">Its HWND becomes the window's owner.</param>
     /// <param name="fanout">Attached on create, detached on close.</param>
     /// <param name="viewModelFactory">The transient registration, given the window-scope token.</param>
     /// <param name="settings">Flushed on close, and the editor's backing store.</param>
     /// <param name="localizer">Supplies the attribution line.</param>
     /// <param name="logger">Diagnostics.</param>
     internal SettingsWindowFactory(
-        OverlayWindow overlay,
+        OverlayHost overlay,
         SnapshotFanout fanout,
         Func<CancellationToken, SettingsViewModel> viewModelFactory,
         ISettingsSource settings,
@@ -77,7 +77,10 @@ internal sealed class SettingsWindowFactory
         _viewModel = _viewModelFactory(_windowScope.Token);
         _editor = new SettingsEditor(_settings, _localizer);
 
-        var window = new SettingsWindow(_viewModel, _editor, _localizer.Ui("ui.footer.attribution"), _overlay);
+        // The overlay's raw parent HWND, not a WPF Window — there is no Window to hand over any
+        // more (S3 4.0 D-SH20). WindowInteropHelper.Owner sets GWLP_HWNDPARENT, which is what the
+        // z-order measurement of §2 actually depended on (00-shell-measurements.md §11.6).
+        var window = new SettingsWindow(_viewModel, _editor, _localizer.Ui("ui.footer.attribution"), _overlay.Handle);
         window.Closing += OnClosing;
         _window = window;
 

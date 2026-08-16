@@ -14,7 +14,7 @@ namespace PoeOverlay.Shell.Tests.Interop;
 /// </remarks>
 public sealed class Win32ConstantTests
 {
-    /// <summary>The measured extended style of the adopted overlay configuration.</summary>
+    /// <summary>The extended style read back off a live overlay in the §9 resize sweep.</summary>
     private const uint MeasuredOverlayExStyle = 0x08080028;
 
     [Fact]
@@ -26,6 +26,30 @@ public sealed class Win32ConstantTests
             | ExtendedStyleBits.Topmost);
 
         Assert.Equal(MeasuredOverlayExStyle, composed);
+    }
+
+    [Fact]
+    public void ToolWindow_IsTheOneBitTheRawParentAddsToThat()
+    {
+        // 00-shell-measurements.md §11.5 lists the adopted parent as
+        // LAYERED|TOOLWINDOW|TOPMOST|NOACTIVATE, plus TRANSPARENT while click-through is on.
+        var composed = (uint)(ExtendedStyleBits.Layered
+            | ExtendedStyleBits.ToolWindow
+            | ExtendedStyleBits.Topmost
+            | ExtendedStyleBits.NoActivate
+            | ExtendedStyleBits.Transparent);
+
+        Assert.Equal(MeasuredOverlayExStyle | Win32Constants.WsExToolWindow, composed);
+    }
+
+    [Fact]
+    public void TheParentStyle_ClipsItsChildren()
+    {
+        // Not decoration: without WS_CLIPCHILDREN the parent's own erase paints over the hosted
+        // WPF child and the overlay renders as a blank magenta rectangle (§11.5).
+        const uint ParentStyle = Win32Constants.WsPopup | Win32Constants.WsClipChildren;
+
+        Assert.Equal(Win32Constants.WsClipChildren, ParentStyle & Win32Constants.WsClipChildren);
     }
 
     [Fact]

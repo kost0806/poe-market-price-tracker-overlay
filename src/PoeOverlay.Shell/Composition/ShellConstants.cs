@@ -86,6 +86,15 @@ internal static class ShellConstants
     /// </remarks>
     internal const uint ColorKeyRef = 0x00FF00FF;
 
+    /// <summary>The window class of the raw layered overlay parent (S3 4.0 D-SH20).</summary>
+    internal const string OverlayWindowClassName = "PoeOverlay.LayeredOverlayHost";
+
+    /// <summary>Window text of the overlay parent. Nothing discovers the overlay by it.</summary>
+    internal const string OverlayWindowTitle = "PoE Market Price Tracker";
+
+    /// <summary>Window text of the hosted <c>HwndSource</c> child.</summary>
+    internal const string OverlayContentWindowTitle = "PoE Market Price Tracker content";
+
     /// <summary>S4 15.1 — provisional footer height in DIPs, the unit of the minimum-visible-area rule.</summary>
     internal const double FooterHeight = 20d;
 

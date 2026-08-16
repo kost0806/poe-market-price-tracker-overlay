@@ -1424,6 +1424,19 @@ internal static class Win32Constants
     public const uint WS_EX_LAYERED      = 0x00080000;
     public const uint WS_EX_TRANSPARENT  = 0x00000020;
     public const uint WS_EX_NOACTIVATE   = 0x08000000;           // 측정 — 00-shell-measurements.md, GWL_EXSTYLE=0x08080028의 성분(LAYERED|TRANSPARENT|NOACTIVATE|TOPMOST)
+    public const uint WS_EX_TOOLWINDOW   = 0x00000080;           // S3 D-SH20 — 생 부모가 추가하는 한 비트. 실행 중 실측 EXSTYLE = 0x080800A8
+    public const uint WS_POPUP           = 0x80000000;
+    public const uint WS_VISIBLE         = 0x10000000;
+    public const uint WS_CLIPCHILDREN    = 0x02000000;           // 없으면 부모의 지우기가 자식을 덮어 그린다(§11.5)
+    public const uint WS_CHILD           = 0x40000000;
+    public const uint WS_CLIPSIBLINGS    = 0x04000000;
+    public const uint SWP_NOSIZE         = 0x0001;
+    public const uint SWP_NOMOVE         = 0x0002;
+    public const uint SWP_NOZORDER       = 0x0004;
+    public const uint SWP_NOACTIVATE     = 0x0010;
+    public const uint SWP_NOOWNERZORDER  = 0x0200;
+    public const int  SW_SHOWNOACTIVATE  = 4;
+    public const int  WM_SIZE            = 0x0005;               // 자식 → 부모 크기 추종의 유일한 신호
     public const uint LWA_COLORKEY       = 0x00000001;
     public const uint LWA_ALPHA          = 0x00000002;
     public static readonly IntPtr HWND_MESSAGE = new IntPtr(-3); // 신규, SDK 표준값
@@ -1437,6 +1450,8 @@ public enum ExtendedStyleBits : uint
     Layered     = Win32Constants.WS_EX_LAYERED,
     Transparent = Win32Constants.WS_EX_TRANSPARENT,
     NoActivate  = Win32Constants.WS_EX_NOACTIVATE,
+    Topmost     = Win32Constants.WS_EX_TOPMOST,      // 읽기 전용 — 생 부모가 생성 시에 켠다
+    ToolWindow  = Win32Constants.WS_EX_TOOLWINDOW,   // 읽기 전용 — 같음
 }
 
 public sealed class ExtendedStyleGate
@@ -1447,10 +1462,22 @@ public sealed class ExtendedStyleGate
     public ExtendedStyleBits Read();
     public void ApplyOr(ExtendedStyleBits mask);
     public void ApplyAndNot(ExtendedStyleBits mask);
-    public void SetLayered(uint colorKeyRgb, byte alpha, LwaFlags flags);
+    public bool SetLayered(uint colorKeyRgb, byte alpha, LwaFlags flags);   // 반환값을 버리지 않는다 — §11.1의 실패가 정확히 여기서 87로 났다
 }
 [Flags]
 public enum LwaFlags { ColorKey = 1, Alpha = 2 }
+
+// S3 D-SH20 — 생 레이어드 부모. 클래스 등록·창·컬러키 브러시를 한 핸들이 소유한다.
+internal sealed class LayeredHostWindowFactory
+{
+    internal LayeredHostWindowHandle Create(string className, string windowTitle, uint colorKeyRef, NativeRect bounds);
+}
+internal sealed class LayeredHostWindowHandle : IDisposable
+{
+    internal IntPtr Hwnd { get; }
+    internal void ShowNoActivate();      // SW_SHOWNOACTIVATE
+    public  void Dispose();              // DestroyWindow → UnregisterClass → DeleteObject(브러시)
+}
 ```
 Shell 안 어디에서도 SetWindowLong/SetLayeredWindowAttributes를 직접 부르지 않는다(S3 4.1) — 이 게이트가 유일한 경로다.
 
@@ -1599,19 +1626,59 @@ internal static class FirstRunGate
 
 ### 12.6 OverlayWindow / SettingsWindow — 코드비하인드 표면
 
+**S3 D-SH20 이후 — `OverlayWindow`는 존재하지 않는다.** WPF `Window`가 `WS_EX_LAYERED`를 가질 수 없으므로(`00-shell-measurements.md` §11.1) 오버레이는 `OverlayHost`(생 부모 + `HwndSource`)와 `OverlayView`(자식의 `RootVisual`)로 나뉜다.
+
 ```
-public sealed partial class OverlayWindow : Window
+internal sealed class OverlayHost : IDisposable
 {
-    public OverlayWindow(OverlayViewModel viewModel, ExtendedStyleGate.Factory gateFactory, ISettingsSource settings);
-    // SourceInitialized, Closing 등 이벤트 핸들러는 private, Interop 게이트를 통해서만 Win32를 만진다(S3 1.1)
+    internal OverlayHost(OverlayViewModel viewModel, ExtendedStyleGate.Factory gateFactory,
+        LayeredHostWindowFactory windowFactory, ISettingsSource settings, ILogger<OverlayHost> logger);
+
+    internal IntPtr Handle { get; }        // 설정 창의 소유자(S3 5.1). Show() 전에는 IntPtr.Zero
+    internal bool   IsLayered { get; }     // 가정하지 않고 읽어서 확인한 결과
+    internal bool   HasCapture { get; }
+    internal bool   HeightWasGripped { get; }
+    internal double Left { get; set; }     // DIP. getter는 GetWindowRect, setter는 SetWindowPos
+    internal double Top { get; set; }
+    internal double Width { get; set; }    // 루트 비주얼의 Width. 자식이 따라가고 부모가 그 자식을 따라간다
+    internal double ActualWidth { get; }
+    internal double ActualHeight { get; }
+
+    internal void Show();                  // 부모 생성 → 레이어드 속성 → 자식 HwndSource → 기하 → SW_SHOWNOACTIVATE
+    internal void EnableClickThrough();
+    internal void DisableClickThrough();
+    internal void ShowMoveModeAffordances(bool visible);   // BorderBrush를 바꾼다. Visibility가 아니다(S3 4.6)
+    internal void ApplyHeightPolicy(bool moveModeActive);
+    internal bool ApplySavedGeometry();
+    internal bool Revalidate();
+    internal IReadOnlyList<Rect> GetWorkAreas();
+    internal void CommitPosition();
+    internal void CommitSize();
+    public   void Dispose();               // HwndSource → 부모 핸들. Window가 없으므로 아무도 대신 닫아 주지 않는다
+
+    internal event EventHandler? CaptureReleased;
+    internal event EventHandler? DragActivity;
+
+    internal static (int Width, int Height) DecodeSize(IntPtr lParam);   // WM_SIZE 언팩. 테스트가 닿는 유일한 부분
 }
+
+public sealed partial class OverlayView : UserControl
+{
+    public OverlayView(OverlayViewModel viewModel);
+    internal void AttachRowsPanel(ClippingRowsPanel panel);   // ClippingRowsPanel이 시각 트리를 거슬러 올라와 부른다
+    internal void Detach();
+}
+
 public sealed partial class SettingsWindow : Window
 {
-    public SettingsWindow(SettingsViewModel viewModel, Window owner);
+    public SettingsWindow(SettingsViewModel viewModel, SettingsEditor editor, string attribution, IntPtr owner);
+    // owner는 WindowInteropHelper.Owner(= GWLP_HWNDPARENT)로 넣는다. Window가 아니다(S3 5.1)
     // Closing 핸들러가 S3 5.3의 5단계 닫기 처리를 수행한다
 }
 ```
-두 창의 XAML 마크업 자체는 이 문서의 범위 밖이다(구역 확정은 S3 5.4) — 코드비하인드 생성자 시그니처만 확정한다. ExtendedStyleGate.Factory는 `internal delegate ExtendedStyleGate Factory(IntPtr hwnd);` — SourceInitialized 시점에야 HWND가 존재하므로 생성자 주입이 아니라 팩터리로 지연시킨다.
+두 창의 XAML 마크업 자체는 이 문서의 범위 밖이다(구역 확정은 S3 5.4) — 코드비하인드 생성자 시그니처만 확정한다. ExtendedStyleGate.Factory는 `public delegate ExtendedStyleGate Factory(IntPtr hwnd);` — `Show()` 시점에야 HWND가 존재하므로 생성자 주입이 아니라 팩터리로 지연시킨다.
+
+**`Application.Run()`에 메인 창을 넘기지 않는다.** 넘길 `Window`가 없다. `ShutdownMode = OnExplicitShutdown`이므로 펌프는 트레이의 Exit가 `Shutdown()`을 부를 때까지 돈다(FR-08-4). 종료 순서(S3 3.3-a)에 `OverlayHost.Dispose()`가 추가된다 — 부모 HWND·클래스 등록·컬러키 브러시는 프레임워크가 아니라 이 프로세스의 자원이다.
 
 
 ## 13. 오류 코드 문자열 카탈로그
@@ -1835,7 +1902,7 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | window.x/y 기본값 | 100 / 100 | HLD 7절 |
 | window.width/height 기본값 | 420 / 500 | HLD 7절 |
 | window.width/height 클램프 | [240, 4000] | S2 8.2 |
-| window.opacity 기본값/클램프 | 0.87 / [0.2, 1.0] | HLD 7절 |
+| window.opacity 기본값/클램프 | 0.87 / [0.5, 1.0] | HLD 7절, S3 D-SH21 |
 | 최소 가시 면적 | 어느 한 작업영역과의 교집합이 (푸터 폭 x 푸터 높이) 이상 | S3 4.5 D-SH8 |
 | 푸터 폰트 크기(잠정) | 12px | 신규, 잠정 — `00-shell-measurements.md` §8이 측정한 10/11/12/14px 중 중간값. `HasMinimumVisibleArea(..., Size footerSize)`의 실입력이 지금 필요하므로 임시로 확정한다. **결정 주체·시점(G3)**: 구현 담당자가 실물 1차 사용성 확인(S3 §14 항목12가 요구하는 체감 판독성 검증) 직후 교체 — 팔레트 확정과 같은 실험에 묶는다, 별도 절차를 새로 만들지 않는다 |
 | 오버레이 색 팔레트(컬러키 제외) | 잠정 — 흰색 주 텍스트/회색 보조/상승 녹색/하락 적색(시스템 기본 계열, 정확한 헥스값 미정) | 신규, 잠정 — 팔레트 값 자체는 여전히 §19.5가 의도적으로 열어 둔 자리다. 이 행은 "값이 아예 없다"는 지적(G3)에 대해 실험 전까지 쓸 수 있는 자리표시자를 준 것이지, §19.5의 유예를 철회한 것이 아니다 |

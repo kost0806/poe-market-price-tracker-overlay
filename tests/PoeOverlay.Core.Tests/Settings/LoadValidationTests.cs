@@ -258,7 +258,9 @@ public sealed class LoadValidationTests
         var settings = harness.Store.Current;
 
         Assert.Equal(5, settings.RefreshIntervalMinutes);
-        Assert.Equal(0.2, settings.Window.Opacity);
+        // 0.5, not 0.2: below α=128 the subpixel spread ClearType carries has never been measured,
+        // and it is already halved there (00-shell-measurements.md §11.3, SettingsValidation.MinOpacity).
+        Assert.Equal(0.5, settings.Window.Opacity);
         Assert.Equal(240, settings.Window.Width);
         Assert.Equal(4000, settings.Window.Height);
 

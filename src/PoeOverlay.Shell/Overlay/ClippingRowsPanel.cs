@@ -1,4 +1,5 @@
 using System.Windows;
+using System.Windows.Media;
 using Panel = System.Windows.Controls.Panel;
 using Size = System.Windows.Size;
 
@@ -110,6 +111,23 @@ internal sealed class ClippingRowsPanel : Panel
         return finalSize;
     }
 
+    /// <summary>
+    /// Registers with the hosting view by walking the visual tree.
+    /// </summary>
+    /// <remarks>
+    /// <c>Window.GetWindow</c> used to do this and now cannot: the overlay's content is the
+    /// <c>RootVisual</c> of an <c>HwndSource</c> child inside a raw Win32 parent, so there is no
+    /// <c>Window</c> anywhere above this panel and <c>GetWindow</c> returns null (S3 4.0 D-SH20).
+    /// </remarks>
     private void OnLoaded(object sender, RoutedEventArgs e)
-        => (Window.GetWindow(this) as OverlayWindow)?.AttachRowsPanel(this);
+    {
+        for (DependencyObject? node = this; node is not null; node = VisualTreeHelper.GetParent(node))
+        {
+            if (node is OverlayView view)
+            {
+                view.AttachRowsPanel(this);
+                return;
+            }
+        }
+    }
 }

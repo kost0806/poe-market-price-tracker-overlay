@@ -56,6 +56,32 @@ internal static class NativeMethods
     [return: MarshalAs(UnmanagedType.Bool)]
     internal static extern bool SetLayeredWindowAttributes(IntPtr hwnd, uint crKey, byte alpha, uint flags);
 
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool SetWindowPos(IntPtr hwnd, IntPtr insertAfter, int x, int y, int cx, int cy, uint flags);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool GetWindowRect(IntPtr hwnd, out NativeRect rect);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool GetCursorPos(out NativePoint point);
+
+    [DllImport("user32.dll")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool ShowWindow(IntPtr hwnd, int command);
+
+    [DllImport("user32.dll", EntryPoint = "LoadCursorW", SetLastError = true)]
+    internal static extern IntPtr LoadCursorW(IntPtr instance, IntPtr cursorName);
+
+    [DllImport("gdi32.dll", SetLastError = true)]
+    internal static extern IntPtr CreateSolidBrush(uint color);
+
+    [DllImport("gdi32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool DeleteObject(IntPtr handle);
+
     [DllImport("user32.dll", EntryPoint = "RegisterClassExW", SetLastError = true, CharSet = CharSet.Unicode)]
     internal static extern ushort RegisterClassExW(ref WndClassEx windowClass);
 
@@ -119,6 +145,34 @@ internal static class NativeMethods
 
     [DllImport("kernel32.dll", EntryPoint = "GetModuleHandleW", SetLastError = true, CharSet = CharSet.Unicode)]
     internal static extern IntPtr GetModuleHandleW(string? moduleName);
+
+    /// <summary><c>RECT</c>, in physical pixels.</summary>
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct NativeRect
+    {
+        /// <summary>Left edge.</summary>
+        internal int Left;
+
+        /// <summary>Top edge.</summary>
+        internal int Top;
+
+        /// <summary>Right edge, exclusive.</summary>
+        internal int Right;
+
+        /// <summary>Bottom edge, exclusive.</summary>
+        internal int Bottom;
+    }
+
+    /// <summary><c>POINT</c>, in physical pixels.</summary>
+    [StructLayout(LayoutKind.Sequential)]
+    internal struct NativePoint
+    {
+        /// <summary>Horizontal coordinate.</summary>
+        internal int X;
+
+        /// <summary>Vertical coordinate.</summary>
+        internal int Y;
+    }
 
     /// <summary><c>WNDCLASSEXW</c>.</summary>
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]

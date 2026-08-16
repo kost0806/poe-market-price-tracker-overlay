@@ -155,11 +155,17 @@ internal static class ServiceRegistration
 
         services.AddSingleton<ExtendedStyleGate.Factory>(_ => hwnd => new ExtendedStyleGate(hwnd));
         services.AddSingleton<MessageOnlyWindowFactory>();
+        services.AddSingleton<LayeredHostWindowFactory>();
 
-        services.AddSingleton<OverlayWindow>();
+        services.AddSingleton(sp => new OverlayHost(
+            sp.GetRequiredService<OverlayViewModel>(),
+            sp.GetRequiredService<ExtendedStyleGate.Factory>(),
+            sp.GetRequiredService<LayeredHostWindowFactory>(),
+            sp.GetRequiredService<ISettingsSource>(),
+            sp.GetRequiredService<ILogger<OverlayHost>>()));
 
         services.AddSingleton(sp => new OverlayModeService(
-            sp.GetRequiredService<OverlayWindow>(),
+            sp.GetRequiredService<OverlayHost>(),
             sp.GetRequiredService<IUiDispatcher>(),
             sp.GetRequiredService<TimeProvider>(),
             sp.GetRequiredService<ISettingsSource>(),
@@ -167,7 +173,7 @@ internal static class ServiceRegistration
         services.AddSingleton<IOverlayModeService>(sp => sp.GetRequiredService<OverlayModeService>());
 
         services.AddSingleton(sp => new OverlayGeometryService(
-            sp.GetRequiredService<OverlayWindow>(),
+            sp.GetRequiredService<OverlayHost>(),
             sp.GetRequiredService<ISettingsSource>()));
         services.AddSingleton<IOverlayGeometryService>(sp => sp.GetRequiredService<OverlayGeometryService>());
 
@@ -176,7 +182,7 @@ internal static class ServiceRegistration
             sp.GetRequiredService<OverlayModeService>()));
 
         services.AddSingleton(sp => new SettingsWindowFactory(
-            sp.GetRequiredService<OverlayWindow>(),
+            sp.GetRequiredService<OverlayHost>(),
             sp.GetRequiredService<SnapshotFanout>(),
             sp.GetRequiredService<Func<CancellationToken, SettingsViewModel>>(),
             sp.GetRequiredService<ISettingsSource>(),

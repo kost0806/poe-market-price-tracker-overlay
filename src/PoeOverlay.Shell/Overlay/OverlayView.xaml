@@ -1,33 +1,37 @@
-<Window x:Class="PoeOverlay.Overlay.OverlayWindow"
-        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:overlay="clr-namespace:PoeOverlay.Overlay"
-        xmlns:rows="clr-namespace:PoeOverlay.Core.Presentation.ViewModels.Rows;assembly=PoeOverlay.Core"
-        Title="PoE Market Price Tracker"
-        WindowStyle="None"
-        AllowsTransparency="False"
-        ResizeMode="NoResize"
-        ShowActivated="False"
-        ShowInTaskbar="False"
-        Topmost="True"
-        SizeToContent="Height"
-        Width="420"
-        Background="#FF1E1E1E"
-        TextOptions.TextFormattingMode="Display"
-        UseLayoutRounding="True"
-        SnapsToDevicePixels="True"
-        FontSize="12">
+<UserControl x:Class="PoeOverlay.Overlay.OverlayView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:overlay="clr-namespace:PoeOverlay.Overlay"
+             xmlns:rows="clr-namespace:PoeOverlay.Core.Presentation.ViewModels.Rows;assembly=PoeOverlay.Core"
+             Background="#FFFF00FF"
+             TextOptions.TextFormattingMode="Display"
+             UseLayoutRounding="True"
+             SnapsToDevicePixels="True"
+             FontSize="12">
 
-    <!-- Everything that carries text sits on this opaque panel, and it never overlaps the window
-         background. Glyphs drawn straight onto the colour key pick up a magenta halo — 73%
-         chromatic pixels even in Grayscale and Aliased rendering modes
-         (00-shell-measurements.md 8.6, trap 1). The window background starts opaque and only
-         becomes the colour key if the layered style is actually accepted (see the code-behind). -->
+    <!-- This is the RootVisual of an HwndSource child hosted inside a raw layered Win32 parent; it
+         is not a Window and must not become one. A WPF Window cannot hold WS_EX_LAYERED while
+         AllowsTransparency is false — the bit is filtered out of every write while the call still
+         reports success (00-shell-measurements.md 11.1) — and turning AllowsTransparency on kills
+         ClearType outright (8.1, 0.0% chromatic ink). In the hosted child ClearType survives
+         bit-identically to a plain opaque Window (11.3: 90.8% fringing, avgSpread 111.11 in both).
+
+         The root background is the colour key rather than a real colour: anything the content does
+         not cover is keyed out by the parent, exactly as if the parent had painted it (11.2).
+
+         Everything that carries text sits on the opaque Body panel below, and it never overlaps the
+         key. Glyphs drawn straight onto the key pick up a magenta halo — 73% chromatic pixels even
+         in Grayscale and Aliased rendering modes (8.6, trap 1). -->
     <Border x:Name="Body" Background="#FF1E1E1E" Padding="6,4">
+        <!-- The move-mode affordance is this border's BRUSH, never its Visibility. Collapsing it
+             collapses everything inside it, which is the whole overlay: the shipped build did
+             exactly that and rendered as an empty 420x8 strip. The thickness is constant so
+             entering move mode does not reflow the content, and "off" is the Body colour rather
+             than Transparent — one less question about what Transparent means on this surface
+             (00-shell-measurements.md 8.6, trap 3). -->
         <Border x:Name="MoveModeBorder"
-                BorderBrush="#FF7FB2FF"
+                BorderBrush="#FF1E1E1E"
                 BorderThickness="1"
-                Visibility="Collapsed"
                 Padding="1">
             <Grid>
                 <Grid.RowDefinitions>
@@ -120,4 +124,4 @@
             </Grid>
         </Border>
     </Border>
-</Window>
+</UserControl>

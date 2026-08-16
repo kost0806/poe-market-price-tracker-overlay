@@ -23,8 +23,56 @@ internal static class Win32Constants
     /// <summary><c>WS_EX_NOACTIVATE</c> — neutralises even an explicit <c>Activate()</c> (measured §3).</summary>
     internal const uint WsExNoActivate = 0x08000000;
 
-    /// <summary><c>WS_EX_TOPMOST</c>. Never written by hand; WPF's <c>Topmost</c> sets it.</summary>
+    /// <summary><c>WS_EX_TOPMOST</c>. Written once, at creation, on the raw parent (S3 4.0).</summary>
     internal const uint WsExTopmost = 0x00000008;
+
+    /// <summary><c>WS_EX_TOOLWINDOW</c> — keeps the overlay out of the taskbar and Alt+Tab.</summary>
+    internal const uint WsExToolWindow = 0x00000080;
+
+    /// <summary><c>WS_POPUP</c> — the parent has no caption, border or menu.</summary>
+    internal const uint WsPopup = 0x80000000;
+
+    /// <summary><c>WS_VISIBLE</c>.</summary>
+    internal const uint WsVisible = 0x10000000;
+
+    /// <summary>
+    /// <c>WS_CLIPCHILDREN</c> — required, not optional.
+    /// </summary>
+    /// <remarks>
+    /// Without it the parent's own background erase paints over the hosted child
+    /// (<c>00-shell-measurements.md</c> §11.5).
+    /// </remarks>
+    internal const uint WsClipChildren = 0x02000000;
+
+    /// <summary><c>WS_CHILD</c> — the hosted <c>HwndSource</c>.</summary>
+    internal const uint WsChild = 0x40000000;
+
+    /// <summary><c>WS_CLIPSIBLINGS</c> — the child's measured style (§11.5).</summary>
+    internal const uint WsClipSiblings = 0x04000000;
+
+    /// <summary><c>SWP_NOSIZE</c>.</summary>
+    internal const uint SwpNoSize = 0x0001;
+
+    /// <summary><c>SWP_NOMOVE</c>.</summary>
+    internal const uint SwpNoMove = 0x0002;
+
+    /// <summary><c>SWP_NOZORDER</c>.</summary>
+    internal const uint SwpNoZOrder = 0x0004;
+
+    /// <summary><c>SWP_NOACTIVATE</c>.</summary>
+    internal const uint SwpNoActivate = 0x0010;
+
+    /// <summary><c>SWP_NOOWNERZORDER</c>.</summary>
+    internal const uint SwpNoOwnerZOrder = 0x0200;
+
+    /// <summary><c>SW_SHOWNOACTIVATE</c> — shows without stealing the foreground (§3).</summary>
+    internal const int SwShowNoActivate = 4;
+
+    /// <summary><c>WM_SIZE</c>, watched on the child so the parent can follow it (§11.6).</summary>
+    internal const int WmSize = 0x0005;
+
+    /// <summary><c>IDC_ARROW</c>, as the <c>MAKEINTRESOURCE</c> value <c>LoadCursor</c> expects.</summary>
+    internal static IntPtr IdcArrow => new(32512);
 
     /// <summary><c>LWA_COLORKEY</c>.</summary>
     internal const uint LwaColorKey = 0x00000001;
