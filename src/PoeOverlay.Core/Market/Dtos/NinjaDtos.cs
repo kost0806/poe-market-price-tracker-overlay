@@ -21,9 +21,28 @@ namespace PoeOverlay.Core.Market.Dtos;
 /// </remarks>
 internal sealed class NinjaOverviewDto
 {
-    /// <summary>Response-global header: base currency, alternate currency and the item table.</summary>
+    /// <summary>Response-global header: base currency, alternate currency and the rate basis.</summary>
     [JsonPropertyName("core")]
     public CoreDto? Core { get; init; }
+
+    /// <summary>
+    /// The name table — one entry per line, and the only source of item names (contract §2.0, A1).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The document root carries three keys, not two. The first implementation declared only
+    /// <c>core</c> and <c>lines</c> and read names out of <c>core.items</c>, which is the rate basis
+    /// and holds exactly <c>[chaos, divine]</c>: 2 of 959 lines joined, so nearly every row rendered
+    /// as its slug.
+    /// </para>
+    /// <para>
+    /// Nullable and <em>not</em> demanded by the skeleton null check of step 2'. A missing name table
+    /// costs the fallback chain its fourth rung and nothing else (S2 5.4); the observable is
+    /// <see cref="Domain.CategorySnapshot.JoinMissCount"/>, which then equals the line count.
+    /// </para>
+    /// </remarks>
+    [JsonPropertyName("items")]
+    public ItemDto[]? Items { get; init; }
 
     /// <summary>
     /// Received as raw elements so that each line can be deserialised independently (D-MK2).
@@ -48,16 +67,29 @@ internal sealed class CoreDto
     [JsonPropertyName("secondary")]
     public string? Secondary { get; init; }
 
-    /// <summary>An array, not a map (contract A2) — the join builds a dictionary once per response.</summary>
+    /// <summary>
+    /// The rate basis — exactly <c>[chaos, divine]</c> in all 18 categories, never the name table.
+    /// </summary>
+    /// <remarks>
+    /// An array, not a map (contract A2). Its <c>category</c> is the one that equals the query
+    /// <c>type</c>, which is why contract A6's self-describing check reads this array and not the
+    /// root one (S2 5.4).
+    /// </remarks>
     [JsonPropertyName("items")]
-    public CoreItemDto[]? Items { get; init; }
+    public ItemDto[]? Items { get; init; }
 
     // core.rates is deliberately absent (D-MK1). D1 forbids using the reciprocal, and a field that
     // does not exist on the type cannot be used by mistake.
 }
 
-/// <summary>One row of the item table, joined to a line by <c>id</c> (contract A1).</summary>
-internal sealed class CoreItemDto
+/// <summary>
+/// One row of either item array, joined to a line by <c>id</c> (contract A1/A2).
+/// </summary>
+/// <remarks>
+/// The two arrays share an element shape and share this type, but they are different things: the
+/// root <c>items</c> is the name table and <c>core.items</c> is the rate basis (contract §2.0).
+/// </remarks>
+internal sealed class ItemDto
 {
     /// <summary>Slug; the join key.</summary>
     [JsonPropertyName("id")]
@@ -67,11 +99,18 @@ internal sealed class CoreItemDto
     [JsonPropertyName("name")]
     public string? Name { get; init; }
 
-    /// <summary>Icon path, relative to https://poe.ninja. Read but not mapped.</summary>
+    /// <summary>
+    /// Icon path, relative to https://poe.ninja. Read but not mapped, and absent on every
+    /// DivinationCard entry (576 of 959 carry one) — nothing may assume it is there.
+    /// </summary>
     [JsonPropertyName("image")]
     public string? Image { get; init; }
 
-    /// <summary>Self-reported category (contract A6).</summary>
+    /// <summary>
+    /// Self-reported category. Only <c>core.items</c>' copy equals the query <c>type</c> and so
+    /// answers contract A6; the root array's copy is a display grouping (<c>Fragments</c>,
+    /// <c>Cards</c>, …) and would disagree on nearly every response.
+    /// </summary>
     [JsonPropertyName("category")]
     public string? Category { get; init; }
 

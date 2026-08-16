@@ -71,7 +71,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
     private string _searchQuery = string.Empty;
 
     [ObservableProperty]
-    private IReadOnlyList<SearchHit> _searchResults = [];
+    private IReadOnlyList<SearchRowViewModel> _searchResults = [];
 
     [ObservableProperty]
     private SearchOutcome _searchOutcome = SearchOutcome.CacheEmpty;
@@ -175,7 +175,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
         _searchDebounce = timeProvider.CreateTimer(
             _ => OnSearchDebounceElapsed(), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
 
-        AddToWatchlistCommand = new AsyncRelayCommand<SearchHit?>(AddToWatchlistAsync);
+        AddToWatchlistCommand = new AsyncRelayCommand<SearchRowViewModel?>(AddToWatchlistAsync);
         RemoveFromWatchlistCommand = new RelayCommand<ItemId>(RemoveFromWatchlist);
         FetchCategoryCommand = new AsyncRelayCommand<ExchangeCategory>(FetchCategoryAsync);
         ReloadLeaguesCommand = new AsyncRelayCommand(ReloadLeaguesAsync);
@@ -360,7 +360,17 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
         // costs one item, not the search (D-ST6).
         var result = _searchSource.Search(query, new SearchOptions(SearchLimit, MatchesLocalisedName));
 
-        SearchResults = result.Hits;
+        // The same ③④⑤ chain the matching predicate below already runs on. Binding ApiName
+        // directly left every unnamed hit as a row with nothing in it but its category (D-DL16),
+        // and rebuilding here rather than caching is what makes a language change follow: Refresh
+        // calls RunSearch on every pass.
+        var rows = new List<SearchRowViewModel>(result.Hits.Count);
+        foreach (var hit in result.Hits)
+        {
+            rows.Add(new SearchRowViewModel(hit.Id, _localizer.ItemName(hit.Id, hit.ApiName), hit.Category));
+        }
+
+        SearchResults = rows;
         SearchOutcome = result.Outcome;
         UnfetchedCategories = result.UnfetchedCategories;
     }
@@ -368,7 +378,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
     private bool MatchesLocalisedName(ItemId id, string? apiName)
         => _localizer.ItemName(id, apiName).Contains(SearchQuery, StringComparison.OrdinalIgnoreCase);
 
-    private async Task AddToWatchlistAsync(SearchHit? hit)
+    private async Task AddToWatchlistAsync(SearchRowViewModel? hit)
     {
         if (hit is null)
         {

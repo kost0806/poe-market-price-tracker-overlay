@@ -113,9 +113,9 @@ public sealed class CategoryFetchTests
     }
 
     [Fact]
-    public async Task M6_LineWithNoMatchingCoreItem_KeepsThePriceAndCountsTheJoinMiss()
+    public async Task M6_LineWithNoMatchingNameTableEntry_KeepsThePriceAndCountsTheJoinMiss()
     {
-        // Five lines, but only three item table rows: two lines cannot be joined.
+        // Five lines, but only three name table rows: two lines cannot be joined.
         var body = MarketTestHarness.Overview(5, MarketTestHarness.GoodLine, itemCount: 3);
 
         var snapshot = Value(await FetchAsync(body).ConfigureAwait(false));

@@ -123,6 +123,11 @@ internal static class Program
         // 7 — closing a window never exits: only the tray's Exit item calls Shutdown (FR-08-4).
         var application = new Application { ShutdownMode = ShutdownMode.OnExplicitShutdown };
         _application = application;
+
+        // After the Application exists and before any window does: pack://application:,,, resolves
+        // against Application.ResourceAssembly, so asking earlier would answer about the wrong
+        // assembly (S3 4.9 D-SH22).
+        _ = Overlay.BundledTypeface.Verify(diagnostics.Logger);
         RegisterFatalExceptionHandlers(application);
         application.SessionEnding += (_, _) => FlushSettings(settings);
 

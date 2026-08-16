@@ -4,6 +4,7 @@ using PoeOverlay.Core.Domain;
 using PoeOverlay.Core.Market;
 using PoeOverlay.Core.Presentation.Overlay;
 using PoeOverlay.Core.Presentation.ViewModels;
+using PoeOverlay.Core.Presentation.ViewModels.Rows;
 using PoeOverlay.Core.Settings;
 using PoeOverlay.Core.Store;
 using PoeOverlay.Core.Tests.TestSupport;
@@ -105,7 +106,23 @@ public sealed class SettingsViewModelTests
 
         Assert.Equal(1, fixture.Search.Calls);
         Assert.Equal(SearchOutcome.Found, fixture.Vm.SearchOutcome);
-        Assert.Single(fixture.Vm.SearchResults);
+        Assert.Equal("Divine Orb", Assert.Single(fixture.Vm.SearchResults).DisplayName);
+    }
+
+    [Fact]
+    public void AHitWithNoApiName_ShowsItsSlugRatherThanAnEmptyRow()
+    {
+        // The shipped list bound SearchHit.ApiName straight through, so a hit the join could not
+        // name rendered as a row with nothing on it but the category (D-DL16). What must be observed
+        // is the row's text, not that a row exists — the blank rows existed too.
+        using var fixture = new Fixture();
+        fixture.Search.HitName = null;
+
+        fixture.Vm.SearchQuery = "divine";
+        fixture.Time.Advance(SettingsViewModel.SearchDebounce);
+        fixture.Dispatcher.Drain();
+
+        Assert.Equal("divine", Assert.Single(fixture.Vm.SearchResults).DisplayName);
     }
 
     [Fact]
@@ -199,7 +216,7 @@ public sealed class SettingsViewModelTests
     {
         using var fixture = new Fixture();
         await fixture.Vm.AddToWatchlistCommand.ExecuteAsync(
-            new SearchHit(new ItemId("divine"), "Divine Orb", ExchangeCategory.Currency, SearchSource.RoundCommitted, 200m, Now));
+            new SearchRowViewModel(new ItemId("divine"), "Divine Orb", ExchangeCategory.Currency));
 
         Assert.Single(fixture.Settings.Current.Watchlist);
 
@@ -406,6 +423,9 @@ public sealed class SettingsViewModelTests
 
         public bool Throw { get; set; }
 
+        /// <summary>The hit's API name; null is the case that used to render as a blank row.</summary>
+        public string? HitName { get; set; } = "Divine Orb";
+
         public SearchResult Search(string query, SearchOptions options)
         {
             Calls++;
@@ -415,7 +435,7 @@ public sealed class SettingsViewModelTests
             }
 
             return new SearchResult(
-                [new SearchHit(new ItemId("divine"), "Divine Orb", ExchangeCategory.Currency, SearchSource.RoundCommitted, 200m, Now)],
+                [new SearchHit(new ItemId("divine"), HitName, ExchangeCategory.Currency, SearchSource.RoundCommitted, 200m, Now)],
                 SearchOutcome.Found,
                 [],
                 false);

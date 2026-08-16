@@ -7,6 +7,7 @@
              TextOptions.TextFormattingMode="Display"
              UseLayoutRounding="True"
              SnapsToDevicePixels="True"
+             FontFamily="pack://application:,,,/Fonts/#Pretendard"
              FontSize="12">
 
     <!-- This is the RootVisual of an HwndSource child hosted inside a raw layered Win32 parent; it

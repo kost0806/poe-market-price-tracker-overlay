@@ -20,7 +20,7 @@ namespace PoeOverlay.Core.Market.Dtos;
 /// <para>
 /// Three roots are enough: the skeleton is parsed once, each line element is parsed individually
 /// through <see cref="LineDto"/>, and the league endpoint returns an array.
-/// <c>CoreDto</c>/<c>CoreItemDto</c>/<c>SparklineDto</c> are reached through those graphs.
+/// <c>CoreDto</c>/<c>ItemDto</c>/<c>SparklineDto</c> are reached through those graphs.
 /// </para>
 /// </remarks>
 [JsonSourceGenerationOptions(

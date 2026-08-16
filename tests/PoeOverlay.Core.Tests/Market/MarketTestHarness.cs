@@ -60,7 +60,21 @@ internal static class MarketTestHarness
         return await task.ConfigureAwait(false);
     }
 
-    /// <summary>Builds an overview body with <paramref name="count"/> generated lines.</summary>
+    /// <summary>
+    /// The rate basis measured in every one of the 18 categories: exactly two entries, and never
+    /// the name table (00-api-contract.md 2.0).
+    /// </summary>
+    internal const string RateBasisItems =
+        """{"id":"chaos","name":"Chaos Orb","category":"Currency","detailsId":"chaos-orb"},""" +
+        """{"id":"divine","name":"Divine Orb","category":"Currency","detailsId":"divine-orb"}""";
+
+    /// <summary>
+    /// Builds an overview body with <paramref name="count"/> generated lines, in the measured
+    /// three-key shape: <c>core</c> (rate basis), <c>lines</c>, and the root <c>items</c> name table.
+    /// </summary>
+    /// <param name="itemCount">
+    /// How many entries the <em>name table</em> carries; the rate basis is always the measured two.
+    /// </param>
     internal static string Overview(int count, Func<int, string> line, string primary = "chaos", int itemCount = -1)
     {
         var items = new StringBuilder();
@@ -89,7 +103,9 @@ internal static class MarketTestHarness
         }
 
         return $$"""
-            {"core":{"primary":"{{primary}}","secondary":"divine","items":[{{items}}]},"lines":[{{lines}}]}
+            {"core":{"primary":"{{primary}}","secondary":"divine","items":[{{RateBasisItems}}]},
+             "lines":[{{lines}}],
+             "items":[{{items}}]}
             """;
     }
 

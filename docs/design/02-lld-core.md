@@ -1012,11 +1012,12 @@ SentinelOk(template, n):
 ```
 // 전부 프로퍼티다. System.Text.Json 은 IncludeFields 없이 필드를 무시한다.
 sealed class NinjaOverviewDto { CoreDto?  Core  { get; init; }
-                                JsonElement[]? Lines { get; init; } }   // ← 원소별 역직렬화
+                                JsonElement[]? Lines { get; init; }     // ← 원소별 역직렬화
+                                ItemDto[]? Items { get; init; } }       // ← 최상위. 이름 표
 sealed class CoreDto         { string?   Primary   { get; init; }
                                string?   Secondary { get; init; }
-                               CoreItemDto[]? Items { get; init; } }
-sealed class CoreItemDto     { string? Id { get; init; } string? Name { get; init; }
+                               ItemDto[]? Items { get; init; } }        // ← 환율 기준. [chaos, divine]
+sealed class ItemDto         { string? Id { get; init; } string? Name { get; init; }
                                string? Image { get; init; } string? Category { get; init; }
                                string? DetailsId { get; init; } }
 sealed class LineDto         { string?  Id { get; init; } decimal? PrimaryValue { get; init; }
@@ -1034,6 +1035,8 @@ sealed class LeagueDto       { string? Id { get; init; } string? Name { get; ini
 | **`Lines`가 `JsonElement[]`다** | §5.5.2의 결론. 원소별 역직렬화만이 D8-b의 표본을 만든다 |
 | **골격 멤버가 전부 널 허용** | 【측정】 `required`는 JSON `null`을 막지 못한다(`{"core":null}`이 성공한다). 널 허용으로 선언하고 **2′단계에서 명시적으로 소비**하는 것이 §1.6의 "없음이 의미를 가지면 명시적 케이스로"와 일치한다 |
 | **`core.rates`를 두지 않는다** 【신규 D-MK1】 | D1이 역수 사용을 금지한다. **존재하지 않는 필드는 잘못 쓸 수 없다** — D-D1의 논법과 같다 |
+| **최상위 `items`가 골격에 있다** 【신규 D-MK5, 구현 후 실측 2026-08-16】 | 문서 루트의 키는 셋이다(`00-api-contract.md` §2.0). 초판은 이 배열을 아예 선언하지 않았고 `core.items`를 이름 표로 오인해 **관심목록 7개 중 6개가 슬러그로 표시됐다**. 두 배열은 원소 모양이 같으므로 DTO 타입 하나(`ItemDto`)를 공유하되 **역할이 다르다** — 최상위는 이름 표(line과 1:1), `core.items`는 환율 기준(`[chaos, divine]` 둘뿐) |
+| **최상위 `items`는 널 허용이고 2′단계가 요구하지 않는다** | 이름 표의 부재는 데이터 무결성 실패가 아니라 **폴백 체인이 ④를 잃고 ⑤로 내려가는 일**이다(§5.4). 없으면 `JoinMissCount`가 line 수만큼 오르며, 그 계수가 관측 경로다. 반면 `core.Items`는 2′단계가 계속 요구한다 — 초판의 검사를 좁히지 않는다 |
 | `sparkline.data`는 읽되 `Domain`에 싣지 않는다 | 1차 범위에 스파크라인이 없다 |
 | `image`·`detailsId` | 읽지만 매핑하지 않는다 |
 
@@ -1053,23 +1056,32 @@ sealed class LeagueDto       { string? Id { get; init; } string? Name { get; ini
 
 **【측정】 다섯 항목 전부 .NET 8 기본값이다.** 즉 이 표를 적는 것만으로는 아무것도 고정되지 않는다. 실질 위험은 누군가 `JsonSerializerDefaults.Web`을 쓰는 것이며 그러면 1번이 뒤집혀 D8-b의 감지력이 조용히 사라진다. **§11.7 M22가 생성된 컨텍스트의 옵션 값을 단언한다.**
 
-### 5.4 `core.items` 조인 (계약 A1/A2)
+### 5.4 두 개의 조인 (계약 A1/A2/A6)
+
+**이름과 카테고리는 서로 다른 배열에서 온다.** 하나로 합치면 둘 중 하나가 반드시 틀린다.
 
 ```
-1. dict = new Dictionary<string, CoreItemDto>(core.Items.Length, StringComparer.Ordinal)
+1. names = Dictionary<string, ItemDto>(doc.Items?.Length ?? 0, StringComparer.Ordinal)   // 최상위 items
+   rates = Dictionary<string, ItemDto>(core.Items.Length,      StringComparer.Ordinal)   // core.items
    각 item 에 대해 TryAdd(item.Id, item)          // 중복 id 는 첫 항목 우선
-2. line 매핑 중 dict.TryGetValue(line.Id, out it) 로 이름·카테고리 획득
-3. 실패하면 ApiName = null, JoinMissCount++
+   사전 구축은 응답당 한 번, 두 사전을 한 구간에서 만든다
+2. line 매핑 중 names.TryGetValue(line.Id, out it) 로 **이름**을 얻는다
+   실패하면 ApiName = null, JoinMissCount++
+3. line 매핑 중 rates.TryGetValue(line.Id, out ci) 로 **자기기술 카테고리**(A6)를 얻는다
+   실패는 계수하지 않는다 — core.items 는 항상 두 원소뿐이므로 대다수 line 이 여기서 빠진다
 ```
 
 | 규칙 | 근거 |
 |---|---|
-| **응답당 사전 1회 구축. 선형 탐색 금지** | 계약 A2. `lines` 수백 × `items` 수백이면 O(n²)가 되고 그 비용이 UI 스레드에 착지하는 경로가 있다 |
+| **이름은 최상위 `items`에서만 온다** 【정정, 구현 후 실측 2026-08-16】 | 계약 A1/§2.0. `core.items`는 18개 카테고리 전부에서 `[chaos, divine]` 둘뿐이라 959 line 중 2건(0.2%)만 조인된다. 초판대로 `core.items`를 이름 표로 쓰면 **거의 모든 행이 슬러그로 렌더된다** — 실제로 그렇게 출하됐다 |
+| **`SelfReportedCategory`(A6)는 `core.items`에서만 온다** | 최상위 `items[].category`는 **표시용 분류**이며 질의 `type`과 다르다(`Fragments`·`Cards`·`Essences`·`Catalysts`·`Ancestor`·`Delve`). 그쪽을 A6 검증에 물리면 거의 모든 응답에서 불일치 경고가 뜬다 — 계약이 이득이 아니라 소음이 된다 |
+| **응답당 사전 1회 구축. 선형 탐색 금지** | 계약 A2. `lines` 수백 × `items` 수백이면 O(n²)가 되고 그 비용이 UI 스레드에 착지하는 경로가 있다. 사전이 둘이 되어도 **구축 구간은 여전히 응답당 하나**이며, 계수기(`JoinDictionaryBuildCount`)가 세는 것도 그 구간이다 |
 | 용량을 미리 잡는다 | 재해시 회피 |
 | 비교자는 **서수** | `ItemId`의 비교 규약과 같다 |
-| **조인 실패는 실패가 아니다** | 폴백 ④가 없어지고 ⑤로 내려갈 뿐이다. `JoinMissCount`로 계수만 한다 |
-| `core.items`에만 있는 id | 무시 |
+| **조인 실패는 실패가 아니다** | 폴백 ④가 없어지고 ⑤로 내려갈 뿐이다. `JoinMissCount`로 계수만 한다. 최상위 `items` 자체가 없는 응답도 같은 취급이다 |
+| 어느 쪽 배열에만 있는 id | 무시 |
 | `core.items[].category` 불일치 (A6) | **거부하지 않고** 세션 1회 Warning. 이 축으로 데이터를 버리면 A6이 이득이 아니라 위험이 된다 |
+| `image` | 읽지만 매핑하지 않는다. **DivinationCard 전 항목에 없다**(959 중 576개만 보유) — 있다고 가정하는 코드를 쓰지 마라 |
 | 미지 `maxVolumeCurrency` 판정 | **`Trim()` + `OrdinalIgnoreCase`** — §4.1과 같은 술어여야 한다(D-C4) |
 
 ### 5.5 구조 유효성 검사
@@ -1110,7 +1122,7 @@ foreach (var el in doc.Lines):
       || string.IsNullOrEmpty(doc.Core.Primary)
 3.  d. core.primary != "chaos"               실패 -> PrimaryCurrencyMismatch
 4.  a. Lines.Length == 0                     실패 -> EmptyLines
-5.  core.items 사전 구축
+5.  조인 사전 구축 — 최상위 items(이름) + core.items(A6). 한 구간에서 둘 다
 6.  line 원소별 역직렬화 + 엄격 판정, 사유별 계수
 7.  b. skips.Total / RawLineCount > 0.20     실패 -> FieldMissingRatio  (또는 아래 분화 코드)
 8.  a'. mapped == 0                          실패 -> NoPricedLines

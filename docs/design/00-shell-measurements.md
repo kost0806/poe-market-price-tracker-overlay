@@ -344,6 +344,8 @@ SetLayeredWindowAttributes(hwnd, key, alpha, LWA_COLORKEY | LWA_ALPHA);
 
 ### 11.3 자식에서 ClearType이 완전히 살아남는다 — 이 구조의 존재 이유
 
+> **이 표의 수치는 WPF 기본 서체의 것이다** 【2026-08-16 추가】. D-SH22가 서체를 Pretendard로 바꿨으므로 아래 잉크·색수차·spread 값은 **현재 형상을 설명하지 않는다.** 재측정은 캡처 경로가 성립하지 않아 **하지 못했다**(§13.3). 이 표가 남는 이유는 그 세 열이 아니라 **행 사이의 관계** — 레이어드 부모+자식이 불투명 창과 같고, `AllowsTransparency=true`가 강제 그레이스케일과 같다는 것 — 이며, 그 결론은 서체와 무관하다.
+
 | 구성 | 잉크 | 색수차 | 평균 spread |
 |---|---|---|---|
 | **레이어드 부모 + WPF 자식** | 3,010 | **90.8%** (2,732) | **111.11** |
@@ -476,3 +478,43 @@ WM_PAINT: 클라이언트 전체를 채운다. 자식이 덮지 않는 영역은
 | 콘텐츠 픽셀이 우연히 키 색과 같으면 구멍이 된다(S4 §15.1) | **미검증이며 현재 형상에서는 발생할 수 없다.** 팔레트가 확정되면(S3 §14-12) 이 표를 다시 읽어야 한다 |
 
 **기록해 두는 이유.** 이 넷은 어느 것도 "틀렸다"가 아니라 **"이 형상에서는 시험된 적이 없다"** 이다. 그 구별을 남기지 않으면 다음 사람이 표의 왼쪽 열을 검증된 사실로 읽는다.
+
+---
+
+## 13. 5라운드 — 서체 교체(D-SH22)와 **취소된 ClearType 재측정**
+
+측정일 2026-08-16. 환경: Win11 Pro 10.0.26200 · .NET SDK 8.0.424 · 96 DPI · `DwmIsCompositionEnabled=True` · `SM_REMOTESESSION=0`(원격 세션 아님) · `HKCU\Control Panel\Desktop`의 `FontSmoothing=2`, `FontSmoothingType=2`(ClearType), `FontSmoothingOrientation=1`(RGB) · `RenderCapability.Tier=0x20000`(하드웨어) · `HKCU\SOFTWARE\Microsoft\Avalon.Graphics` **키 없음**(가속 무력화 흔적 없음, 측정 후에도 없음).
+
+### 13.1 §11.3의 수치는 이제 서체가 다른 구성의 것이다
+
+§11.3(잉크 3,010 · 색수차 **90.8%** · 평균 spread **111.11**)은 **WPF 기본 서체**로 잰 값이다. D-SH22가 두 창의 서체를 Pretendard로 바꿨으므로 **그 수치는 현재 형상을 설명하지 않는다.** 아래 13.3의 이유로 새 수치를 얻지 못했으므로, §11.3은 **"기본 서체에서의 값"으로만** 읽어야 한다. 지우지 않는 이유는 그것이 여전히 「레이어드 부모 + WPF 자식이 불투명 창과 비트 단위로 같다」와 「`AllowsTransparency=true`가 ClearType을 죽인다」를 증명하기 때문이다 — 그 결론들은 서체와 무관하다.
+
+### 13.2 서체 해석은 확인했다 — 화면이 아니라 타이프페이스로
+
+| 확인 | 방법 | 결과 |
+|---|---|---|
+| 앱이 실제로 Pretendard를 잡는가 | 실물 앱 기동, 로그(`Composition`) | **`Typeface Pretendard resolved from the bundled resource (4 faces)`** — 두 얼굴 × 이탤릭 시뮬레이션 |
+| XAML 속성 문자열이 해석되는가 | 별도 WPF 프로세스에서 `XamlReader.Parse`, BaseUri를 `pack://application:,,,/<asm>;component/…xaml`로 두고 4개 형식 비교 | `pack://application:,,,/Fonts/#Pretendard` → **Pretendard**, `/Fonts/#Pretendard` → **Pretendard**, `<asm>;component/Fonts/#Pretendard` → **Pretendard**, `./Fonts/#Pretendard` → **UNRESOLVED** |
+| 리소스 바이트가 진짜 Pretendard인가 | `BundledFontTests`(S4 §16.10) | 패밀리 `Pretendard`, 한글 11,172음절 커버, Regular/SemiBold |
+
+**【측정】 코드에서 `new FontFamily("pack://application:,,,/Fonts/#Pretendard")`는 해석되지 않는다.** 문자열 생성자에는 리소스를 풀 기준 URI가 없어 **조용히 폴백**한다(반환된 패밀리의 얼굴 수 14 = 폴백 패밀리). 같은 문자열이 **XAML 속성으로는 해석된다** — 파서가 XAML 자신의 BaseUri를 넘겨주기 때문이다. 코드에서 읽어 볼 때는 `new FontFamily(new Uri("pack://application:,,,/"), "./Fonts/#Pretendard")`처럼 기준 URI를 명시해야 하며, 그러지 않으면 **존재하지 않는 실패를 보고하게 된다.** `Fonts.GetFontFamilies(new Uri("pack://application:,,,/"), "./Fonts/")`도 같은 이유로 1개를 정확히 돌려준다.
+
+### 13.3 ClearType 재측정 — **하지 못했다**
+
+**결론: 이 장비에서 하드웨어 렌더된 WPF 표면을 픽셀로 읽어 낼 방법을 찾지 못했다. 따라서 서체 교체 후의 색수차·spread는 미측정이다.** 아래는 시도와 그 관측이다.
+
+| 시도 | 관측 |
+|---|---|
+| §11.3과 같은 방식 — 화면 DC에서 `BitBlt(SRCCOPY\|CAPTUREBLT)` | **창이 캡처되지 않는다.** 프로브 창(레이어드 부모 + WPF 자식) 좌표에서 읽힌 것은 **그 뒤의 터미널 창**이었다. 서체를 바꿔 두 번 돌렸는데 픽셀 통계가 **완전히 동일**(ink 63,000 · 색수차 8,922 · 14.2%)했던 것이 그 증거다 — 캡처가 프로브를 담았다면 같을 수 없다 |
+| 같은 지점의 `WindowFromPoint` | **자식 hwnd**를 반환한다. 창은 데스크톱에 있고 최상위이며 `IsWindowVisible=True`, `GetWindowRect`도 정확하다. **창이 없어서가 아니다** |
+| `PrintWindow(hwnd, dc, PW_RENDERFULLCONTENT)` — 부모/자식 × 플래그 0/2, 네 조합 | 전부 **빈 표면**. 저장한 PNG는 균일한 흰색이다. 평범한 WPF `Window`(레이어드 아님)로 바꿔도 같다 |
+| 소프트웨어 렌더링으로 우회 | **하지 않았다.** `DisableHWAcceleration=1`은 캡처를 되살리지만 그러면 서브픽셀 자체가 사라지므로 **재려는 값이 정의상 존재하지 않는다.** 잰 척한 수치를 남기는 것보다 미측정이 낫다 |
+| `RenderTargetBitmap` | 애초에 무효다(§4.0.2·§8.4) |
+
+**§4.0.2를 확장한다.** 그 절은 "렌더링 품질 검증은 화면 캡처로만 한다"고 적었다. 이번 라운드가 덧붙이는 사실은 **그 화면 캡처가 이 장비에서는 GDI 경로로 성립하지 않는다**는 것이다 — `BitBlt`는 데스크톱의 레거시 GDI 사본을 읽으므로 DWM이 합성하는 D3D 표면(=WPF가 그린 것)이 들어 있지 않고, `PrintWindow`도 빈 표면을 준다. **다음에 서브픽셀을 재려는 사람은 GDI 캡처부터 다시 시작하지 마라.** 남은 경로는 Desktop Duplication(DXGI) 또는 `Windows.Graphics.Capture`이며 **둘 다 이 라운드에서 시도하지 않았다**(미측정).
+
+### 13.4 그래서 무엇이 열려 있는가
+
+- **서체 교체 후의 색수차·평균 spread** — 미측정. §11.3의 90.8% / 111.11을 Pretendard에 그대로 옮겨 적으면 안 된다.
+- Pretendard의 **12px 판독성** — S3 §14-12의 사람 판독 실험이 다룰 몫이다. 서체 크기는 여전히 잠정이다(S4 §15.1).
+- 위 두 가지 모두 **캡처 경로가 확보되기 전에는 시작할 수 없다** — 실험의 선행 조건이 §13.3이다.

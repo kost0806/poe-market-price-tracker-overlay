@@ -2,7 +2,6 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:rows="clr-namespace:PoeOverlay.Core.Presentation.ViewModels.Rows;assembly=PoeOverlay.Core"
-        xmlns:store="clr-namespace:PoeOverlay.Core.Store;assembly=PoeOverlay.Core"
         xmlns:domain="clr-namespace:PoeOverlay.Core.Domain;assembly=PoeOverlay.Core"
         xmlns:diag="clr-namespace:PoeOverlay.Core.Diagnostics;assembly=PoeOverlay.Core"
         Title="PoE Market Price Tracker — Settings"
@@ -11,6 +10,7 @@
         WindowStartupLocation="CenterScreen"
         Background="#FF232323"
         Foreground="#FFEDEDED"
+        FontFamily="pack://application:,,,/Fonts/#Pretendard"
         FontSize="12">
 
     <!-- Every colour in this window is one of the overlay's (OverlayView.xaml). The palette is
@@ -361,14 +361,19 @@
                                  MaxHeight="160"
                                  Margin="0,6,0,0">
                             <ListBox.ItemTemplate>
-                                <DataTemplate DataType="{x:Type store:SearchHit}">
+                                <!-- DisplayName, never ApiName: an unnamed hit bound straight from
+                                     the Store rendered as a blank row with only its category on it.
+                                     The fallback cannot live here — TargetNullValue and
+                                     PriorityBinding both count a null as a binding that succeeded —
+                                     so the row view model resolves it (S4 11.3 D-DL16). -->
+                                <DataTemplate DataType="{x:Type rows:SearchRowViewModel}">
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0"
-                                                   Text="{Binding ApiName, Mode=OneWay}"
+                                                   Text="{Binding DisplayName, Mode=OneWay}"
                                                    TextTrimming="CharacterEllipsis" />
                                         <TextBlock Grid.Column="1"
                                                    Margin="8,0,0,0"

@@ -102,7 +102,7 @@ src/
       Dtos/
         NinjaOverviewDto.cs
         CoreDto.cs
-        CoreItemDto.cs
+        ItemDto.cs                         D-MK5. 최상위 items 와 core.items 가 공유한다
         LineDto.cs
         SparklineDto.cs
         LeagueDto.cs
@@ -178,6 +178,10 @@ src/
       SingleInstanceGuard.cs
       InstanceSignal.cs
       FirstRunGate.cs
+    Fonts/                                 D-SH22, S3 4.9
+      Pretendard-Regular.otf               Resource. pack://application:,,,/Fonts/#Pretendard
+      Pretendard-SemiBold.otf              Resource
+      OFL.txt                              Content/PreserveNewest — 재배포 조건
     App.xaml.cs                            리소스 딕셔너리 코드 병합용 최소 코드비하인드, 3.2절
 
 tests/
@@ -696,14 +700,15 @@ internal sealed class NinjaOverviewDto
 {
     [JsonPropertyName("core")]  public CoreDto? Core { get; init; }
     [JsonPropertyName("lines")] public JsonElement[]? Lines { get; init; }
+    [JsonPropertyName("items")] public ItemDto[]? Items { get; init; }   // 최상위 = 이름 표
 }
 internal sealed class CoreDto
 {
     [JsonPropertyName("primary")]   public string? Primary { get; init; }
     [JsonPropertyName("secondary")] public string? Secondary { get; init; }
-    [JsonPropertyName("items")]     public CoreItemDto[]? Items { get; init; }
+    [JsonPropertyName("items")]     public ItemDto[]? Items { get; init; }   // 환율 기준 = [chaos, divine]
 }
-internal sealed class CoreItemDto
+internal sealed class ItemDto
 {
     [JsonPropertyName("id")]        public string? Id { get; init; }
     [JsonPropertyName("name")]      public string? Name { get; init; }
@@ -733,6 +738,8 @@ internal sealed class LeagueDto
 ```
 `core.rates`는 타입 자체에 없다(D-MK1) — CoreDto에 그 프로퍼티를 선언하지 않는다. `NinjaOverviewDto.Lines`가 JsonElement[]인 것이 D-MK2(원소별 역직렬화)의 타입 표현이다.
 
+**`NinjaOverviewDto.Items`와 `CoreDto.Items`는 이름이 같고 뜻이 다르다** 【정정 D-MK5, 구현 후 실측 2026-08-16】. 최상위 `items`가 **이름의 유일한 출처**(line과 1:1, 조인율 100%)이고, `core.items`는 **환율 기준**(`[chaos, divine]`, 조인율 0.2%)이다 — `00-api-contract.md` §2.0. 원소 모양이 같으므로 DTO는 `ItemDto` 하나를 공유한다(초판의 이름 `CoreItemDto`는 최상위 배열에 쓰이면 거짓이 되므로 개명했다). 조인 규칙은 S2 5.4: **이름은 최상위에서, `SelfReportedCategory`(A6)는 `core.items`에서**. `ItemDto.Image`는 읽되 매핑하지 않으며 **DivinationCard 전 항목에 없다** — 존재를 가정하지 않는다.
+
 ### 7.2 NinjaJsonContext — 소스 생성 옵션 확정
 
 ```
@@ -748,7 +755,7 @@ internal sealed class LeagueDto
 [JsonSerializable(typeof(LeagueDto[]))]
 internal sealed partial class NinjaJsonContext : JsonSerializerContext { }
 ```
-다섯 옵션은 S2 5.3의 표와 문자 단위로 일치해야 한다 — M22(11.7절 테스트)가 생성된 `NinjaJsonContext.Default.Options`를 리플렉션 없이 직접 단언한다(각 옵션은 JsonSerializerOptions의 공개 속성이므로 소스 생성 컨텍스트의 `Options` 인스턴스에서 바로 읽을 수 있다). `NinjaOverviewDto` 파싱 1회, `Lines`의 원소는 `JsonSerializer.Deserialize(el, NinjaJsonContext.Default.LineDto)`로 개별 파싱, `LeagueDto[]` 파싱 1회 — 셋만 소스 생성 대상이면 충분하다(CoreDto/CoreItemDto/SparklineDto는 NinjaOverviewDto/LineDto의 그래프에 포함되므로 소스 생성기가 자동으로 커버한다).
+다섯 옵션은 S2 5.3의 표와 문자 단위로 일치해야 한다 — M22(11.7절 테스트)가 생성된 `NinjaJsonContext.Default.Options`를 리플렉션 없이 직접 단언한다(각 옵션은 JsonSerializerOptions의 공개 속성이므로 소스 생성 컨텍스트의 `Options` 인스턴스에서 바로 읽을 수 있다). `NinjaOverviewDto` 파싱 1회, `Lines`의 원소는 `JsonSerializer.Deserialize(el, NinjaJsonContext.Default.LineDto)`로 개별 파싱, `LeagueDto[]` 파싱 1회 — 셋만 소스 생성 대상이면 충분하다(CoreDto/ItemDto/SparklineDto는 NinjaOverviewDto/LineDto의 그래프에 포함되므로 소스 생성기가 자동으로 커버한다).
 
 ### 7.3 MarketResult
 
@@ -1220,7 +1227,11 @@ public enum RowKind { Normal, Loading, FetchFailed, ItemUnresolved, ItemDropped 
 
 public sealed record BannerViewModel(AppConditionKind Kind, string Text, TimeSpan Duration, BannerSeverity Severity);
 public enum BannerSeverity { Info, Warning, Error }
+
+public sealed record SearchRowViewModel(ItemId Id, string DisplayName, ExchangeCategory Category);   // 신규 D-DL24
 ```
+
+**`SearchRowViewModel`(신규 D-DL24).** 설정 창의 검색 목록은 `SearchHit`을 직접 바인딩했고, `SearchHit.ApiName`이 널인 항목은 **카테고리만 보이는 빈 행**으로 렌더됐다. 이름 폴백은 `PriceRowViewModel.DisplayName`과 마찬가지로 뷰모델의 일이다 — `Store`는 `Localization`을 참조할 수 없으므로(S2 1.2) `SearchHit`에 표시 이름을 둘 수 없고, XAML의 `TargetNullValue`·`PriorityBinding`은 **널을 성공한 바인딩으로 보므로** 다른 속성으로 대체하지 못한다. `DisplayName = localizer.ItemName(hit.Id, hit.ApiName)` — 오버레이 행과 같은 ③④⑤ 체인이며, `Refresh`가 검색을 재계산하므로 언어 전환도 그대로 따라온다.
 
 ### 11.4 OverlayViewModel
 
@@ -1257,7 +1268,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
         ILogger<SettingsViewModel> logger);
 
     public string SearchQuery { get; set; }
-    public IReadOnlyList<SearchHit> SearchResults { get; }
+    public IReadOnlyList<SearchRowViewModel> SearchResults { get; }   // D-DL24. SearchHit 직결이 아니다
     public SearchOutcome SearchOutcome { get; }
     public IReadOnlyList<ExchangeCategory> UnfetchedCategories { get; }
     public IReadOnlyList<WatchlistEntry> Watchlist { get; }
@@ -1269,7 +1280,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
     public bool IsMoveModeActive { get; set; }         // IOverlayModeService로의 통과 속성(HLD D4-b)
     public bool ShowFirstRunBanner { get; }
 
-    public IAsyncRelayCommand AddToWatchlistCommand { get; }
+    public IAsyncRelayCommand AddToWatchlistCommand { get; }        // 실체는 AsyncRelayCommand<SearchRowViewModel?> — 목록의 SelectedItem
     public IRelayCommand<ItemId> RemoveFromWatchlistCommand { get; }
     public IAsyncRelayCommand FetchCategoryCommand { get; }        // 캐시에 없을 때 카테고리 1회 조회
     public IAsyncRelayCommand ReloadLeaguesCommand { get; }
@@ -1908,6 +1919,7 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | window.width/height 클램프 | [240, 4000] | S2 8.2 |
 | window.opacity 기본값/클램프 | 0.87 / [0.5, 1.0] | HLD 7절, S3 D-SH21 |
 | 최소 가시 면적 | 어느 한 작업영역과의 교집합이 (푸터 폭 x 푸터 높이) 이상 | S3 4.5 D-SH8 |
+| **서체(확정)** | `pack://application:,,,/Fonts/#Pretendard` — Regular + SemiBold, 어셈블리 동봉, 전 한글 커버리지, SIL OFL 1.1(`Fonts/OFL.txt` 동봉) | 신규 **D-SH22**(S3 §4.9). **크기와 달리 잠정이 아니다** — 서체는 여기서 닫히고, 아래 두 행(크기·팔레트)만 §14-12 실험에 남는다 |
 | 푸터 폰트 크기(잠정) | 12px | 신규, 잠정 — `00-shell-measurements.md` §8이 측정한 10/11/12/14px 중 중간값. `HasMinimumVisibleArea(..., Size footerSize)`의 실입력이 지금 필요하므로 임시로 확정한다. **결정 주체·시점(G3)**: 구현 담당자가 실물 1차 사용성 확인(S3 §14 항목12가 요구하는 체감 판독성 검증) 직후 교체 — 팔레트 확정과 같은 실험에 묶는다, 별도 절차를 새로 만들지 않는다 |
 | 오버레이 색 팔레트(컬러키 제외) | 잠정 — 흰색 주 텍스트/회색 보조/상승 녹색/하락 적색(시스템 기본 계열, 정확한 헥스값 미정) | 신규, 잠정 — 팔레트 값 자체는 여전히 §19.5가 의도적으로 열어 둔 자리다. 이 행은 "값이 아예 없다"는 지적(G3)에 대해 실험 전까지 쓸 수 있는 자리표시자를 준 것이지, §19.5의 유예를 철회한 것이 아니다 |
 
@@ -2045,7 +2057,7 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | 파일 | S2 절 | 커버 ID |
 |---|---|---|
 | Market/CategoryFetchTests.cs | 11.7 | M1~M6, M9~M11, **M10Prime**(전 행이 문자열 값 -> ElementFaultRatio, E2) (구조 검사 순서, 원소별 역직렬화) |
-| Market/JoinTests.cs | 11.7 | M6, M7(사전 1회 구축 계수 단언 포함 — E1, 아래 참조) |
+| Market/JoinTests.cs | 11.7 | M6, M7(사전 1회 구축 계수 단언 포함 — E1, 아래 참조), **M6Prime(신규, D-MK5 회귀) — 최상위 `items`에만 있는 슬러그의 이름이 해석되고 `core.items`에만 있는 슬러그는 `ApiName == null`임을 함께 단언한다. 두 단언이 옛 바인딩에서 정확히 뒤집힌다**, **M6DoublePrime — 최상위 `items[].category`(표시용 분류)가 A6 검증에 쓰이지 않음을 `CategoryMismatch` 부재로 단언**, **M6TriplePrime — 최상위 `items` 자체가 없는 응답이 실패가 아니라 `JoinMissCount` 상승으로 귀결** |
 | Market/DeserializationBoundaryTests.cs | 11.7 | **M8**(core 키 자체 없음 -> Deserialization, E2), **M12(신규 개별 파일 아님, 이 파일의 한 메서드) — {"core":null,...}가 Deserialization으로 귀결함을 단언. 2프라임 골격 널 검사 회귀**, **M12Prime**({"core":{...},"lines":null} -> Deserialization), **M12DoublePrime**(본문이 null 리터럴 -> Deserialization) |
 | Market/LeagueListTests.cs | 11.7 | M13~M15 |
 | Market/RetryAfterTests.cs | 11.7 | M16~M18 |
@@ -2111,6 +2123,16 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | Diagnostics/RollingFileSinkOverflowTests.cs | 4.3절, D-DG1, D2(신규) | 상한 초과 시 최고참 항목 폐기 + `LogBufferOverflow` 유실 통지가 상한 무시하고 큐잉됨을 단언. **유실 통지의 LogLevel이 Warning임을 단언**(D2 회귀) |
 | Diagnostics/RecentErrorRingTests.cs | 4.4절 | Warning 이상만 담김, 용량 64에서 최고참 폐기 |
 | Diagnostics/SessionSuppressionRegistryTests.cs | 4.5절, 14.8절 | `ShouldReport`의 채널별 1회 억제, `DumpTotals` |
+
+### 16.10 Shell — 동봉 서체 (D-SH22, 신규)
+
+| 파일 | 대응 절 | 내용 |
+|---|---|---|
+| Overlay/BundledFontTests.cs | S3 4.9 | 두 얼굴이 `fonts/pretendard-regular.otf`·`fonts/pretendard-semibold.otf` 키로 어셈블리에 들어 있고(=pack URI가 가리키는 폴더), 그 바이트가 **패밀리 `Pretendard`**이며, **한글 음절(`가`·`힣`)과 호환 자모(`ㄱ`)를 담고** 있고, 굵기가 Regular/SemiBold임을 단언 |
+
+**`FontFamily("pack://application:,,,/Fonts/#Pretendard")`로는 단언할 수 없다** 【측정】. 그 URI는 `Application.ResourceAssembly`를 기준으로 풀리고 그것은 **진입 어셈블리**인데, 테스트 호스트에서는 러너다. 세터는 1회성이며 테스트 본문이 도는 시점에는 이미 확정돼 있어 `InvalidOperationException`을 던진다. 따라서 테스트는 **리소스 바이트**를 검증하고, XAML이 실제로 그 URI를 해석하는지는 **실행 중 화면 캡처**로 확인한다(`00-shell-measurements.md` §13). 둘 중 하나만으로는 부족하다 — 전자는 XAML 오타를, 후자는 회귀를 놓친다.
+
+**함정 두 개** 【측정】. `GlyphTypeface`는 URI로만 열리므로 리소스를 파일로 풀어야 하는데, ① WPF는 **폴더의 목록을 첫 접근 시 캐시**한다 — 한 얼굴을 연 뒤 같은 폴더에 두 번째 파일을 쓰면 그것을 여는 순간 래스터라이저 내부에서 `NullReferenceException`이 난다. 전부 먼저 풀고 나서 열어야 한다. ② WPF는 파일을 **프로세스 수명 내내 매핑한 채로 둔다** — 테스트마다 지우거나 덮어쓰면 각각 `NullReferenceException`과 "매핑된 구역이 열린 파일" IOException이 된다. 어느 쪽도 원인을 말해 주지 않는다.
 
 ### 16.8 공통 규약
 

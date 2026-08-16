@@ -126,9 +126,15 @@ public sealed partial class MarketClient
             return FailCategory(FailureKind.EmptyLines, "EmptyLines", category.ToString(), null);
         }
 
-        // Step 5 — one dictionary per response (contract A2). A linear scan over hundreds of items
-        // for each of hundreds of lines is O(n²) on a path that reaches the UI thread.
-        var itemsById = BuildJoinDictionary(doc.Core.Items);
+        // Step 5 — two joins, one build pass per response (contract A2). A linear scan over hundreds
+        // of items for each of hundreds of lines is O(n²) on a path that reaches the UI thread.
+        //
+        // The two arrays are different things and neither can do the other's job: the root items is
+        // the name table (one entry per line, 959/959), core.items is the rate basis ([chaos,
+        // divine], 2/959 and its category is the only one that equals the query type). S2 5.4.
+        JoinDictionaryBuildCount++;
+        var namesById = BuildJoinDictionary(doc.Items);
+        var rateBasisById = BuildJoinDictionary(doc.Core.Items);
 
         // Step 6.
         var mapped = new Dictionary<ItemId, ItemPrice>(doc.Lines.Length);
@@ -185,11 +191,23 @@ public sealed partial class MarketClient
             }
 
             string? apiName = null;
-            ExchangeCategory? selfReported = null;
-            if (itemsById.TryGetValue(id.Value, out var item))
+            if (namesById.TryGetValue(id.Value, out var named))
             {
-                apiName = item.Name;
-                selfReported = ParseCategory(item.Category);
+                apiName = named.Name;
+            }
+            else
+            {
+                // A join miss is not a failure: it only shortens the name fallback chain.
+                joinMiss++;
+            }
+
+            // A6 reads the rate basis, which is where the category that matches the query type
+            // lives. Most lines are absent from it — that is its normal shape, not a miss, so it is
+            // not counted.
+            ExchangeCategory? selfReported = null;
+            if (rateBasisById.TryGetValue(id.Value, out var basis))
+            {
+                selfReported = ParseCategory(basis.Category);
                 if (selfReported is { } reported && reported != category)
                 {
                     // Contract A6 disagreement is reported, never a reason to discard data —
@@ -201,11 +219,6 @@ public sealed partial class MarketClient
                         "CategoryMismatch",
                         Invariant($"core.items reported category {reported} inside the {category} response."));
                 }
-            }
-            else
-            {
-                // A join miss is not a failure: it only shortens the name fallback chain.
-                joinMiss++;
             }
 
             ReportUnknownCurrency(line.MaxVolumeCurrency);
@@ -330,11 +343,18 @@ public sealed partial class MarketClient
             ? parsed
             : null;
 
-    private FrozenDictionary<string, CoreItemDto> BuildJoinDictionary(CoreItemDto[] items)
+    /// <summary>
+    /// Indexes one item array by slug. The caller counts the build pass, not this method: both
+    /// dictionaries are built in the same step, and the counter measures "once per response".
+    /// </summary>
+    private static FrozenDictionary<string, ItemDto> BuildJoinDictionary(ItemDto[]? items)
     {
-        JoinDictionaryBuildCount++;
+        if (items is null || items.Length == 0)
+        {
+            return FrozenDictionary<string, ItemDto>.Empty;
+        }
 
-        var builder = new Dictionary<string, CoreItemDto>(items.Length, StringComparer.Ordinal);
+        var builder = new Dictionary<string, ItemDto>(items.Length, StringComparer.Ordinal);
         foreach (var item in items)
         {
             if (!string.IsNullOrEmpty(item.Id))

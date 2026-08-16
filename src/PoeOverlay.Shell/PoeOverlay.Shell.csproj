@@ -16,6 +16,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- S3 4.7 / S4 15.1 — Pretendard travels inside the assembly. Relying on an installed copy
+         fails silently on any machine that has not got it: WPF substitutes and says nothing. The
+         licence (SIL OFL 1.1) ships beside the faces because redistribution is conditional on it,
+         and Content/PreserveNewest puts a readable copy next to the exe as well. -->
+    <Resource Include="Fonts\Pretendard-Regular.otf" />
+    <Resource Include="Fonts\Pretendard-SemiBold.otf" />
+    <Content Include="Fonts\OFL.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\PoeOverlay.Core\PoeOverlay.Core.csproj" />
   </ItemGroup>
 
