@@ -79,7 +79,7 @@ public sealed class FallbackChainTests
     }
 
     [Fact]
-    public void L5_NoApiNameEither_RendersTheSlugAndWarnsOnce()
+    public void L5_NoApiNameEither_RendersTheSlugAndReportsAtDebugOnce()
     {
         using var harness = LocalizationHarness.Create();
         var catalog = harness.Start();
@@ -89,7 +89,27 @@ public sealed class FallbackChainTests
 
         Assert.Equal("exalted-orb", first);
         Assert.Equal("exalted-orb", second);
-        Assert.Equal(1, harness.Logger.Count(LogLevel.Warning, "exalted-orb"));
+
+        // Debug, not Warning: no dictionary this project ships names every item slug, so an
+        // unnamed item is data the app has not got rather than a fault (S2 9.4). At Warning it
+        // reached the settings window's recent list, one line per watchlist item, every start.
+        Assert.Equal(1, harness.Logger.Count(LogLevel.Debug, "exalted-orb"));
+        Assert.Equal(0, harness.Logger.Count(LogLevel.Warning, "exalted-orb"));
+    }
+
+    [Fact]
+    public void L5b_AnUnresolvedUiKey_IsStillAWarning()
+    {
+        // The other half of the split: a missing ui.* key is a defect in a dictionary this project
+        // ships, and it must keep reaching the user-facing list.
+        using var harness = LocalizationHarness.Create();
+        var catalog = harness.Start();
+
+        var value = catalog.Resolve("ui.state.doesNotExist", apiName: null, isItemName: false, out var level);
+
+        Assert.Equal(5, level);
+        Assert.Equal("ui.state.doesNotExist", value);
+        Assert.Equal(1, harness.Logger.Count(LogLevel.Warning, "ui.state.doesNotExist"));
     }
 
     [Fact]

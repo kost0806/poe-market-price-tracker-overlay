@@ -1297,15 +1297,19 @@ graph TD
 
 ```
 ConsumeAsync(lifetimeToken):                  // 취소는 하드 타임아웃용이지 정상 종료 수단이 아니다
+  exitKind = Faulted                          // 끝까지 배수(drain)한 것을 보기 전까지는 Faulted
   try:
     await foreach (cmd in reader.ReadAllAsync().ConfigureAwait(false)):
         try:    Apply(cmd)
         catch (Exception ex):
             Log(Error, "store.apply", cmd.Kind, ex)
             SetLastError(ErrorRecord{ Module="Store", Code="ApplyFault", … })   // ← 상태를 남긴다
+    exitKind = Canceled                       // StopAsync가 닫은 채널을 다 비운 정상 경로
   finally:
-    Log(Error, "store.loop.exited")
+    Log(exitKind == Faulted ? Error : Information, "store.loop.exited")
 ```
+
+**루프 종료의 수준은 갈래를 따른다 — 【실측 정정】.** 초판은 `finally`에서 무조건 `Error`로 적었고, 그 결과 **정상 종료할 때마다 로그의 마지막 줄이 `[ERR]`** 이었다(2026-08-16 실행 로그에서 관측). 운영자가 로그에서 가장 먼저 찾는 것이 `[ERR]`이므로, 이 한 줄은 "스토어가 더 이상 명령을 적용할 수 없다"는 **진짜** 사고와 구별되지 않은 채 매 실행에 한 번씩 나타났다 — 경보가 늘 켜져 있으면 경보가 아니다. **결정**: 기록 자체는 두 갈래 모두 남기되(루프가 나갔다는 사실은 어느 쪽이든 알 가치가 있다) **수준으로 갈래를 말한다.** `Canceled`(= 채널 완료 후 배수 종료)는 `Information`, `Faulted`(= 예외가 `await foreach`를 뚫고 나감)는 `Error`. 어휘는 `Heartbeat.ExitKind`가 이미 들고 있는 `LoopExitKind`를 그대로 쓴다 — 같은 사실에 두 개의 이름을 두지 않는다.
 
 | 규칙 | 근거 |
 |---|---|
@@ -1786,7 +1790,8 @@ record LogEntry(DateTimeOffset At, LogLevel Level, string Module, string Message
 
 | 채널 | 억제 키 | 수준 |
 |---|---|---|
-| 미해결 i18n 키 (⑤) | (언어, 공간, 키) | Warning |
+| 미해결 i18n 키 (⑤) — `Ui` 공간 | (언어, 공간, 키) | Warning |
+| 미해결 i18n 키 (⑤) — `ItemName` 공간 | (언어, 공간, 키) | **Debug** |
 | 아이템명 API 폴백 (④) | (언어, 슬러그) | Debug |
 | 사전 템플릿 자리표시자 위반 (§3.7) | (언어, 키) | Warning |
 | 미지 `maxVolumeCurrency` | 원시 토큰 | Info |
@@ -1794,6 +1799,8 @@ record LogEntry(DateTimeOffset At, LogLevel Level, string Module, string Message
 | `core.items[].category` 불일치 | (요청 type, 응답 category) | Warning |
 | 쓰기 차단 상태의 갱신 시도 | 차단 사유 | Warning |
 | `ExtraMatch` 예외 (§6.7) | 예외 타입 | Warning |
+
+**⑤의 수준은 체인 위치가 아니라 공간이 정한다 — 【실측 정정】.** 초판은 ⑤ 한 줄에 `Warning` 하나만 적었다. 실행 로그(2026-08-16)에서 그 결정의 결과가 드러났다: `en` 사전은 `ui.*` 키만 담고 아이템 슬러그는 담지 않으므로, **관심목록·검색에 등장하는 거의 모든 아이템이 ⑤에 떨어지고** 설정 창의 최근 오류 목록(§9.3)이 `Key 'divine' (ItemName) is unresolved` 같은 줄로 가득 찼다. 그 목록은 사용자가 "무엇이 잘못됐나"를 보러 여는 자리인데, 잘못된 것이 하나도 없을 때조차 스무 줄이 차 있었다. **결정**: `Ui` 공간의 미해결 키는 이 프로젝트가 **배포하는** 사전의 결함이므로 `Warning` 그대로 두고 사용자 목록에도 계속 올린다. `ItemName` 공간의 미해결 슬러그는 결함이 아니라 **가지고 있지 않은 데이터**이며 ④(API 이름 폴백)와 같은 종류의 사건이므로 같은 `Debug` 수준으로 내린다 — 파일 로그에는 그대로 남고, 링(Warning 이상만 받는다)에는 들어가지 않는다.
 
 **모든 의도적 폐기를 보고한다** 【신규 D-DG2】.
 
@@ -2037,7 +2044,8 @@ IUiTicker { event EventHandler Tick;  void Start(TimeSpan period);  void Stop();
 | L2 | `ko`에 없음, 디스크 `en`에 있음 | ② |
 | L3 | `ko`·디스크 `en` 없음 | ③ **내장** |
 | L4 | `ItemName`, 전 사전에 없음, `apiName` 있음 | ④ + Debug 1회 |
-| L5 | `apiName`도 없음 | ⑤ 슬러그 + Warning 1회 |
+| L5 | `apiName`도 없음(`ItemName` 공간) | ⑤ 슬러그 + **Debug** 1회 (§9.4 — 배포 사전에 없는 슬러그는 결함이 아니다) |
+| **L5b** | `ui.*` 키가 어느 사전에도 없음(`Ui` 공간) | ⑤ 키 + **Warning** 1회 — 이쪽은 배포 사전의 결함이므로 사용자 목록까지 올라간다 |
 | L6 | `ko`에 `"key": "  "` | ①을 건너뛰고 ② |
 | L7 | `current == "en"` | ①·② 통합, 표 조회 1회 |
 | L8 | 억제 키에 언어 포함 | 언어 전환 후 같은 키가 **다시** 보고된다 |

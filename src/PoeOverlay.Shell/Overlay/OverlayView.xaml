@@ -74,11 +74,32 @@
                                            Text="{Binding Price.Text}"
                                            Foreground="#FFEDEDED"
                                            Margin="8,0,0,0" />
+                                <!-- One run, not two. Change.Text already begins with the glyph
+                                     (ui.price.change is "{0}{1}%" and Pricing passes the glyph as
+                                     {0}), so binding Change.Glyph beside it printed every arrow
+                                     twice — "▼ ▼5.0%" on every row. Change.Glyph stays on the
+                                     record for callers that want the sign on its own.
+
+                                     The brush comes from Change.Direction, never from the string:
+                                     HLD 6.3 puts the glyph and the number in Pricing and the colour
+                                     in the View for exactly this reason — telling Flat from Unknown
+                                     by comparing text breaks on a language change. -->
                                 <TextBlock Grid.Column="2"
-                                           Foreground="#FFA0A0A0"
+                                           Text="{Binding Change.Text, Mode=OneWay}"
                                            Margin="8,0,0,0">
-                                    <Run Text="{Binding Change.Glyph, Mode=OneWay}" />
-                                    <Run Text="{Binding Change.Text, Mode=OneWay}" />
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock">
+                                            <Setter Property="Foreground" Value="#FFA0A0A0" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding Change.Direction}" Value="Up">
+                                                    <Setter Property="Foreground" Value="#FF7FD18C" />
+                                                </DataTrigger>
+                                                <DataTrigger Binding="{Binding Change.Direction}" Value="Down">
+                                                    <Setter Property="Foreground" Value="#FFE58A8A" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
                                 </TextBlock>
                             </Grid>
                         </DataTemplate>
@@ -97,6 +118,7 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0"
                                Text="{Binding FooterAttribution}"
@@ -108,19 +130,23 @@
                                Foreground="#FF808080"
                                FontSize="10"
                                Margin="6,0,0,0" />
-                </Grid>
 
-                <!-- Move-mode grip. Inset into painted pixels: the colour-keyed region passes
-                     clicks through whatever shape it is (HLD D4-c, restated in S3 4.0.1). -->
-                <Rectangle Grid.Row="3"
-                           x:Name="ResizeGrip"
-                           Width="12"
-                           Height="12"
-                           Fill="#FF7FB2FF"
-                           HorizontalAlignment="Right"
-                           VerticalAlignment="Bottom"
-                           Cursor="SizeNWSE"
-                           Visibility="Collapsed" />
+                    <!-- Move-mode grip. A column of the footer rather than a free-floating overlay
+                         on top of it: laid over the footer it covered the relative time, which is
+                         the half of the footer that changes. Auto width means the column costs
+                         nothing at all while the grip is Collapsed, so leaving move mode gives the
+                         time its space straight back. Inset into painted pixels — the colour-keyed
+                         region passes clicks through whatever shape it is (HLD D4-c, S3 4.0.1). -->
+                    <Rectangle Grid.Column="2"
+                               x:Name="ResizeGrip"
+                               Width="12"
+                               Height="12"
+                               Fill="#FF7FB2FF"
+                               Margin="6,0,0,0"
+                               VerticalAlignment="Bottom"
+                               Cursor="SizeNWSE"
+                               Visibility="Collapsed" />
+                </Grid>
             </Grid>
         </Border>
     </Border>

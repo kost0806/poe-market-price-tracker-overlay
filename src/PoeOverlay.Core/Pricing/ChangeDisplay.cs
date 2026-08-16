@@ -12,10 +12,14 @@ namespace PoeOverlay.Core.Pricing;
 /// </param>
 /// <param name="Glyph">
 /// <c>▲</c>, <c>▼</c> or empty. A compile-time constant of Pricing, never a dictionary key — a
-/// translator supplying a broken glyph would destroy meaning, not translate it.
+/// translator supplying a broken glyph would destroy meaning, not translate it. It is the sign on
+/// its own, for a caller that wants it separately; it is not something to draw beside
+/// <paramref name="Text"/>.
 /// </param>
 /// <param name="Text">
-/// The magnitude, always absolute; the sign is carried by <paramref name="Glyph"/>. Empty for
-/// <see cref="ChangeDirection.Unknown"/>.
+/// The whole rendered change — <c>ui.price.change</c> is <c>{0}{1}%</c> and Pricing passes the
+/// glyph as <c>{0}</c>, so this <em>already begins with</em> <paramref name="Glyph"/>. Empty for
+/// <see cref="ChangeDirection.Unknown"/>. A view binds this alone: binding the glyph beside it drew
+/// every arrow twice, observed on screen as <c>▼ ▼5.0%</c> (S3 4.8).
 /// </param>
 public sealed record ChangeDisplay(ChangeDirection Direction, string Glyph, string Text);

@@ -88,6 +88,19 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
     [ObservableProperty]
     private LeagueListStatus _leaguesStatus = LeagueListStatus.Failed;
 
+    /// <summary>
+    /// The league the data actually carries, which is not the league the user typed.
+    /// </summary>
+    /// <remarks>
+    /// <c>settings.league</c> is null whenever the league is being resolved from the list (S4 10.2),
+    /// so the league control on screen is legitimately empty in the ordinary case — and a user
+    /// looking at an empty box next to healthy prices cannot tell "resolved for me" from "not
+    /// working". This is that answer, and it is read-only: writing it would be a second route into
+    /// <c>settings.league</c>.
+    /// </remarks>
+    [ObservableProperty]
+    private string _activeLeague = string.Empty;
+
     [ObservableProperty]
     private IReadOnlyList<BannerViewModel> _banners = [];
 
@@ -270,6 +283,10 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
 
         _dataLeague = snapshot.DataLeague ?? string.Empty;
         _dataEpoch = snapshot.DataEpoch;
+
+        // The resolution's own league first: it is the verdict, while DataLeague is the tag on the
+        // data that verdict admitted. They agree except in the window between the two.
+        ActiveLeague = snapshot.LeagueResolution.League ?? _dataLeague;
 
         // The set RetryNowCommand works from. Read here rather than at click time because the
         // command must not hold the Store: the snapshot the pass handed us is the only view of it

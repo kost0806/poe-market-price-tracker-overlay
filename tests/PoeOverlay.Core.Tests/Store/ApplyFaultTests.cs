@@ -172,4 +172,23 @@ public sealed class ApplyFaultTests
             Assert.Equal(6, harness.Current.Heartbeat.LastRoundNumber);
         }
     }
+
+    [Fact]
+    public async Task S18_AnOrdinaryShutdown_RecordsTheLoopExitWithoutClaimingAnError()
+    {
+        // Every clean run ended with an [ERR] line, which is exactly the line an operator scans a
+        // log for. The record itself is kept — the loop leaving is worth knowing either way — but
+        // the level now says which of the two exits happened (S2 6.3).
+        using var harness = await StoreHarness.StartAsync().ConfigureAwait(false);
+
+        harness.Store.RecordHeartbeatAttempt(1);
+        await harness.WaitForVersionAsync(1).ConfigureAwait(false);
+        await harness.StopAsync().ConfigureAwait(false);
+
+        var exits = harness.Logger.WithCode("LoopExited");
+        var exit = Assert.Single(exits);
+
+        Assert.Equal(LogLevel.Information, exit.Level);
+        Assert.DoesNotContain(harness.Logger.Entries, e => e.Level >= LogLevel.Error);
+    }
 }

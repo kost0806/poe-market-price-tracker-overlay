@@ -23,6 +23,12 @@ public sealed partial class Store
     {
         _ = lifetimeToken;
 
+        // Faulted until the loop is seen to reach the end of a completed channel. The exit kind is
+        // the whole difference between "the application is shutting down" and "the store can no
+        // longer apply anything" — logging both at Error put an [ERR] line in every clean run and
+        // made the one that matters indistinguishable from the one that does not.
+        var exitKind = LoopExitKind.Faulted;
+
         try
         {
             // CA2007 does not see await foreach, so ConfigureAwait is written out by hand — and
@@ -64,10 +70,19 @@ public sealed partial class Store
                 }
 #pragma warning restore CA1031
             }
+
+            // Reached only by draining a channel that StopAsync completed — the ordinary exit.
+            exitKind = LoopExitKind.Canceled;
         }
         finally
         {
-            Log(LogLevel.Error, "LoopExited", "The store consumer loop exited.");
+            var faulted = exitKind == LoopExitKind.Faulted;
+            Log(
+                faulted ? LogLevel.Error : LogLevel.Information,
+                "LoopExited",
+                faulted
+                    ? "The store consumer loop exited on a fault; no further command can be applied."
+                    : "The store consumer loop exited after the command channel closed.");
         }
     }
 

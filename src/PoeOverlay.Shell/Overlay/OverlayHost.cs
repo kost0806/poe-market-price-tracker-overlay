@@ -210,6 +210,7 @@ internal sealed class OverlayHost : IDisposable
         _view.Body.LostMouseCapture += OnBodyCaptureLost;
         _view.ResizeGrip.MouseLeftButtonDown += OnGripPressed;
         _view.ResizeGrip.MouseMove += OnGripMoved;
+        _view.ResizeGrip.MouseLeftButtonUp += OnGripReleased;
         _view.ResizeGrip.LostMouseCapture += OnGripCaptureLost;
 
         _view.Width = window.Width;
@@ -246,6 +247,33 @@ internal sealed class OverlayHost : IDisposable
 
         _view.MoveModeBorder.BorderBrush = visible ? OverlayView.MoveModeBrush : OverlayView.BodyBrush;
         _view.ResizeGrip.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// <summary>
+    /// Gives back any capture a gesture still holds (S3 4.6.1 D4-c).
+    /// </summary>
+    /// <remarks>
+    /// Idempotent, and a no-op when nothing is captured. Leaving move mode hides the grip, and a
+    /// hidden element goes on receiving mouse input while it holds the capture — so the mode's exit
+    /// path drops the capture itself rather than trusting the gesture to have ended. Each release
+    /// runs the normal <c>LostMouseCapture</c> path, which is where the commit lives.
+    /// </remarks>
+    internal void ReleaseGestureCapture()
+    {
+        if (_view is null)
+        {
+            return;
+        }
+
+        if (_view.ResizeGrip.IsMouseCaptured)
+        {
+            _view.ResizeGrip.ReleaseMouseCapture();
+        }
+
+        if (_view.Body.IsMouseCaptured)
+        {
+            _view.Body.ReleaseMouseCapture();
+        }
     }
 
     /// <summary>
@@ -392,6 +420,7 @@ internal sealed class OverlayHost : IDisposable
             _view.Body.LostMouseCapture -= OnBodyCaptureLost;
             _view.ResizeGrip.MouseLeftButtonDown -= OnGripPressed;
             _view.ResizeGrip.MouseMove -= OnGripMoved;
+            _view.ResizeGrip.MouseLeftButtonUp -= OnGripReleased;
             _view.ResizeGrip.LostMouseCapture -= OnGripCaptureLost;
             _view.Detach();
         }
@@ -635,6 +664,29 @@ internal sealed class OverlayHost : IDisposable
         _resizeStartHeight = _view.ActualHeight;
         _ = _view.ResizeGrip.CaptureMouse();
         DragActivity?.Invoke(this, EventArgs.Empty);
+        e.Handled = true;
+    }
+
+    /// <summary>
+    /// Ends the grip gesture on the button release.
+    /// </summary>
+    /// <remarks>
+    /// Without this the capture is never given back. WPF keeps routing <c>MouseMove</c> to the
+    /// captured element whether or not a button is down, so after one press-and-release the overlay
+    /// went on resizing itself to follow the bare cursor until move mode was left — observed on
+    /// screen with the button state read directly and the window rect tracking the cursor. The body
+    /// drag has always had this handler; the grip did not.
+    /// </remarks>
+    private void OnGripReleased(object sender, MouseButtonEventArgs e)
+    {
+        if (_view is null || !_view.ResizeGrip.IsMouseCaptured)
+        {
+            return;
+        }
+
+        // The commit and the CaptureReleased notification both live in OnGripCaptureLost, which
+        // this call reaches synchronously — the same single exit point the body drag uses.
+        _view.ResizeGrip.ReleaseMouseCapture();
         e.Handled = true;
     }
 

@@ -1263,6 +1263,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
     public IReadOnlyList<WatchlistEntry> Watchlist { get; }
     public IReadOnlyList<LeagueEntry> Leagues { get; }
     public LeagueListStatus LeaguesStatus { get; }
+    public string ActiveLeague { get; }                // 읽기 전용. 자유 입력 상자와 다른 값이다 — S3 5.4.3
     public IReadOnlyList<BannerViewModel> Banners { get; }
     public bool WritesBlocked { get; }
     public bool IsMoveModeActive { get; set; }         // IOverlayModeService로의 통과 속성(HLD D4-b)
@@ -1285,6 +1286,8 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
 }
 ```
 Refresh 내부 순서: 배너 계산(먼저, 독립 구간, S3 7.6) → 검색 결과 재계산 → 관심목록 행 갱신 → 리그 목록 갱신.
+
+**`ActiveLeague`(신규, S3 §5.4.3).** `Refresh`에서 `snapshot.LeagueResolution.League ?? snapshot.DataLeague`로 갱신한다 — 해석 결과가 먼저다(그것이 판정이고, `DataLeague`는 그 판정이 받아들인 데이터에 붙은 꼬리표다). 세터는 두지 않는다: 쓰기를 허용하면 `settings.league`로 가는 두 번째 통로가 생기고, 그 키는 `SettingsEditor`(S3 §5.4)가 단독으로 쓴다.
 
 **B2 — 세 가지 결함을 함께 닫는다.** ① `windowScopeToken`을 공급할 팩터리가 없었다 — §12.4가 `SettingsWindowFactory`를 그 공급자로 확정했다. ② §19.4가 산문으로만 적었던 `retryTrayRegistration` 매개변수가 실제 생성자 목록에 없었다 — 위 시그니처에 추가했다. `RetryTrayRegistrationCommand`는 이 델리게이트를 그대로 호출한다: Composition의 `ServiceRegistration`이 `sp => sp.GetRequiredService<TrayIconHost>().TryReregisterAsync`를 바인딩한다(§19.4, D-SH12). ③ §8.4가 "SettingsViewModel이 `Store.SetFetchedListing`을 부른다"고 적었지만 생성자에 `Store`도 그것을 노출하는 인터페이스도 없었다 — `Store`에 6번째 얼굴을 추가하는 대신(S3 §3.1이 다섯 얼굴로 동결했으므로 늘리면 S3 개정이 필요해진다), `retryTrayRegistration`과 같은 델리게이트 패턴을 재사용한다: `FetchedListingSink`(위)를 새로 선언하고, Composition이 `sp => (league, epoch, category, snapshot) => sp.GetRequiredService<Store>().SetFetchedListing(new DataTag(league, epoch), category, snapshot)`를 바인딩한다. `SettingsViewModel`은 `Store`도 `DataTag`도 모른 채(D-C5와 동형의 격리) §8.4의 오버로드를 호출할 수 있다.
 
@@ -1648,6 +1651,7 @@ internal sealed class OverlayHost : IDisposable
     internal void EnableClickThrough();
     internal void DisableClickThrough();
     internal void ShowMoveModeAffordances(bool visible);   // BorderBrush를 바꾼다. Visibility가 아니다(S3 4.6)
+    internal void ReleaseGestureCapture();                 // 멱등. 모드 종료 경로가 부른다(S3 4.6)
     internal void ApplyHeightPolicy(bool moveModeActive);
     internal bool ApplySavedGeometry();
     internal bool Revalidate();
@@ -2004,6 +2008,7 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | LWA_ALPHA | 0x00000002 | 신규, SDK 표준값 |
 | HWND_MESSAGE | `new IntPtr(-3)` | 신규, SDK 표준값 |
 | SMTO_ABORTIFHUNG | 0x00000002 | 신규, SDK 표준값 — S3 §3.2가 요구한 플래그 |
+| DWMWA_USE_IMMERSIVE_DARK_MODE | 20 | 신규, SDK 표준값(Windows 10 20H1 이후) — S3 §5.4.1이 요구한 어두운 캡션. 빌드 18985 이전의 값 19은 **쫓지 않는다**(그 경우 캡션이 밝게 남을 뿐이다). `DwmSetWindowAttribute`의 HRESULT는 확인만 하고 던지지 않는다 |
 
 ### 15.10 부팅 감시
 
@@ -2031,7 +2036,7 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 
 | 파일 | S2 절 | 커버 ID |
 |---|---|---|
-| Localization/FallbackChainTests.cs | 11.6 | L1~L10 |
+| Localization/FallbackChainTests.cs | 11.6 | L1~L10, **L5b**(`ui.*` 미해결은 Warning으로 남고 `ItemName` 미해결만 Debug로 내려감 — S2 9.4 갈래 회귀) |
 | Localization/PriceTemplateFallbackTests.cs | 11.11 | C1~C7, 14절 카탈로그와 PriceTemplates 상수의 문자 단위 일치(C1)를 리플렉션으로 순회 단언 |
 | Presentation/UiStateTemplateFallbackTests.cs | S3 9.3, 신규 | UiStateTemplates 상수와 14.3절 표의 일치를 C1과 동형으로 단언 |
 
@@ -2054,7 +2059,7 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 |---|---|---|
 | Store/CommitValidationTests.cs | 11.8 | **S0 — 기동 후 BeginNewLeague -> CommitCategory 커밋이 착지함을 단언, B1 회귀**. S1, S2, S2Prime, S2DoublePrime, **S2TriplePrime**(`Items`에 `default(ItemId)` 키 -> `EmptyItemId` 거부, Release에서도 — §13.4가 코드를 정의한 자리, E2), S3, S4, S4Prime |
 | Store/ConcurrencyTests.cs | 11.8 | S5 |
-| Store/ApplyFaultTests.cs | 11.8 | S6, S7, S7Prime, S7DoublePrime |
+| Store/ApplyFaultTests.cs | 11.8 | S6, S7, S7Prime, S7DoublePrime, **S18 — 정상 종료가 남기는 `LoopExited`는 `Information`이고 실행 전체에 `Error` 이상이 하나도 없음(S2 6.3 갈래 회귀)** |
 | Store/CommitRejectedConditionTests.cs | 11.8 | S8, S8Prime |
 | Store/SearchTests.cs | 11.8 | S9~S15 |
 | Store/SnapshotChangedInvariantTests.cs | 11.8 | **S16 — 임의 명령 적용 후 SnapshotChanged가 정확히 1회 발신됨을 단언(AP->EV, S3 13-41)** |
@@ -2094,6 +2099,7 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | Presentation/SnapshotFanoutReentrancyTests.cs | S3 8.4, 측정 §10.3 | 경계 트리거+래치 구현이 반복 실패에서 유한 패스 후 수렴함을 단언 — **상한 패스 수 N=7**(E4, `00-shell-measurements.md` §10.3 실측값)로 고정 assert. `>=N` 레벨 구현으로 회귀하면 실패하도록 정확히 7을 assert하며, "N 이하"가 아니라 "정확히 7 이하로 수렴"임을 단언한다 |
 | Presentation/DerivedConditionsTests.cs | S3 9.2 | PollingStopped/RatePending/RowStale/ClassifyRow 네 순수 함수 |
 | Presentation/ViewModelRefreshFailingLatchTests.cs | S3 10.1, B3 | 경계(false->true/true->false)에서만 Set이 호출됨을 단언 — N-1회 실패 시 미호출, N회째 정확히 1회 호출 |
+| Presentation/SettingsViewModelTests.cs | S3 5, 7.4, 7.6, **5.4.3** | 배너 조립 순서, 디바운스, 통과 토글, 델리게이트 경유 명령, **`ActiveLeague`가 해석된 리그를 게시함**(자유 입력 상자가 비어 있는 정상 상태에서 창이 답을 갖도록) |
 
 ### 16.9 Diagnostics (E3, 신규)
 

@@ -239,7 +239,15 @@ public sealed class LocalizationCatalog : ILocalizer, IHostedLifecycleService
         var space = isItemName ? "ItemName" : "Ui";
         if (_suppression.ShouldReport(UnresolvedKeyChannel, SuppressionKey(current, space, key)))
         {
-            _logger.LogWarning(
+            // The level is the space, not the chain position (S2 9.4). A missing ui.* key is a
+            // defect in a dictionary this project ships — Warning, and it belongs in front of the
+            // user in the settings window's recent list. An item-name slug has no shipped entry for
+            // almost any item, so its absence is data the app does not have rather than a fault: it
+            // is the same kind of event as level ④ and is recorded at the same level. Warning here
+            // filled the recent-error list with one line per watchlist item on every start, which
+            // is the noise that hides a real warning.
+            _logger.Log(
+                isItemName ? LogLevel.Debug : LogLevel.Warning,
                 "Key '{Key}' ({Space}) is unresolved in '{Language}'; rendering the key itself.",
                 key,
                 space,

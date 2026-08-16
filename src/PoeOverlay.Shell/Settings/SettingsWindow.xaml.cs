@@ -1,6 +1,7 @@
 using System.Windows;
 using System.Windows.Interop;
 using PoeOverlay.Core.Presentation.ViewModels;
+using PoeOverlay.Interop;
 
 namespace PoeOverlay.Settings;
 
@@ -62,4 +63,24 @@ public sealed partial class SettingsWindow : Window
 
     /// <summary>The scalar settings adapter, bound to by name from the XAML.</summary>
     public SettingsEditor Editor { get; }
+
+    /// <summary>
+    /// Asks DWM for a dark caption, once the HWND exists (S3 5.4).
+    /// </summary>
+    /// <remarks>
+    /// The window's own chrome is the one surface XAML cannot reach. A refusal is left alone: the
+    /// attribute is simply unsupported on older builds and the caption stays light, which is worse
+    /// looking and nothing more.
+    /// </remarks>
+    protected override void OnSourceInitialized(EventArgs e)
+    {
+        base.OnSourceInitialized(e);
+
+        var enabled = 1;
+        _ = NativeMethods.DwmSetWindowAttribute(
+            new WindowInteropHelper(this).Handle,
+            Win32Constants.DwmwaUseImmersiveDarkMode,
+            ref enabled,
+            sizeof(int));
+    }
 }

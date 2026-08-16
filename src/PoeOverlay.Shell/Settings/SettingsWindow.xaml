@@ -13,19 +13,276 @@
         Foreground="#FFEDEDED"
         FontSize="12">
 
+    <!-- Every colour in this window is one of the overlay's (OverlayView.xaml). The palette is
+         provisional pending the legibility experiment (S3 14-12), so this file invents nothing: it
+         reuses the six values the overlay already paints with. Before this, the window set only its
+         own Background and Foreground and left every control on the system theme — white text boxes,
+         grey Win32 buttons, and combo boxes whose items inherited a near-white foreground onto a
+         white popup and so read as empty. Each control below therefore states its own Background and
+         Foreground rather than relying on inheritance, which is what leaked in the first place: a
+         GroupBox Foreground propagates to everything inside it, including the TextBlocks a
+         ContentPresenter builds, which implicit Window-level styles never reach. -->
+
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+
+        <SolidColorBrush x:Key="Surface" Color="#FF232323" />
+        <SolidColorBrush x:Key="Field" Color="#FF1E1E1E" />
+        <SolidColorBrush x:Key="Line" Color="#FF3C3C3C" />
+        <SolidColorBrush x:Key="Ink" Color="#FFEDEDED" />
+        <SolidColorBrush x:Key="MutedInk" Color="#FFA0A0A0" />
+        <SolidColorBrush x:Key="FaintInk" Color="#FF808080" />
+        <SolidColorBrush x:Key="Accent" Color="#FF7FB2FF" />
+        <SolidColorBrush x:Key="AccentFill" Color="#FF2F3B4C" />
+        <SolidColorBrush x:Key="WarnInk" Color="#FFFFC35C" />
+        <SolidColorBrush x:Key="ErrorInk" Color="#FFE58A8A" />
+
         <Style TargetType="TextBlock">
-            <Setter Property="Foreground" Value="#FFEDEDED" />
+            <Setter Property="Foreground" Value="{StaticResource Ink}" />
+            <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="{StaticResource Field}" />
+            <Setter Property="Foreground" Value="{StaticResource Ink}" />
+            <Setter Property="CaretBrush" Value="{StaticResource Ink}" />
+            <Setter Property="SelectionBrush" Value="{StaticResource Accent}" />
+            <Setter Property="BorderBrush" Value="{StaticResource Line}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="Padding" Value="4,3" />
+        </Style>
+
+        <!-- Buttons, list items and the combo box get explicit templates. The system templates paint
+             their own backgrounds from theme brushes, so setting Background on them changes nothing
+             and the control stays light on a dark window. Each template is the smallest one that
+             still shows focus and hover. -->
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource Field}" />
+            <Setter Property="Foreground" Value="{StaticResource Ink}" />
+            <Setter Property="BorderBrush" Value="{StaticResource Line}" />
+            <Setter Property="Padding" Value="10,3" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Chrome"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="1"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              TextElement.Foreground="{TemplateBinding Foreground}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="{StaticResource AccentFill}" />
+                                <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource Accent}" />
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Chrome" Property="Background" Value="{StaticResource Accent}" />
+                                <Setter Property="Foreground" Value="#FF10151C" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Foreground" Value="{StaticResource FaintInk}" />
+                                <Setter TargetName="Chrome" Property="Background" Value="{StaticResource Surface}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="CheckBox">
+            <Setter Property="Foreground" Value="{StaticResource Ink}" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+
+        <Style TargetType="ListBoxItem">
+            <Setter Property="Foreground" Value="{StaticResource Ink}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Padding" Value="4,2" />
+            <!-- F3: without this the item container is only as wide as its content, so a row's own
+                 star column never stretches and the "Remove" button sits flush against the id. -->
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Row"
+                                Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter HorizontalAlignment="Stretch"
+                                              TextElement.Foreground="{TemplateBinding Foreground}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Row" Property="Background" Value="{StaticResource Field}" />
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Row" Property="Background" Value="{StaticResource AccentFill}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="ListBox">
+            <Setter Property="Background" Value="{StaticResource Field}" />
+            <Setter Property="Foreground" Value="{StaticResource Ink}" />
+            <Setter Property="BorderBrush" Value="{StaticResource Line}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        </Style>
+
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Foreground" Value="{StaticResource Ink}" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Padding" Value="6,3" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="Row"
+                                Background="{TemplateBinding Background}"
+                                Padding="{TemplateBinding Padding}"
+                                SnapsToDevicePixels="True">
+                            <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="Row" Property="Background" Value="{StaticResource AccentFill}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style TargetType="ComboBox">
+            <Setter Property="Background" Value="{StaticResource Field}" />
+            <Setter Property="Foreground" Value="{StaticResource Ink}" />
+            <Setter Property="BorderBrush" Value="{StaticResource Line}" />
+            <Setter Property="Padding" Value="5,3" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="18" />
+                            </Grid.ColumnDefinitions>
+
+                            <ToggleButton Grid.ColumnSpan="2"
+                                          Focusable="False"
+                                          ClickMode="Press"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border x:Name="Chrome"
+                                                Background="{StaticResource Field}"
+                                                BorderBrush="{StaticResource Line}"
+                                                BorderThickness="1"
+                                                SnapsToDevicePixels="True" />
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="Chrome" Property="BorderBrush" Value="{StaticResource Accent}" />
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+
+                            <!-- ContentTemplateSelector is not decoration. DisplayMemberPath is
+                                 implemented as an internal ItemTemplateSelector, so a presenter
+                                 that forwards only SelectionBoxItemTemplate has nothing to render
+                                 with and falls back to ToString(): the language box read
+                                 "LanguageInfo { Tag = en, DisplayName = English }". -->
+                            <ContentPresenter Grid.Column="0"
+                                              Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="Center"
+                                              IsHitTestVisible="False"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              ContentTemplateSelector="{TemplateBinding ItemTemplateSelector}"
+                                              ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
+                                              TextElement.Foreground="{TemplateBinding Foreground}" />
+
+                            <TextBox x:Name="PART_EditableTextBox"
+                                     Grid.Column="0"
+                                     Margin="{TemplateBinding Padding}"
+                                     VerticalAlignment="Center"
+                                     Background="Transparent"
+                                     BorderThickness="0"
+                                     Padding="0"
+                                     Foreground="{TemplateBinding Foreground}"
+                                     CaretBrush="{StaticResource Ink}"
+                                     Visibility="Collapsed"
+                                     IsReadOnly="{TemplateBinding IsReadOnly}" />
+
+                            <Path Grid.Column="1"
+                                  Width="8"
+                                  Height="4"
+                                  HorizontalAlignment="Center"
+                                  VerticalAlignment="Center"
+                                  Fill="{StaticResource MutedInk}"
+                                  Data="M 0,0 L 8,0 L 4,4 Z"
+                                  IsHitTestVisible="False" />
+
+                            <Popup x:Name="PART_Popup"
+                                   Grid.ColumnSpan="2"
+                                   Placement="Bottom"
+                                   AllowsTransparency="True"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}">
+                                <Border Background="{StaticResource Field}"
+                                        BorderBrush="{StaticResource Line}"
+                                        BorderThickness="1"
+                                        MinWidth="{TemplateBinding ActualWidth}"
+                                        MaxHeight="{TemplateBinding MaxDropDownHeight}">
+                                    <ScrollViewer>
+                                        <ItemsPresenter />
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsEditable" Value="True">
+                                <Setter TargetName="PART_EditableTextBox" Property="Visibility" Value="Visible" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- The system GroupBox draws a light chrome of its own and, worse, propagates its
+             Foreground into everything it contains — which is where the #B0B0B0-on-#232323 "Move
+             mode" label came from. This template keeps the header and drops both problems. -->
         <Style TargetType="GroupBox">
-            <Setter Property="Foreground" Value="#FFB0B0B0" />
-            <Setter Property="Margin" Value="0,0,0,8" />
-            <Setter Property="Padding" Value="6" />
+            <Setter Property="Foreground" Value="{StaticResource Ink}" />
+            <Setter Property="Margin" Value="0,0,0,10" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="GroupBox">
+                        <StackPanel>
+                            <TextBlock Text="{TemplateBinding Header}"
+                                       Foreground="{StaticResource MutedInk}"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,4" />
+                            <Border Background="{StaticResource Surface}"
+                                    BorderBrush="{StaticResource Line}"
+                                    BorderThickness="1"
+                                    Padding="8">
+                                <ContentPresenter />
+                            </Border>
+                        </StackPanel>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Window.Resources>
 
-    <Grid Margin="10">
+    <Grid Margin="12">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -37,8 +294,8 @@
         <!-- First-run guidance (FR-08-6). Not a balloon: a balloon needs the tray icon the guidance
              exists to help find, and not a fourth window either (S3 6.5 D-SH6). -->
         <Border Grid.Row="0"
-                Background="#FF2F3B4C"
-                BorderBrush="#FF7FB2FF"
+                Background="{StaticResource AccentFill}"
+                BorderBrush="{StaticResource Accent}"
                 BorderThickness="1"
                 Padding="8"
                 Margin="0,0,0,8"
@@ -51,8 +308,7 @@
                            Text="While a game is covering the screen, press the Windows key or Alt+Tab first to raise the taskbar; the tray cannot be clicked otherwise." />
                 <Button Content="Got it"
                         HorizontalAlignment="Left"
-                        Margin="0,6,0,0"
-                        Padding="10,2"
+                        Margin="0,8,0,0"
                         Command="{Binding DismissFirstRunBannerCommand}" />
             </StackPanel>
         </Border>
@@ -61,48 +317,79 @@
             <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type rows:BannerViewModel}">
                     <Border Background="#FF3A2E20" Padding="6" Margin="0,0,0,4">
-                        <TextBlock Text="{Binding Text}" TextWrapping="Wrap" Foreground="#FFFFC35C" />
+                        <TextBlock Text="{Binding Text}" TextWrapping="Wrap" Foreground="{StaticResource WarnInk}" />
                     </Border>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>
         </ItemsControl>
 
         <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
-            <StackPanel>
+            <StackPanel Margin="0,0,8,0">
                 <GroupBox Header="Search">
                     <StackPanel>
                         <TextBox Text="{Binding SearchQuery, UpdateSourceTrigger=PropertyChanged}" />
-                        <TextBlock Margin="0,4,0,0">
-                            <Run Text="Result:" />
-                            <Run Text="{Binding SearchOutcome, Mode=OneWay}" />
+
+                        <!-- The enum used to be printed straight out ("Result: CacheEmpty"). The
+                             three outcomes stay distinguishable, and CacheEmpty keeps the meaning
+                             the design gives it (S2 6.7): "nothing has been fetched yet", which is
+                             not the same claim as "not in the cache" and must not send the user off
+                             to fetch categories by hand. While the box is empty there is no search
+                             to report on, so the line is not shown at all. -->
+                        <TextBlock Margin="0,6,0,0" TextWrapping="Wrap" Foreground="{StaticResource MutedInk}">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Foreground" Value="{StaticResource MutedInk}" />
+                                    <Setter Property="Text" Value="Waiting for the first refresh — nothing has been fetched yet." />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SearchOutcome}" Value="Found">
+                                            <Setter Property="Text" Value="Matches found." />
+                                            <Setter Property="Foreground" Value="{StaticResource Ink}" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding SearchOutcome}" Value="NotInCache">
+                                            <Setter Property="Text" Value="No match in the data fetched so far — try a category below." />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding SearchQuery}" Value="">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
                         </TextBlock>
+
                         <ListBox x:Name="SearchResultsList"
                                  ItemsSource="{Binding SearchResults}"
                                  MaxHeight="160"
-                                 Margin="0,4,0,0">
+                                 Margin="0,6,0,0">
                             <ListBox.ItemTemplate>
                                 <DataTemplate DataType="{x:Type store:SearchHit}">
-                                    <TextBlock>
-                                        <Run Text="{Binding ApiName, Mode=OneWay}" />
-                                        <Run Text=" · " />
-                                        <Run Text="{Binding Category, Mode=OneWay}" />
-                                    </TextBlock>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{Binding ApiName, Mode=OneWay}"
+                                                   TextTrimming="CharacterEllipsis" />
+                                        <TextBlock Grid.Column="1"
+                                                   Margin="8,0,0,0"
+                                                   Foreground="{StaticResource MutedInk}"
+                                                   Text="{Binding Category, Mode=OneWay}" />
+                                    </Grid>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
                         <Button Content="Add to watchlist"
                                 HorizontalAlignment="Left"
-                                Margin="0,4,0,0"
-                                Padding="10,2"
+                                Margin="0,6,0,0"
                                 Command="{Binding AddToWatchlistCommand}"
                                 CommandParameter="{Binding SelectedItem, ElementName=SearchResultsList}" />
-                        <ItemsControl ItemsSource="{Binding UnfetchedCategories}" Margin="0,4,0,0">
+                        <ItemsControl ItemsSource="{Binding UnfetchedCategories}" Margin="0,6,0,0">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate DataType="{x:Type domain:ExchangeCategory}">
                                     <Button Content="{Binding}"
                                             HorizontalAlignment="Left"
                                             Margin="0,2,0,0"
-                                            Padding="8,1"
+                                            Padding="8,2"
                                             Command="{Binding DataContext.FetchCategoryCommand,
                                                               RelativeSource={RelativeSource AncestorType=Window}}"
                                             CommandParameter="{Binding}" />
@@ -123,10 +410,13 @@
                                         <ColumnDefinition Width="*" />
                                         <ColumnDefinition Width="Auto" />
                                     </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="{Binding Id.Value, Mode=OneWay}" />
+                                    <TextBlock Grid.Column="0"
+                                               Text="{Binding Id.Value, Mode=OneWay}"
+                                               TextTrimming="CharacterEllipsis" />
                                     <Button Grid.Column="1"
                                             Content="Remove"
-                                            Padding="8,0"
+                                            Margin="8,0,0,0"
+                                            Padding="8,1"
                                             Command="{Binding DataContext.RemoveFromWatchlistCommand,
                                                               RelativeSource={RelativeSource AncestorType=Window}}"
                                             CommandParameter="{Binding Id}" />
@@ -150,6 +440,7 @@
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="League" Margin="0,3,8,3" />
@@ -160,44 +451,69 @@
                                   DisplayMemberPath="Name"
                                   Text="{Binding Editor.League, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=LostFocus}" />
 
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="League list" Margin="0,3,8,3" />
-                        <StackPanel Grid.Row="1" Grid.Column="1" Orientation="Horizontal" Margin="0,3">
+                        <!-- Empty is the ordinary state of the box above: it holds an override, and
+                             with no override the league is resolved from the list. This row is what
+                             says which one that is. -->
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="In use" Margin="0,3,8,3" />
+                        <TextBlock Grid.Row="1" Grid.Column="1"
+                                   Margin="0,3"
+                                   Foreground="{StaticResource MutedInk}"
+                                   TextTrimming="CharacterEllipsis"
+                                   Text="{Binding ActiveLeague, Mode=OneWay}" />
+
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="League list" Margin="0,3,8,3" />
+                        <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Margin="0,3">
                             <TextBlock Text="{Binding LeaguesStatus, Mode=OneWay}" VerticalAlignment="Center" />
-                            <Button Content="Reload" Margin="8,0,0,0" Padding="8,1" Command="{Binding ReloadLeaguesCommand}" />
-                            <Button Content="Retry now" Margin="6,0,0,0" Padding="8,1" Command="{Binding RetryNowCommand}" />
+                            <Button Content="Reload" Margin="8,0,0,0" Padding="8,2" Command="{Binding ReloadLeaguesCommand}" />
+                            <Button Content="Retry now" Margin="6,0,0,0" Padding="8,2" Command="{Binding RetryNowCommand}" />
                         </StackPanel>
 
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Refresh (min)" Margin="0,3,8,3" />
-                        <TextBox Grid.Row="2" Grid.Column="1"
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Refresh (min)" Margin="0,3,8,3" />
+                        <TextBox Grid.Row="3" Grid.Column="1"
                                  Margin="0,3"
                                  Text="{Binding Editor.RefreshIntervalMinutes, RelativeSource={RelativeSource AncestorType=Window}, UpdateSourceTrigger=LostFocus}" />
 
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Language" Margin="0,3,8,3" />
-                        <ComboBox Grid.Row="3" Grid.Column="1"
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Language" Margin="0,3,8,3" />
+                        <ComboBox Grid.Row="4" Grid.Column="1"
                                   Margin="0,3"
                                   ItemsSource="{Binding Editor.Languages, RelativeSource={RelativeSource AncestorType=Window}}"
                                   DisplayMemberPath="DisplayName"
                                   SelectedValuePath="Tag"
                                   SelectedValue="{Binding Editor.Language, RelativeSource={RelativeSource AncestorType=Window}}" />
 
-                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Display currency" Margin="0,3,8,3" />
-                        <ComboBox Grid.Row="4" Grid.Column="1"
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Display currency" Margin="0,3,8,3" />
+                        <ComboBox Grid.Row="5" Grid.Column="1"
                                   Margin="0,3"
                                   ItemsSource="{Binding Editor.DisplayCurrencies, RelativeSource={RelativeSource AncestorType=Window}}"
                                   SelectedItem="{Binding Editor.DefaultDisplayCurrency, RelativeSource={RelativeSource AncestorType=Window}}" />
 
-                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Opacity" Margin="0,3,8,3" />
-                        <Slider Grid.Row="5" Grid.Column="1"
-                                Margin="0,3"
-                                Minimum="0.5"
-                                Maximum="1.0"
-                                TickFrequency="0.05"
-                                IsSnapToTickEnabled="True"
-                                Value="{Binding Editor.Opacity, RelativeSource={RelativeSource AncestorType=Window}}" />
+                        <TextBlock Grid.Row="6" Grid.Column="0" Text="Opacity" Margin="0,3,8,3" />
+                        <Grid Grid.Row="6" Grid.Column="1" Margin="0,3">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Slider Grid.Column="0"
+                                    VerticalAlignment="Center"
+                                    Minimum="0.5"
+                                    Maximum="1.0"
+                                    TickFrequency="0.05"
+                                    IsSnapToTickEnabled="True"
+                                    Value="{Binding Editor.Opacity, RelativeSource={RelativeSource AncestorType=Window}}" />
+                            <!-- A slider with no readout is a slider whose value nobody can state.
+                                 The overlay's own alpha is this number times 255 (measured,
+                                 00-shell-measurements.md 12.3). -->
+                            <TextBlock Grid.Column="1"
+                                       Margin="8,0,0,0"
+                                       MinWidth="34"
+                                       TextAlignment="Right"
+                                       Foreground="{StaticResource MutedInk}"
+                                       Text="{Binding Editor.Opacity, RelativeSource={RelativeSource AncestorType=Window}, StringFormat={}{0:P0}, Mode=OneWay}" />
+                        </Grid>
 
-                        <TextBlock Grid.Row="6" Grid.Column="1"
+                        <TextBlock Grid.Row="7" Grid.Column="1"
                                    Margin="0,3"
-                                   Foreground="#FFFF8A8A"
+                                   Foreground="{StaticResource ErrorInk}"
                                    Text="Settings cannot be saved right now."
                                    Visibility="{Binding WritesBlocked, Converter={StaticResource BoolToVisibility}}" />
                     </Grid>
@@ -208,9 +524,9 @@
                         <!-- The one setting that is deliberately not persisted (FR-05-6). -->
                         <CheckBox Content="Move mode (not saved — always off at next start)"
                                   IsChecked="{Binding IsMoveModeActive}" />
-                        <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
-                            <Button Content="Revert height to automatic" Padding="8,2" Command="{Binding RevertHeightCommand}" />
-                            <Button Content="Reset position and size" Margin="6,0,0,0" Padding="8,2" Command="{Binding ResetPlacementCommand}" />
+                        <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <Button Content="Revert height to automatic" Command="{Binding RevertHeightCommand}" />
+                            <Button Content="Reset position and size" Margin="6,0,0,0" Command="{Binding ResetPlacementCommand}" />
                         </StackPanel>
                     </StackPanel>
                 </GroupBox>
@@ -218,14 +534,46 @@
                 <GroupBox Header="Diagnostics">
                     <StackPanel>
                         <StackPanel Orientation="Horizontal">
-                            <Button Content="Open log folder" Padding="8,2" Command="{Binding OpenLogFolderCommand}" />
-                            <Button Content="Retry tray registration" Margin="6,0,0,0" Padding="8,2" Command="{Binding RetryTrayRegistrationCommand}" />
-                            <Button Content="Acknowledge corrupt settings" Margin="6,0,0,0" Padding="8,2" Command="{Binding AcknowledgeCorruptionCommand}" />
+                            <Button Content="Open log folder" Command="{Binding OpenLogFolderCommand}" />
+                            <Button Content="Retry tray registration" Margin="6,0,0,0" Command="{Binding RetryTrayRegistrationCommand}" />
+                            <Button Content="Acknowledge corrupt settings" Margin="6,0,0,0" Command="{Binding AcknowledgeCorruptionCommand}" />
                         </StackPanel>
-                        <ListBox ItemsSource="{Binding RecentErrors}" MaxHeight="160" Margin="0,6,0,0">
+                        <TextBlock Margin="0,8,0,0"
+                                   Foreground="{StaticResource MutedInk}"
+                                   Text="Recent warnings and errors — a warning is something the app worked around." />
+                        <ListBox ItemsSource="{Binding RecentErrors}" MaxHeight="160" Margin="0,4,0,0">
                             <ListBox.ItemTemplate>
                                 <DataTemplate DataType="{x:Type diag:LogEntry}">
-                                    <TextBlock Text="{Binding Message}" TextWrapping="Wrap" />
+                                    <!-- The level is shown, not implied. Every entry in this list
+                                         used to read as a failure whatever it was. -->
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   MinWidth="64"
+                                                   VerticalAlignment="Top"
+                                                   Text="{Binding Level, Mode=OneWay}">
+                                            <TextBlock.Style>
+                                                <Style TargetType="TextBlock">
+                                                    <Setter Property="Foreground" Value="{StaticResource WarnInk}" />
+                                                    <Style.Triggers>
+                                                        <DataTrigger Binding="{Binding Level}" Value="Error">
+                                                            <Setter Property="Foreground" Value="{StaticResource ErrorInk}" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding Level}" Value="Critical">
+                                                            <Setter Property="Foreground" Value="{StaticResource ErrorInk}" />
+                                                        </DataTrigger>
+                                                    </Style.Triggers>
+                                                </Style>
+                                            </TextBlock.Style>
+                                        </TextBlock>
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{Binding Message}"
+                                                   TextWrapping="Wrap"
+                                                   VerticalAlignment="Top" />
+                                    </Grid>
                                 </DataTemplate>
                             </ListBox.ItemTemplate>
                         </ListBox>
@@ -238,13 +586,13 @@
              footer hard to read, and this is the screen where the league is chosen. -->
         <TextBlock Grid.Row="3"
                    x:Name="Attribution"
-                   Margin="0,8,0,0"
-                   Foreground="#FF9A9A9A"
+                   Margin="0,10,0,0"
+                   Foreground="{StaticResource MutedInk}"
                    TextWrapping="Wrap" />
 
         <TextBlock Grid.Row="4"
                    Margin="0,6,0,0"
-                   Foreground="#FF6F6F6F"
+                   Foreground="{StaticResource FaintInk}"
                    Text="Closing this window does not exit the application." />
     </Grid>
 </Window>

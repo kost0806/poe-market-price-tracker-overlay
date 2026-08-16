@@ -39,6 +39,28 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
+    public void TheResolvedLeagueIsPublished_BecauseTheLeagueBoxHoldsAnOverrideAndIsUsuallyEmpty()
+    {
+        // settings.league is null whenever the league is resolved from the list, so the control the
+        // user looks at is blank in the ordinary case. Without this the window gave no answer to
+        // "which league am I looking at" at all.
+        using var fixture = new Fixture();
+
+        Assert.Equal(string.Empty, fixture.Vm.ActiveLeague);
+
+        fixture.Vm.Refresh(
+            SnapshotBuilder.Empty() with
+            {
+                DataLeague = SnapshotBuilder.League,
+                LeagueResolution = new LeagueResolution(
+                    LeagueResolutionState.Resolved, SnapshotBuilder.League, null),
+            },
+            Now);
+
+        Assert.Equal(SnapshotBuilder.League, fixture.Vm.ActiveLeague);
+    }
+
+    [Fact]
     public void LoggingUnavailable_CarriesThePath_SoTheOpenLogButtonIsNotAMystery()
     {
         using var fixture = new Fixture();

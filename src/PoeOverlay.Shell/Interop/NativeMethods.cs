@@ -146,6 +146,19 @@ internal static class NativeMethods
     [DllImport("kernel32.dll", EntryPoint = "GetModuleHandleW", SetLastError = true, CharSet = CharSet.Unicode)]
     internal static extern IntPtr GetModuleHandleW(string? moduleName);
 
+    /// <summary>
+    /// Asks the desktop window manager to draw a window's caption dark (S3 5.4).
+    /// </summary>
+    /// <remarks>
+    /// The one part of the settings window WPF cannot paint: the caption belongs to DWM, so a dark
+    /// window with a light title bar is not a styling oversight but the only outcome available
+    /// without this call. Failure is not an error — the attribute is absent on Windows 10 builds
+    /// before 1809, where the caption simply stays light — so the HRESULT is checked and reported,
+    /// never thrown.
+    /// </remarks>
+    [DllImport("dwmapi.dll")]
+    internal static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
+
     /// <summary><c>RECT</c>, in physical pixels.</summary>
     [StructLayout(LayoutKind.Sequential)]
     internal struct NativeRect

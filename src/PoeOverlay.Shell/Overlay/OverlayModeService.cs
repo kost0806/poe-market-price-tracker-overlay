@@ -90,6 +90,11 @@ internal sealed class OverlayModeService : IOverlayModeService, IDisposable
 
         _logger.LogInformation("Move mode off ({Reason}).", reason);
 
+        // Cleared before the capture is dropped, not after: OnCaptureReleased would otherwise see
+        // the flag still up and call back into this method while it is running.
+        _expiredWhileCaptured = false;
+        _window.ReleaseGestureCapture();
+
         var gripped = _window.HeightWasGripped;
         _window.ShowMoveModeAffordances(visible: false);
 

@@ -91,4 +91,11 @@ internal static class Win32Constants
 
     /// <summary>Parent handle that makes a window message-only (S3 3.2 D-SH4).</summary>
     internal static IntPtr HwndMessage => new(-3);
+
+    /// <summary><c>DWMWA_USE_IMMERSIVE_DARK_MODE</c> — the settings window's caption (S3 5.4).</summary>
+    /// <remarks>
+    /// The documented value since Windows 10 20H1. Builds 18985 and earlier used 19 for the same
+    /// attribute; this application does not chase that, it lets the older caption stay light.
+    /// </remarks>
+    internal const int DwmwaUseImmersiveDarkMode = 20;
 }
