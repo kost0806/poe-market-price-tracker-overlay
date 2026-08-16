@@ -39,7 +39,7 @@ internal sealed class SettingsWindowFactory
     /// <param name="fanout">Attached on create, detached on close.</param>
     /// <param name="viewModelFactory">The transient registration, given the window-scope token.</param>
     /// <param name="settings">Flushed on close, and the editor's backing store.</param>
-    /// <param name="localizer">Supplies the attribution line.</param>
+    /// <param name="localizer">The editor's language list and current language.</param>
     /// <param name="logger">Diagnostics.</param>
     internal SettingsWindowFactory(
         OverlayHost overlay,
