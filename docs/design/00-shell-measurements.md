@@ -156,6 +156,9 @@ Windows의 전체화면 감지가 작업표시줄을 게임 아래로 강등한�
 | S11 | 성장 시 1프레임 미도색 띠, 축소 시 없음 (§9) | 자동 높이 갱신은 **성장 방향에서만** 한 프레임의 배경 노출을 낳는다. `SizeToContent=Height`가 명시 `Height`보다 낫다 |
 | S12 | 확장 스타일·`Topmost`는 리사이즈·모니터 이동을 견딘다 (§9) | **재적용 코드를 넣지 않는다.** 16단계 내내 `0x08080028` 불변 |
 | S13 | `RenderTargetBitmap`은 화면 안티에일리어싱을 반영하지 않는다 (§8.4) | 렌더링 품질 검증 테스트는 **화면 캡처로만** 한다. RTB 기반 단언은 무효다 |
+| S16 | **WPF `Window`는 `AllowsTransparency=false`에서 레이어드가 될 수 없다** (§11.1) | 오버레이는 **생 Win32 부모 + WPF 자식**이어야 한다. §8.1 4행·§8.6의 구성은 무효 |
+| S17 | 부모의 키·알파가 **자식이 그린 픽셀에 그대로 적용**되고 ClearType도 자식에서 살아남는다 (§11.2) | 이 구조가 목적을 실제로 달성한다. 선명한 글자와 투명이 양립한다 |
+| S18 | **WPF `Popup`은 자기 최상위 HWND를 만들어 부모의 레이어드 경로 밖에 있다** (§11.4) | 툴팁·컨텍스트 메뉴·팝업에 키/알파가 적용되지 않는다. 키가 필요한 것을 팝업으로 만들지 마라 |
 | S14 | **`SendMessageTimeout`의 성공 반환은 ack이 아니다** (§10.1) | 단일 인스턴스 신호의 확인은 **`lpdwResult`와 센티널의 일치**로만 판정한다. HLD D18-d·S3 `D-SH18`의 근거 |
 | S15 | 지연 방출 루프는 **경계 트리거 + 래치**에서만 수렴한다 (§10.3) | `>= N` 임계 검사로 구현하면 자기 지속 폭주가 된다. S3 §8.4/§10.1이 래치를 명문화하는 근거 |
 
@@ -172,7 +175,7 @@ Windows의 전체화면 감지가 작업표시줄을 게임 아래로 강등한�
 | 일반 창 (`AllowsTransparency=false`) | **90.4%** (626/692) | 142 | ClearType **켜짐** |
 | `WindowStyle=None` + **`AllowsTransparency=true`** | **0.0%** (0/521) | **0** | ClearType **꺼짐** |
 | 위 + `WS_EX_LAYERED\|TRANSPARENT\|NOACTIVATE` | **0.0%** | 0 | ClearType **꺼짐** |
-| **`AllowsTransparency=false` + `WS_EX_LAYERED` + `SetLayeredWindowAttributes`** | **90.29~90.46%** | — | ClearType **켜짐** ✅ |
+| ~~**`AllowsTransparency=false` + `WS_EX_LAYERED` + `SetLayeredWindowAttributes`**~~ | ~~90.29~90.46%~~ | — | **⚠ 반증됨 → §11.1.** WPF `Window`는 이 구성에 **도달할 수 없다**. 이 행이 잰 것은 레이어드 창이 아니라 **비트가 조용히 걸러진 불투명 창**이었다 |
 
 마지막 행은 `LWA_ALPHA`, `LWA_COLORKEY`, 둘의 조합 **전부**에서 성립한다. 10·11·12·14px 모두 동일하다.
 
@@ -208,6 +211,8 @@ Windows의 전체화면 감지가 작업표시줄을 게임 아래로 강등한�
 **따라서 손실은 획이 뭉개지는 것이 아니라 획 위치의 정밀도다.** 작은 글자의 숫자 구별(`8`/`6`, `3`/`9`)과 소수점 위치에서 드러난다 — 이 앱이 하는 일 그 자체다. 다만 "읽기 실험"을 한 것은 아니므로, 픽셀 데이터가 증명하는 것은 **정보량이 1/3로 줄었다**는 것이지 사람이 못 읽는다는 것이 아니다.
 
 ### 8.6 채택 구성과 그 대가
+
+> **⚠ 이 절의 구성은 WPF `Window`에서 성립하지 않는다 — §11.1이 반증했다.** 채택 구성은 **생 Win32 레이어드 부모 + WPF `HwndSource` 자식**이며 §11.3에 있다. 아래 「잃는 것」과 세 가지 함정은 컬러키 방식 자체의 성질이므로 **그대로 유효하다.**
 
 ```
 WindowStyle        = None
@@ -306,3 +311,93 @@ SetLayeredWindowAttributes(hwnd, key, alpha, LWA_COLORKEY | LWA_ALPHA);
 **「필연적 폭주」라는 초기 의심은 반증됐다** — 문서 의도대로 구현하면 안전하다. 위험한 것은 **문서가 래치를 요구하지 않는다는 사실**이며, S2 §6.3의 「병합·중복 제거 없음」이 유일한 방어벽마저 제거한다.
 
 **채택**: S3 §8.4/§10.1이 **경계 트리거와 「이미 보고함」 래치를 명문화**한다. 병합이 순환을 흡수한다는 서술은 거짓이므로 삭제한다 — 병합은 동시에 대기 중인 게시를 합칠 뿐, 스스로 방아쇠를 재생성하는 순환은 감쇠시키지 못한다.
+
+---
+
+## 11. 3라운드 측정 — 레이어드 부모 + WPF 자식
+
+측정일 2026-08-16. 구현 6단계가 §8.1 4행을 반증하면서 시작됐고, **대체 구조가 성립하는지**를 확정하기 위해 수행했다.
+
+환경: Win11 26200 · .NET 8.0.424 · 1920×1080 **96 DPI(배율 1.0)** · `DwmIsCompositionEnabled=True` · ClearType 켜짐(`FontSmoothing=2`, `FontSmoothingType=2`, RGB) · `RenderCapability.Tier=0x20000`. 배경 RGB(16,128,240), 회색 띠 RGB(128,128,128). 표본은 전부 `BitBlt(SRCCOPY|CAPTUREBLT)` 화면 캡처의 6×6 평균이다.
+
+### 11.1 WPF `Window`는 `AllowsTransparency=false`에서 레이어드가 될 수 없다 — §8.1 4행 반증
+
+네 경로 전부에서 **성공 반환(`ret=0`, `err=0`)인데 `GWL_EXSTYLE`은 변하지 않는다** — `SourceInitialized`, `Show()` 이후, `ContentRendered`, 그리고 비트를 미리 넣어 만든 `HwndSource`. 이어진 `SetLayeredWindowAttributes`는 **87(ERROR_INVALID_PARAMETER)** 로 실패한다. **같은 프로세스의 생 Win32 팝업은 즉시 받아들인다**(EXSTYLE `0x00080080`, 반환 `True`).
+
+**§8.1 4행이 잰 것은 레이어드 창이 아니었다.** 비트가 조용히 걸러진 **불투명 `WindowStyle=None` 창**이었고, 그래서 ClearType이 살아 있었다. 그 행이 증명한 명제는 「레이어드 WPF 창이 ClearType을 유지한다」가 아니라 **「불투명 WPF 창이 ClearType을 유지한다」**다.
+
+> **측정이 권위를 잃는 다섯 번째 방식** — 앞의 넷과 달리 **시험 대상 구성 자체가 성립한 적이 없었다.** 스타일 설정 호출이 성공을 반환한다는 사실만 확인하고 **읽어서 대조하지 않은** 것이 원인이다.
+
+### 11.2 부모의 키·알파는 자식이 그린 픽셀에 그대로 적용된다
+
+| 측정 | 결과 | 예측 |
+|---|---|---|
+| 자식이 그린 마젠타(255,0,255), `LWA_COLORKEY` | **RGB(16,128,240)** = 배경과 정확히 일치 | 완전 통과 |
+| 자식 노랑(255,255,0), α=128 | **(136,192,120)** | (136.0, 191.8, 119.5) |
+| 자식 흰색, α=128 | **(136,192,248)** | (136.0, 191.8, 247.5) |
+| 자식 바탕(0,60,0) 위 회색 띠 | **(64,94,64)** | (63.8, 93.9, 63.8) |
+| **알파 이중 적용 여부** | 부모 스트립 노랑 **(136,192,120)** == 자식 노랑 **(136,192,120)** | 1회만 적용 |
+| 두 플래그 동시 | 마젠타는 뚫리고 노랑·흰색은 블렌드 — **한 패스에서 둘 다** | — |
+| 자식만 다시 그릴 때 | **(8,64,248)** — 부모 `WM_PAINT` 없이, `SetLayeredWindowAttributes` 재호출 없이 갱신됨 | (8.0, 63.8, 247.5) |
+
+**자식 픽셀과 부모 픽셀이 구별되지 않는다.**
+
+### 11.3 자식에서 ClearType이 완전히 살아남는다 — 이 구조의 존재 이유
+
+| 구성 | 잉크 | 색수차 | 평균 spread |
+|---|---|---|---|
+| **레이어드 부모 + WPF 자식** | 3,010 | **90.8%** (2,732) | **111.11** |
+| 불투명 WPF `Window` (대조) | 3,010 | **90.8%** | **111.11** |
+| 강제 `Grayscale` (음성 대조) | 2,353 | **0.0%** | 0 |
+| **`AllowsTransparency=true`** (음성 대조) | 2,353 | **0.0%** | 0 |
+
+앞의 둘이 **비트 단위로 같다.** 그리고 마지막 행이 **옛 설계가 ClearType을 잃은 이유를 확증**한다 — `AllowsTransparency=true`가 강제 그레이스케일과 수치까지 동일하다.
+
+**단서 하나** — α를 낮추면 서브픽셀 효과가 **감쇠**한다. α=128에서 색수차 **개수는 동일**(2,732, 90.8%)하지만 평균 spread가 **55.74 = 111.11 × 0.502**로 절반이 된다. 글자는 여전히 ClearType이지만 **더 부드럽게 읽힌다.** 투명도 슬라이더를 낮출수록 판독성이 점진적으로 떨어진다는 뜻이며, 이는 설계가 예상하지 못한 결합이다.
+
+글리프 가장자리가 우연히 키 색에 걸리는 사고는 없었다 — 텍스트 패널 66,000px에서 배경색 픽셀 **0개**.
+
+### 11.4 입력 라우팅
+
+| 상황 | 결과 |
+|---|---|
+| 부모에 `WS_EX_TRANSPARENT` | `WindowFromPoint`가 **네 지점 전부**(자식 위 포함) 뒤 창을 반환. 외부 프로세스 주입 클릭이 배경의 올바른 지역 좌표에 착지 |
+| `WS_EX_TRANSPARENT` 없음 | `WindowFromPoint`가 **자식 hwnd** 반환. 주입 클릭이 `WM_LBUTTONDOWN` → WPF `MouseLeftButtonDown` (309,69)로 정상 라우팅 |
+
+자식의 EXSTYLE은 `0x0`인데도 **히트를 삼키지 않는다.** 클릭 통과가 부모 수준에서 전 영역에 걸린다.
+
+주입은 **별도 프로세스**에서 했다 — 같은 프로세스의 `SendInput`은 호출자에게 포그라운드 권리를 주어 결과를 무효화한다(§6-1).
+
+### 11.5 채택 구성
+
+**부모 — 생 `CreateWindowEx`. WPF `Window`를 쓰지 않는다.**
+
+```
+exStyle : WS_EX_LAYERED | WS_EX_TOOLWINDOW | WS_EX_TOPMOST | WS_EX_NOACTIVATE
+          (+ 클릭 통과가 필요한 동안만 WS_EX_TRANSPARENT — 런타임 토글로 모드 전환)
+style   : WS_POPUP | WS_VISIBLE | WS_CLIPCHILDREN
+SetLayeredWindowAttributes(hwnd, 0x00FF00FF, alpha, LWA_COLORKEY | LWA_ALPHA)  // 1회면 된다
+WM_PAINT: 클라이언트 전체를 채운다. 자식이 덮지 않는 영역은 키 색으로
+```
+
+**`WS_CLIPCHILDREN`이 없으면 부모의 `WM_PAINT`가 자식을 덮어 그린다.**
+
+**자식** — `HwndSourceParameters { ParentWindow = parent, WindowStyle = WS_CHILD|WS_VISIBLE|WS_CLIPSIBLINGS, UsesPerPixelOpacity = false }`. `TextRenderingMode`는 `Auto`로 둔다(이미 ClearType로 해석된다), `TextFormattingMode = Ideal`. 투명해야 할 영역은 `#FF00FF`로 칠한다.
+
+### 11.6 잃는 것
+
+| 기능 | 상태 |
+|---|---|
+| `SizeToContent` | `HwndSource.SizeToContent`는 **동작하지만 자식 HWND만** 줄인다(640×400 → 88×16, 부모는 640×460 그대로). 크기 변경을 후킹해 **부모를 직접 `SetWindowPos`** 해야 한다 |
+| `DragMove` | **없다.** `Window`가 없으므로 `WM_NCHITTEST` → `HTCAPTION`이나 수동 `WM_LBUTTONDOWN` + `SetWindowPos`로 재구현 |
+| `Owner` | **된다.** `new WindowInteropHelper(w).Owner = parentHwnd`가 `GWLP_HWNDPARENT`를 설정한다(일치 확인) |
+| **`Popup`** | 열리기는 하지만 **자기 최상위 HWND를 만들어 부모의 레이어드 경로 밖에 있다.** 키·알파가 적용되지 않는다 — **키가 필요한 것을 팝업·툴팁·컨텍스트 메뉴로 만들지 마라** |
+| 컬러키의 이진성 | 픽셀 단위 알파가 없으므로 부드러운 그림자·안티에일리어싱된 바깥 모서리 불가 |
+| 그 외 | `Window` XAML 루트, `WindowState`, 호스트의 `ShowDialog`, `Window` 수준 `Closing`/`Activated` |
+
+### 11.7 미측정
+
+- **안티에일리어싱된 둥근 투명 모서리.** 측정한 키 영역은 전부 축 정렬 정수 사각형이었고 경계는 픽셀 단위로 정확했다(x=549 배경, x=550 내용, 헤일로 없음). 둥근 모서리의 블렌드된 가장자리 픽셀은 `0xFF00FF`와 같지 않으므로 **마젠타 헤일로가 보일 것**이다 — `LWA_COLORKEY`의 성질상 그렇게 되나 **UNVERIFIED**.
+- 다중 모니터 · 혼합 DPI (이 장비는 단일 모니터 96 DPI).
+- **실물 PoE 클라이언트 위에서의 동작** — 여기서는 다른 WPF 창이 배경이었다.
+- 레이어드 합성의 장시간 안정성 (프로브 수명 약 10초).
