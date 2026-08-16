@@ -369,8 +369,14 @@ public static class PricingEngine
     /// argument is already a formatted <see cref="string"/> (D-PR4) so that <c>string.Format</c>
     /// cannot re-format a number under the calling thread's culture — the rule is enforced by the
     /// parameter type, not by convention.
+    /// <para>
+    /// <c>internal</c> rather than <c>private</c> so that <c>Presentation.UiStateFormat.Ui</c>
+    /// (S4 11.8 G1) is the same three nets rather than a second copy of them. S4 called for an
+    /// isomorphic helper; sharing this one removes the way the two could drift apart, and the
+    /// sentinel cache is shared with it.
+    /// </para>
     /// </remarks>
-    private static string Tmpl(
+    internal static string Tmpl(
         ITemplateSource templates,
         string key,
         string fallbackConst,

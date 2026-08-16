@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.1" />
     <!-- S2 1.2: Market's one allowed infrastructure dependency is IHttpClientFactory. -->
     <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.1" />
@@ -24,11 +25,8 @@
          the assembly (level ③, which cannot be absent) and copied to Localization/ in the output
          (level ②, which a translator may edit). The link keeps the output path at
          Localization/en.json, matching {AppContext.BaseDirectory}/Localization/ (S2 3.2). -->
-    <EmbeddedResource Include="Localization\Localization\en.json"
-                      LogicalName="PoeOverlay.Core.Localization.en.json" />
-    <None Update="Localization\Localization\en.json"
-          Link="Localization\en.json"
-          CopyToOutputDirectory="PreserveNewest" />
+    <EmbeddedResource Include="Localization\Localization\en.json" LogicalName="PoeOverlay.Core.Localization.en.json" />
+    <None Update="Localization\Localization\en.json" Link="Localization\en.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
