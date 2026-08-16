@@ -98,7 +98,7 @@ public sealed class GatewayStallTests
         };
 
         await harness.StartAsync();
-        await harness.Market.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+        await harness.Market.FetchEnteredAsync(1).WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
 
         // The sampler is a real scheduler, so each step gives it a chance to run before the clock
         // moves again. The assertion below is on state, never on how long any of this took.
@@ -135,7 +135,7 @@ public sealed class GatewayStallTests
         };
 
         await harness.StartAsync();
-        await harness.Market.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+        await harness.Market.FetchEnteredAsync(1).WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
 
         for (var i = 0; i < 20; i++)
         {

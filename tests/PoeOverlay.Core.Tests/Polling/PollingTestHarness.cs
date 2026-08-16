@@ -48,6 +48,7 @@ internal sealed class FakeMarketClient : IMarketClient
     private readonly Dictionary<ExchangeCategory, int> _callCounts = [];
     private readonly List<ExchangeCategory> _requested = [];
     private readonly List<IReadOnlyList<ExchangeCategory>> _rounds = [];
+    private readonly Dictionary<int, TaskCompletionSource<bool>> _entered = [];
     private readonly object _gate = new();
 
     public LeagueList Leagues { get; set; } = new(
@@ -77,8 +78,28 @@ internal sealed class FakeMarketClient : IMarketClient
     /// </remarks>
     public bool HoldIgnoresCancellation { get; set; }
 
-    /// <summary>Completes when a category fetch has actually been entered, so a test never guesses.</summary>
-    public TaskCompletionSource<bool> Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    /// <summary>
+    /// Completes once the given round has actually entered a category fetch, so a test never guesses.
+    /// </summary>
+    /// <remarks>
+    /// Per round, and that is the whole point. A round takes its settings snapshot before its first
+    /// fetch, so this is the observable that says "the round in flight is asking about the watchlist
+    /// as it stands now" — which is what a test editing the watchlist to cancel that round depends
+    /// on. The earlier signal was one shot: it stayed completed from the first fetch of the first
+    /// round, so awaiting it after any later round returned immediately and the edit could land
+    /// before the round it was meant to cancel had even read its settings. The round then ran the
+    /// *new* watchlist to completion and was never cancelled, and the test asserting on the
+    /// cancellation passed or failed on thread luck.
+    /// </remarks>
+    public Task FetchEnteredAsync(int round)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(round, 1);
+
+        lock (_gate)
+        {
+            return EnteredSignal(round).Task;
+        }
+    }
 
     /// <summary>Whether returned snapshots are stamped with the requested league, as Market does.</summary>
     public bool StampLeague { get; set; } = true;
@@ -124,10 +145,13 @@ internal sealed class FakeMarketClient : IMarketClient
             if (_rounds.Count > 0)
             {
                 ((List<ExchangeCategory>)_rounds[^1]).Add(category);
+
+                // The signal is created under the same lock that appends the round, so a waiter that
+                // asked before the round existed and the fetch that starts it cannot disagree about
+                // which TaskCompletionSource they are talking about.
+                EnteredSignal(_rounds.Count).TrySetResult(true);
             }
         }
-
-        Entered.TrySetResult(true);
 
         if (Hold is { } hold)
         {
@@ -167,6 +191,18 @@ internal sealed class FakeMarketClient : IMarketClient
 
         ct.ThrowIfCancellationRequested();
         return Task.FromResult<MarketResult<LeagueList>>(new MarketResult<LeagueList>.Ok(Leagues));
+    }
+
+    /// <summary>The entry signal for one round; the caller must hold <c>_gate</c>.</summary>
+    private TaskCompletionSource<bool> EnteredSignal(int round)
+    {
+        if (!_entered.TryGetValue(round, out var signal))
+        {
+            signal = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _entered[round] = signal;
+        }
+
+        return signal;
     }
 }
 

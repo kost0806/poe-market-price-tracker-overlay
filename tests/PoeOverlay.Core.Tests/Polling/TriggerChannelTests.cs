@@ -68,8 +68,14 @@ public sealed class TriggerChannelTests
         var hold = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         harness.Market.Hold = hold;
 
+        // A cancelled request still has to unwind, and this test's subject is the window while it
+        // does. Left cancellable, the fetch would abort the instant the edit below fired and round
+        // one would be racing to complete against the assertion that it has not — which is thread
+        // luck, not a property of the loop.
+        harness.Market.HoldIgnoresCancellation = true;
+
         await harness.StartAsync();
-        await harness.Market.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+        await harness.Market.FetchEnteredAsync(1).WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
 
         // The edit cancels the round in flight and schedules a repoll; the repoll must not start
         // while the first round is still unwinding.
@@ -98,7 +104,7 @@ public sealed class TriggerChannelTests
         harness.Market.HoldIgnoresCancellation = true;
 
         await harness.StartAsync();
-        await harness.Market.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+        await harness.Market.FetchEnteredAsync(1).WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
 
         // Two ticks, then the repoll the watchlist edit asks for, then a third tick — four triggers
         // in the channel while the first round is held open. The trailing tick is the whole point:

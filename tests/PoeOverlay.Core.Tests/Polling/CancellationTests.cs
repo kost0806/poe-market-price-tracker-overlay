@@ -24,7 +24,7 @@ public sealed class CancellationTests
         harness.Market.Hold = hold;
 
         await harness.StartAsync();
-        await harness.Market.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+        await harness.Market.FetchEnteredAsync(1).WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
 
         EditWatchlist(harness, ExchangeCategory.Scarab);
         hold.TrySetResult(true);
@@ -55,7 +55,7 @@ public sealed class CancellationTests
         harness.Market.Hold = hold;
 
         await harness.StartAsync();
-        await harness.Market.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+        await harness.Market.FetchEnteredAsync(1).WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
 
         EditWatchlist(harness, ExchangeCategory.Scarab);
         hold.TrySetResult(true);
@@ -120,11 +120,20 @@ public sealed class CancellationTests
         var hold = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         harness.Market.Hold = hold;
         harness.Time.Advance(TimeSpan.FromMinutes(5));
-        await harness.Market.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
+
+        // Round two, not round one: the edit below only cancels a round that has already taken its
+        // settings snapshot, and a round takes that snapshot before its first fetch. Waiting on the
+        // first round's entry instead would not wait at all — round two would then read the edited
+        // watchlist, run to completion uncancelled, and commit a third category.
+        await harness.Market.FetchEnteredAsync(2).WaitAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false);
 
         EditWatchlist(harness, ExchangeCategory.Scarab, ExchangeCategory.Fossil);
         hold.TrySetResult(true);
         await harness.WaitForRoundsAsync(2);
+
+        // Asserted first, because it is what makes the count below mean anything: a round that was
+        // never cancelled leaves two categories standing for entirely uninteresting reasons.
+        Assert.Equal(RoundOutcome.Canceled, harness.Rounds[1].Outcome);
 
         // Discarding them would let an ordinary watchlist edit destroy data that is still perfectly
         // current — the epoch never moved.
