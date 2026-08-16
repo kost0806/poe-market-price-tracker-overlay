@@ -69,6 +69,10 @@ GET https://poe.ninja/poe1/api/economy/exchange/current/overview?league={league}
 
 ## 2. 응답 구조 (실측)
 
+> **⚠ 정정 (2026-08-16, 구현 후 실측).** 초판은 최상위 키를 `core`와 `lines` **둘**로 그렸다. **실제로는 셋이며, 누락된 `items`가 이름의 유일한 출처다.**
+> `core.items`는 이름 표가 아니라 **환율 기준**이다 — 18개 카테고리 전부에서 정확히 `[chaos, divine]` 둘뿐이고, 959개 line 중 **2개(0.2%)**만 조인된다.
+> 최상위 `items[]`는 line당 하나씩 **959/959, 이름 공백 0건**이다. 아래 §2.0을 정본으로 한다.
+
 ```jsonc
 {
   "core": {
@@ -103,12 +107,45 @@ GET https://poe.ninja/poe1/api/economy/exchange/current/overview?league={league}
 }
 ```
 
+### 2.0 최상위 구조 — **정본** 【구현 후 실측 2026-08-16】
+
+문서 루트에는 키가 **셋** 있다.
+
+```jsonc
+{
+  "core":  { "primary": "chaos", "secondary": "divine",
+             "items": [ /* 정확히 2개: chaos, divine — 환율 기준이다 */ ],
+             "rates": { "divine": 0.005139 } },
+  "lines": [ /* 시세 본체. 959개 (Allflame 18카테고리 합) */ ],
+  "items": [ /* ★ 이름의 출처. line당 하나씩 959개 */
+    { "id": "hinekoras-lock", "name": "Hinekora's Lock",
+      "category": "Currency", "detailsId": "hinekoras-lock",
+      "image": "/gen/image/...png" }
+  ]
+}
+```
+
+| 배열 | 원소 수 | 조인율 | 정체 |
+|---|---|---|---|
+| `core.items` | **항상 2** (`chaos`, `divine`) | 959 중 **2 (0.2%)** | **환율 기준.** `core.rates`와 짝이다 |
+| 최상위 `items` | **line과 1:1** | 959 중 **959 (100%)** | **이름 표.** 공백 이름 0건 |
+
+18개 카테고리 전부, 두 리그(`Allflame`·`Standard`)에서 확인했다.
+
+**line에는 이름 필드가 없다** — 959개 line 전수에서 키는 정확히 여섯이다: `id` · `primaryValue` · `volumePrimaryValue` · `maxVolumeCurrency` · `maxVolumeRate` · `sparkline{totalChange,data}`. 초판의 line 표는 옳았다. **틀린 것은 한 층 위였다.**
+
+> **왜 놓쳤는가.** 초판은 `Currency` 응답에서 `divine` 항목이 `core.items` 안에 있는 것을 확인하고 그것을 이름 출처로 기록했다. **그 배열에 그 둘밖에 없다는 사실을 확인하지 않았고, 문서 루트를 열거하지도 않았다.** 예상한 것을 찾아 확인하고 실제로 무엇이 있는지 세지 않은 것이며, ClearType 측정이 실패한 방식과 같다(`00-shell-measurements.md` §11.1).
+
+**서버 측 지역화는 없다.** `language=ko` · `lang=ko` · `language=ko-KR` · `locale=ko` 전부 200을 반환하지만 이름이 영문과 **한 글자도 다르지 않다**. FR-07-3의 한글 사전은 앱이 직접 채워야 한다.
+
+---
+
 ### 2.1 필드 대응표 — §6 → 실제
 
 | `REQUIREMENTS.md` §6 표기 | 실제 raw 필드 | 비고 |
 |---|---|---|
 | `id` | `lines[].id` | **동일.** FR-01-5·FR-07-2의 키로 그대로 사용 |
-| `name` | `core.items[].name` | **`lines`에 없다.** `core.items`를 `id`로 조인해야 한다. `core.items`는 배열이므로 매핑 시 1회 사전 구축 필요 |
+| `name` | **최상위 `items[].name`** | **`lines`에 없다.** **최상위** `items`를 `id`로 조인한다(§2.0). ~~`core.items`~~는 `[chaos, divine]` 둘뿐이라 조인율 0.2%다 |
 | `value.amount` | `lines[].primaryValue` | |
 | `value.currency` | `core.primary` | **항목별이 아니라 응답 전역에 하나.** 실측값 `"chaos"` |
 | `valueAlt` | 대응 필드 **없음** | `core.rates` + `core.secondary`로 유도 가능하나 **쓸 필요가 없다** (FR-04-5가 금지) |
@@ -116,8 +153,9 @@ GET https://poe.ninja/poe1/api/economy/exchange/current/overview?league={league}
 | `topPair.currency` | `lines[].maxVolumeCurrency` | **FR-04-3 `자동` 모드의 판단 근거** |
 | `topPair.rate` | `lines[].maxVolumeRate` | 검산용. 계산 입력으로는 쓰지 않는다 |
 | `changePercent` | `lines[].sparkline.totalChange` | FR-04의 변동률 |
-| (§6에 없음) | `core.items[].image` | 아이콘. 상대 경로이므로 `https://poe.ninja` 접두 필요. 1차 범위에서 사용 여부 미정 |
-| (§6에 없음) | `core.items[].category` | 아이템→카테고리 역인덱스. **FR-01-1 검색 카탈로그에 유용** |
+| (§6에 없음) | **최상위** `items[].image` | 아이콘. 상대 경로이므로 `https://poe.ninja` 접두 필요. **DivinationCard 전 항목에는 없다**(959개 중 576개만 보유). 1차 범위 사용 여부 미정 |
+| (§6에 없음) | `core.items[].category` | **`core.items`의** 것. 질의 `type`과 일치하므로 A6의 자기기술 검증에 쓴다 |
+| (§6에 없음) | **최상위** `items[].category` | **표시용 분류**이며 질의 `type`과 **다르다**(`Fragments`·`Cards`·`Essences`·`Catalysts`·`Ancestor`·`Delve`). **A6 검증에 쓰면 안 된다** — 상시 불일치 경고가 뜬다 |
 | (§6에 없음) | `lines[].sparkline.data` | §3.2 참조 |
 
 ---
@@ -171,8 +209,8 @@ GET https://poe.ninja/poe1/api/economy/exchange/current/overview?league={league}
 
 | # | 사실 | 설계 요구 |
 |---|---|---|
-| A1 | 아이템 이름이 `lines`에 없다 | 매핑 계층은 **`core.items` 조인을 반드시 수행**한다. `lines`만 파싱하면 이름이 사라진다 |
-| A2 | `core.items`가 배열이다 | 응답당 1회 `id → item` 사전을 구축한 뒤 조인. 선형 탐색 금지 |
+| A1 | 아이템 이름이 `lines`에 없다 | 매핑 계층은 **최상위 `items` 조인을 반드시 수행**한다(§2.0). ~~`core.items`~~를 조인하면 959개 중 2개만 맞는다 — **구현 후 실측으로 정정** |
+| A2 | 최상위 `items`가 배열이다 | 응답당 1회 `id → item` 사전을 구축한 뒤 조인. 선형 탐색 금지 |
 | A3 | 기준 통화가 응답 전역(`core.primary`)에 하나뿐이다 | 도메인 모델은 항목별 통화를 갖지 않는다. 카테고리 스냅샷 헤더에 둔다. `core.primary != "chaos"` 인 경우를 **검증하고 거부**할 것 (전제 붕괴 감지) |
 | A4 | 리그 목록에 현재 챌린지 리그 플래그가 없다 | 첫 원소 채택 + 방어: 배열이 비었거나, 첫 원소가 `Standard`/`Hardcore` 인 경우를 이상으로 간주하고 사용자에게 리그 명시 선택을 요구 |
 | A5 | `valueAlt`가 raw에 없다 | FR-04-5 위반 경로가 구조적으로 부재. 설계는 이 사실을 명시하고 `core.rates` 역수 사용도 함께 금지 |
