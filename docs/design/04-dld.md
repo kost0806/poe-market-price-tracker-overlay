@@ -1804,7 +1804,7 @@ internal sealed class ItemIconConverter : IValueConverter
 {
     internal const string ResourceKey = "ItemIcon";   // OverlayView가 Resources에 넣는 키. XAML이 같은 문자열을 쓴다
 
-    internal ItemIconConverter(ItemIconSource source);
+    internal void Attach(ItemIconSource source);      // 1회. 두 번째 호출은 프로그래밍 오류로 던진다
     public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture);
     public object ConvertBack(...);                   // NotSupportedException. 단방향이다
 }
@@ -1817,7 +1817,11 @@ internal sealed record AppPaths(string AppDataDirectory, string LogDirectory,
 
 **매니페스트 형식.** `Dictionary<string, string>` 하나 — 슬러그 → 파일명. `ko.json`과 같은 이유로 평평하다(`JsonSerializerContext` 소스 생성이 그대로 받는다). 값에 경로 구분자가 들어 있으면 **그 항목을 버린다** — 매니페스트는 `Icons/` 안의 파일 이름만 가리키며, `..`로 폴더를 벗어나는 값은 생성기의 결함이지 읽는 쪽이 따라야 할 지시가 아니다.
 
-**`ItemIconConverter`를 `Resources`에 넣는 시점.** `OverlayView` 생성자가 `InitializeComponent()` **뒤**, `DataContext` 대입 **앞**에 넣는다. `DataTemplate` 안의 `{StaticResource}`는 지연 해석이므로 이 순서면 행이 처음 만들어질 때 이미 있다. 정적 필드로 두지 않는다 — 뷰 하나에 캐시 하나가 붙으면 뷰가 사라질 때 비트맵도 같이 사라진다.
+**`ItemIconConverter`는 `OverlayView.xaml`이 선언한다 — 코드가 `Resources`에 넣지 않는다** 【정정 2026-08-17, `00-shell-measurements.md` §15】. `<UserControl.Resources>`에 `x:Key="ItemIcon"`으로 두고, 생성자는 `InitializeComponent()` 뒤 `DataContext` 대입 앞에서 `Attach(icons)`만 부른다. 생성자가 매개변수를 못 받는 대신 소스를 나중에 거는 것은 XAML이 만드는 객체이기 때문이다.
+
+초판은 여기에 "생성자가 `InitializeComponent()` 뒤에 넣는다 — `DataTemplate` 안의 `{StaticResource}`는 지연 해석이므로 행이 처음 만들어질 때 이미 있다"고 적었고 **그대로 구현돼 출시됐으며, 그 빌드는 첫 레이아웃 패스에서 죽었다**(`이름이 'ItemIcon'인 리소스를 찾을 수 없습니다`). 틀린 것은 뒤 절반이다: 템플릿 내용이 지연 로드되는 것은 맞지만, 그때 `{StaticResource}`가 뒤지는 것은 살아 있는 요소 트리가 아니라 **그 파일이 파싱될 때 스코프에 있던 리소스 사전들**이다. 런타임에 넣은 키는 거기 없다.
+
+정적 필드로 두지 않는 것은 그대로다 — 뷰 하나에 캐시 하나가 붙으면 뷰가 사라질 때 비트맵도 같이 사라진다. XAML 선언은 그 성질을 깨지 않는다: `<UserControl.Resources>`는 인스턴스마다 새로 만들어진다.
 
 **`Application.Run()`에 메인 창을 넘기지 않는다.** 넘길 `Window`가 없다. `ShutdownMode = OnExplicitShutdown`이므로 펌프는 트레이의 Exit가 `Shutdown()`을 부를 때까지 돈다(FR-08-4). 종료 순서(S3 3.3-a)에 `OverlayHost.Dispose()`가 추가된다 — 부모 HWND·클래스 등록·컬러키 브러시는 프레임워크가 아니라 이 프로세스의 자원이다.
 

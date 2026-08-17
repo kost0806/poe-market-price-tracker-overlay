@@ -572,7 +572,7 @@ HLD D23이 "매니페스트는 데이터, 픽셀은 `Shell`"까지 정했다. �
 |---|---|---|
 | `Icons/item-icons.json` | 프로젝트에 커밋, 출력의 `Icons/`로 복사 | 슬러그 → 파일명. 생성물이며 손으로 고치지 않는다 |
 | `Overlay/ItemIconSource` | `Shell` | 매니페스트를 **한 번** 읽고, 슬러그로 물으면 **동결된 `ImageSource`** 또는 `null`을 준다. 결과(실패 포함)를 캐시한다 |
-| `Overlay/ItemIconConverter` | `Shell` | XAML의 `Id` 바인딩을 위 호출로 잇는 `IValueConverter` |
+| `Overlay/ItemIconConverter` | `Shell` | XAML의 `Id` 바인딩을 위 호출로 잇는 `IValueConverter`. **`OverlayView.xaml`이 `<UserControl.Resources>`에 선언한다** — 코드가 `Resources`에 넣으면 템플릿이 그 키를 못 찾는다(`00-shell-measurements.md` §15, S4 §12.7) |
 
 #### 4.10.1 왜 뷰모델이 아니라 뷰인가
 

@@ -40,11 +40,12 @@ public sealed partial class OverlayView : UserControl
     /// <param name="viewModel">The display state. Attached to the fan-out by the composition root.</param>
     /// <param name="icons">Resolves a row's slug to its picture (FR-04-6, S3 4.10).</param>
     /// <remarks>
-    /// The icon converter goes into this view's resources after <c>InitializeComponent</c> — which
-    /// is what fills <see cref="System.Windows.FrameworkElement.Resources"/> from the XAML — and
-    /// before the <c>DataContext</c> that makes rows appear. A <c>{StaticResource}</c> inside a
-    /// <c>DataTemplate</c> is resolved when the template is instantiated, not when the file is
-    /// parsed, so by the time the first row asks for the key it is there.
+    /// The icon converter is declared in the XAML, so <c>InitializeComponent</c> creates it and
+    /// this constructor only hands it its source. It cannot be inserted here instead: a
+    /// <c>{StaticResource}</c> inside a compiled template resolves against the dictionaries that
+    /// were in scope when the file was parsed and never against the live element tree, so a key
+    /// added after <c>InitializeComponent</c> is not found when the row template loads — measured,
+    /// with the process ending on its first layout pass (<c>00-shell-measurements.md</c> §15).
     /// </remarks>
     /// <remarks>
     /// <para>
@@ -60,7 +61,7 @@ public sealed partial class OverlayView : UserControl
 
         _viewModel = viewModel;
         InitializeComponent();
-        Resources[ItemIconConverter.ResourceKey] = new ItemIconConverter(icons);
+        ((ItemIconConverter)Resources[ItemIconConverter.ResourceKey]).Attach(icons);
         DataContext = viewModel;
     }
 

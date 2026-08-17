@@ -10,6 +10,16 @@
              FontFamily="pack://application:,,,/Fonts/#Pretendard"
              FontSize="12">
 
+    <UserControl.Resources>
+        <!-- Declared here, not inserted from the constructor. A {StaticResource} inside a compiled
+             template is resolved against the dictionaries in scope when this file was parsed, never
+             against the live element tree, so the entry has to exist by the end of
+             InitializeComponent. Adding it one line later threw "Cannot find resource named
+             'ItemIcon'" out of the first layout pass and took the process with it
+             (00-shell-measurements.md 15). The source arrives through Attach in the constructor. -->
+        <overlay:ItemIconConverter x:Key="ItemIcon" />
+    </UserControl.Resources>
+
     <!-- This is the RootVisual of an HwndSource child hosted inside a raw layered Win32 parent; it
          is not a Window and must not become one. A WPF Window cannot hold WS_EX_LAYERED while
          AllowsTransparency is false — the bit is filtered out of every write while the call still

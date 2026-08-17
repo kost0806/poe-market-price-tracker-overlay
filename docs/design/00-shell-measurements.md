@@ -634,3 +634,48 @@ Tier는 하드웨어(0x20000)라고 보고하는데 그 경로의 출력이 화�
 - **화면 합성 결과.** §13.5가 남긴 그대로, 이 기계에서 하드웨어 렌더된 WPF 표면은 픽셀을 내주지 않는다. 아이콘이 실제로 그려진 오버레이를 찍어 키 픽셀 0개를 재확인하지 못했다.
 - **행 높이.** 아이콘 상자 16 DIP가 12px 텍스트의 줄 상자보다 큰지 작은지 재지 못했다. 크면 시세 행이 그만큼 높아진다 — D19의 자동 높이가 다시 계산하므로 결함은 아니지만, **높이가 바뀌지 않는다고 주장할 근거도 없다.** S4 §15.1의 폰트 크기와 같은 실험(§14-12)에 묶는다.
 - **판독성.** 16 DIP로 줄인 48px 아트가 구별 가능한지는 취향이 아니라 측정 대상이며, 재지 않았다.
+
+---
+
+## 15. 8라운드 — 컴파일된 템플릿 안의 `{StaticResource}`는 런타임에 넣은 리소스를 보지 못한다
+
+측정일 2026-08-17. **동기는 결함이다**: `main`(202e039)에서 빌드한 앱이 첫 레이아웃 패스에서 죽었다. 실행 로그에 남은 것은 다음 한 줄이다.
+
+```
+[CRT] Composition exceptionType=System.Windows.Markup.XamlParseException
+      msg="Unhandled exception on the UI thread. |
+           System.Windows.Markup.XamlParseException:
+           'System.Windows.Markup.StaticResourceHolder'에 대한 값 제공에서 예외가 throw되었습니다.
+           at PoeOverlay.Overlay.ClippingRowsPanel.MeasureOverride(...) ClippingRowsPanel.cs:line 66"
+```
+
+프로세스는 `AppDomain.UnhandledException`까지 가서 종료했다. **아이콘 기능이 들어간 뒤로 이 앱은 한 번도 뜬 적이 없다.**
+
+### 15.1 무엇을 재었나
+
+`tests/PoeOverlay.Shell.Tests/Overlay/OverlayViewTemplateTests.cs`. 프로브가 아니라 **실물 `OverlayView`의 컴파일된 BAML**을 STA 스레드에서 만들고 재는 테스트다 — 창은 띄우지 않는다. 두 배치를 같은 방법으로 재었다.
+
+| 배치 | 결과 |
+|---|---|
+| ① 생성자가 `InitializeComponent()` **뒤에** `Resources[key] = new ItemIconConverter(icons)` (동결된 구현) | **실패.** `XamlParseException` → 내부 예외 `System.Exception: 이름이 'ItemIcon'인 리소스를 찾을 수 없습니다. 리소스 이름은 대/소문자를 구분합니다.` (`StaticResourceExtension.ProvideValueInternal`) |
+| ② `<UserControl.Resources>`에 XAML로 선언하고 생성자는 `Attach(icons)`만 | **성공.** 행 템플릿이 인스턴스화되고 `Image`(Width=16, `Source=null`)와 이름 `TextBlock`이 시각 트리에 나타난다 |
+
+②를 적용한 뒤 **실물 앱을 다시 띄워 확인**했다: `Release` 게시본이 10초 뒤에도 살아 있고(창 제목 `PoE Market Price Tracker`), 같은 로그 파일에 `[CRT]`가 한 줄도 없으며 폴링이 200을 받는다.
+
+### 15.2 그래서 무엇이 틀렸나
+
+S4 §12.7이 이렇게 적고 있었다 — **"`DataTemplate` 안의 `{StaticResource}`는 지연 해석이므로 이 순서면 행이 처음 만들어질 때 이미 있다."** 이 문장의 앞 절반은 맞고 뒤 절반이 틀렸다. 템플릿 내용은 확실히 지연 로드되지만, 그때 `{StaticResource}`가 뒤지는 것은 **살아 있는 요소 트리가 아니라 그 파일이 파싱될 때 스코프에 있던 리소스 사전들**이다. 생성자에서 한 줄 뒤에 넣은 항목은 그 스코프에 없다.
+
+같은 성질이 이 문서 밖에도 이미 한 번 적혀 있었다 — S3 §5.4.2가 설정 창에서 "**템플릿 내부는 창의 리소스 사전을 건너뛴다**"를 암시적 스타일로 관측했다. 그때는 스타일 이야기로 읽혔고, 같은 규칙이 `{StaticResource}` 전반에 걸린다는 것으로는 일반화되지 않았다.
+
+### 15.3 측정 방법론 — 한 번 재는 실험은 아무것도 가르지 않았다
+
+첫 판의 테스트는 `Measure` **한 번**만 돌렸고, 그때는 예외가 아니라 `Assert.NotNull` 실패가 났다 — `ItemsControl`이 컨테이너를 아직 만들지 않아 **패널에 자식이 하나도 없었기** 때문이다. 그 상태로는 ①도 ②도 똑같이 "행이 없다"로 끝난다. **두 배치를 가르지 못하는 실험이었고, 고치기 전에 통과시켰다면 빈 트리 위에서 초록색이 됐을 것이다.**
+
+컨테이너 생성은 디스패처에 게시되며 창이 없으면 그것을 펌프하는 것이 없다. 확정판은 `Measure`/`Arrange`/`UpdateLayout` + `DispatcherFrame` 배수를 **세 번** 돌린다. 이 저장소의 목록에 하나를 더한다: **관측 대상이 아직 존재하지 않아서 두 가설이 같은 결과를 내는 경우.**
+
+### 15.4 이 측정이 말하지 않는 것
+
+- **`DynamicResource`는 재지 않았다.** 이 자리에는 쓸 수 없다 — `Binding.Converter`는 `DependencyObject`의 의존 속성이 아니므로 `DynamicResource`가 붙지 않는다. 다른 자리에서도 그렇다는 뜻이 아니다.
+- **`Application.Resources`는 재지 않았다.** 파싱 스코프 밖의 마지막 폴백이 앱 리소스인지 확인하지 않았고, 확인할 이유도 없다 — 아이콘 캐시의 수명은 뷰의 것이어야 한다(D-SH23).
+- **설정 창은 재지 않았다 — 다만 같은 형태가 없다는 것은 확인했다.** `SettingsWindow.xaml`이 참조하는 `{StaticResource}` 키 11개는 전부 그 파일이 스스로 선언한다(`Ink`·`Field`·`Accent`·`BoolToVisibility` 등). 저장소 전체에서 코드가 `Resources[...]`에 쓰는 자리는 위 ②의 `Attach` 한 곳뿐이다. 즉 이 결함의 형태는 오버레이에만 있었다 — 그러나 이것은 **정적 확인이지 실행 측정이 아니다.**
