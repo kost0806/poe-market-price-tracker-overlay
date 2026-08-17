@@ -91,6 +91,8 @@ src/
       LocalizationJsonContext.cs
       LanguageTagValidator.cs
       Localization/en.json               EmbeddedResource + 출력 복사
+      Localization/ko.json               출력 복사만. 내장하지 않는다 — 체인 ③의 바닥은 en 전용이다(S2 3.3 D3)
+                                         생성물이다. 정본 생성기는 tools/build-ko-dictionary.py (2.5절)
     Pricing/
       PriceTemplates.cs
       NumberFormatter.cs                 Num, Pct
@@ -241,6 +243,26 @@ NoWarn의 WFAC010은 net8.0(비 Windows) 프로젝트에는 의미가 없는 경
 ### 2.4 테스트 프로젝트
 
 tests/PoeOverlay.Core.Tests(net8.0, xunit + xunit.runner.visualstudio + Microsoft.Extensions.TimeProvider.Testing의 FakeTimeProvider)만 둔다. Shell 전용 테스트 프로젝트는 만들지 않는다 — S2 11절 "S3 로직은 테스트하지 않는다. Core 전용 테스트 프로젝트가 도달할 수 없다"를 그대로 받아들인다(S3 13-31이 재확인). Presentation은 net8.0이므로 이 프로젝트가 도달 가능하고, 9.2절(파생 조건 순수 함수)과 뷰모델 로직 중 UI 비의존 부분은 여기서 검증한다(16절).
+
+### 2.5 tools/ — 빌드 타임 생성기 (신규 D-DL25)
+
+`ko.json`의 아이템 이름 부분은 손으로 쓰는 것이 아니라 **생성물**이다(`00-api-contract.md` §6, FR-07-3). 생성기를 저장소에 두되 **빌드에 걸지 않는다.**
+
+```
+tools/
+  build-ko-dictionary.py     data/statics.json + data/statics.en.json + data/ko-items.json
+                             + tools/ko-ui.json  →  src/.../Localization/Localization/ko.json
+  fetch-ko-sources.py        두 static 응답과 아이콘을 다시 받는다. 네트워크가 필요한 유일한 스크립트
+  ko-ui.json                 ui.* 한글 문구의 정본. 손으로 쓴다 — 외부 출처가 없다
+```
+
+| 결정 | 근거 |
+|---|---|
+| 생성기를 저장소에 **둔다** | 리그가 바뀌어 KR이 신규 아이템을 따라잡았을 때 재생성 절차가 문서가 아니라 실행 가능한 형태로 남아야 한다. `00-api-contract.md` §6.3의 `id` 동일성 단언은 **코드로 있어야 지워지지 않는다** |
+| **MSBuild 타깃으로 걸지 않는다** | 걸면 모든 빌드가 파이썬과 (재취득 시) kakaogames 가용성에 묶인다. 산출물인 `ko.json`을 커밋하므로 빌드는 파일만 복사하면 된다 |
+| 파이썬 | 이 저장소에 이미 .NET 도구 체인 외의 의존을 추가하지 않는다는 규칙은 없고, 생성기는 빌드 산출물이 아니다. 실측·재생성 절차가 전부 파이썬으로 기록돼 있다(`00-api-contract.md` §6) |
+
+**`ko-ui.json`이 별도인 이유.** `ui.*` 문구는 GGG가 주지 않는다 — 사람이 쓴다. 생성기가 `ko.json`을 통째로 덮어쓰므로, 손으로 쓴 부분이 생성 입력 쪽에 있지 않으면 재생성 때마다 사라진다.
 
 
 ## 3. Domain — 시그니처 확정
@@ -1228,8 +1250,18 @@ public enum RowKind { Normal, Loading, FetchFailed, ItemUnresolved, ItemDropped 
 public sealed record BannerViewModel(AppConditionKind Kind, string Text, TimeSpan Duration, BannerSeverity Severity);
 public enum BannerSeverity { Info, Warning, Error }
 
-public sealed record SearchRowViewModel(ItemId Id, string DisplayName, ExchangeCategory Category);   // 신규 D-DL24
+public sealed record SearchRowViewModel(
+    ItemId Id, string DisplayName, ExchangeCategory Category, string CategoryLabel);   // 신규 D-DL24, CategoryLabel은 D-DL26
+
+public sealed record WatchlistRowViewModel(ItemId Id, string DisplayName);            // 신규 D-DL26
+public sealed record CategoryRowViewModel(ExchangeCategory Category, string Label);   // 신규 D-DL26
 ```
+
+**세 행 타입의 라벨(신규 D-DL26, S3 §5.4.3 E13·E14).** 열거형과 슬러그를 그대로 그리던 세 자리를 각각 닫는다.
+
+- `SearchRowViewModel.CategoryLabel` — `localizer.Ui(ui.category.<이름>)`. `Category` 자체는 남긴다: 관심목록에 담을 때 `CategoryRef`를 만드는 데 쓰이므로 표시용 라벨이 그것을 대체하지 못한다.
+- `WatchlistRowViewModel` — `DisplayName = localizer.ItemName(entry.Id, null)`. `WatchlistEntry`에는 `apiName`이 없으므로 체인 ④를 건너뛰고 ⑤(슬러그)로 떨어진다. **이것은 손실이 아니라 현상 유지다** — 지금 이 목록이 그리는 것이 정확히 그 슬러그다.
+- `CategoryRowViewModel` — `UnfetchedCategories`가 버튼으로 그려지므로 라벨과 명령 인자를 함께 든다. `FetchCategoryCommand`는 `ExchangeCategory`를 받으므로 `Category`가 인자다.
 
 **`SearchRowViewModel`(신규 D-DL24).** 설정 창의 검색 목록은 `SearchHit`을 직접 바인딩했고, `SearchHit.ApiName`이 널인 항목은 **카테고리만 보이는 빈 행**으로 렌더됐다. 이름 폴백은 `PriceRowViewModel.DisplayName`과 마찬가지로 뷰모델의 일이다 — `Store`는 `Localization`을 참조할 수 없으므로(S2 1.2) `SearchHit`에 표시 이름을 둘 수 없고, XAML의 `TargetNullValue`·`PriorityBinding`은 **널을 성공한 바인딩으로 보므로** 다른 속성으로 대체하지 못한다. `DisplayName = localizer.ItemName(hit.Id, hit.ApiName)` — 오버레이 행과 같은 ③④⑤ 체인이며, `Refresh`가 검색을 재계산하므로 언어 전환도 그대로 따라온다.
 
@@ -1267,11 +1299,14 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
         FetchedListingSink setFetchedListing, Func<CancellationToken, Task<bool>> retryTrayRegistration,
         ILogger<SettingsViewModel> logger);
 
+    public SettingsStrings Strings { get; }                           // D-SH23. 언어 전환 시 통째로 교체된다
     public string SearchQuery { get; set; }
     public IReadOnlyList<SearchRowViewModel> SearchResults { get; }   // D-DL24. SearchHit 직결이 아니다
     public SearchOutcome SearchOutcome { get; }
-    public IReadOnlyList<ExchangeCategory> UnfetchedCategories { get; }
-    public IReadOnlyList<WatchlistEntry> Watchlist { get; }
+    public string SearchStatusText { get; }                           // D-DL26. 열거형이 아니라 문장(S3 5.4.3)
+    public string LeagueStatusText { get; }                           // D-DL26. 같은 이유
+    public IReadOnlyList<CategoryRowViewModel> UnfetchedCategories { get; }
+    public IReadOnlyList<WatchlistRowViewModel> Watchlist { get; }
     public IReadOnlyList<LeagueEntry> Leagues { get; }
     public LeagueListStatus LeaguesStatus { get; }
     public string ActiveLeague { get; }                // 읽기 전용. 자유 입력 상자와 다른 값이다 — S3 5.4.3
@@ -1297,6 +1332,20 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
 }
 ```
 Refresh 내부 순서: 배너 계산(먼저, 독립 구간, S3 7.6) → 검색 결과 재계산 → 관심목록 행 갱신 → 리그 목록 갱신.
+
+**`SettingsStrings`(신규 D-SH23 / D-DL26).** 설정 창의 고정 문구 32개를 담은 불변 묶음이다. 근거와 대안 판정은 S3 §5.4.4에 있다.
+
+```
+public sealed class SettingsStrings
+{
+    internal SettingsStrings(ILocalizer localizer);   // 32번의 Ui() 조회. 그 외에 하는 일이 없다
+    public string Title { get; }  ... public string CloseNotice { get; }   // 14.9절 표의 키 순서 그대로
+}
+```
+
+`Shell`은 `UiStateKeys`(11.8절, `internal`)를 볼 수 없으므로 키 상수는 `Presentation` 안에 있어야 하고, 조립도 거기 있다. 생성자가 `internal`인 이유는 같다 — 뷰가 임의로 만들 물건이 아니다.
+
+**언어 전환(D-PS5, S3 §11).** `SettingsViewModel`은 생성자에서 `LanguageChanged`를 구독하고 `Dispose`에서 해지한다(**셋 중 유일한 일회성 뷰모델이다**). 핸들러가 하는 일은 셋이다: `Strings`를 새로 만들어 교체(알림 1건), `LeagueStatusText` 재계산, `RunSearch()` 재호출(검색 행의 이름·카테고리 라벨·상태 문장이 여기서 다시 풀린다). 관심목록 행도 다시 만든다 — 이름이 언어에 의존한다. 파일 I/O는 없다(D-L1).
 
 **`ActiveLeague`(신규, S3 §5.4.3).** `Refresh`에서 `snapshot.LeagueResolution.League ?? snapshot.DataLeague`로 갱신한다 — 해석 결과가 먼저다(그것이 판정이고, `DataLeague`는 그 판정이 받아들인 데이터에 붙은 꼬리표다). 세터는 두지 않는다: 쓰기를 허용하면 `settings.league`로 가는 두 번째 통로가 생기고, 그 키는 `SettingsEditor`(S3 §5.4)가 단독으로 쓴다.
 
@@ -1686,9 +1735,11 @@ public sealed partial class OverlayView : UserControl
 
 public sealed partial class SettingsWindow : Window
 {
-    public SettingsWindow(SettingsViewModel viewModel, SettingsEditor editor, string attribution, IntPtr owner);
+    public SettingsWindow(SettingsViewModel viewModel, SettingsEditor editor, IntPtr owner);
     // owner는 WindowInteropHelper.Owner(= GWLP_HWNDPARENT)로 넣는다. Window가 아니다(S3 5.1)
     // Closing 핸들러가 S3 5.3의 5단계 닫기 처리를 수행한다
+    // attribution 인자는 제7판에서 제거됐다(S3 5.4.4) — 그 문자열은 이제 viewModel.Strings.Attribution이며,
+    // 생성자에서 한 번 써 넣던 방식으로는 창이 열려 있는 동안의 언어 전환을 따라가지 못했다
 }
 ```
 두 창의 XAML 마크업 자체는 이 문서의 범위 밖이다(구역 확정은 S3 5.4) — 코드비하인드 생성자 시그니처만 확정한다. ExtendedStyleGate.Factory는 `public delegate ExtendedStyleGate Factory(IntPtr hwnd);` — `Show()` 시점에야 HWND가 존재하므로 생성자 주입이 아니라 팩터리로 지연시킨다.
@@ -1811,7 +1862,9 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 
 ## 14. 지역화 키 카탈로그 — 단일 권위 목록
 
-신규 D-DL13. 이 절이 ui.* 키의 유일한 정본이다. S2 3.6/4.6.2/4.6.3(ui.price.*, ui.time.*)과 S3 9.3(ui.state.*, ui.tray.*)이 요구한 "문자 단위 일치"를 이 절 하나로 만족시킨다 — PriceTemplates(6.3절)와 UiStateTemplates(11.8절)의 값은 아래 표와 정확히 같아야 하며, 16.6절의 등가 테스트가 그것을 강제한다. 값은 전부 내장 en.json의 정본이다(1차 릴리스는 영문만 채운다, FR-07-3).
+신규 D-DL13. 이 절이 ui.* 키의 유일한 정본이다. S2 3.6/4.6.2/4.6.3(ui.price.*, ui.time.*)과 S3 9.3(ui.state.*, ui.tray.*)이 요구한 "문자 단위 일치"를 이 절 하나로 만족시킨다 — PriceTemplates(6.3절)와 UiStateTemplates(11.8절)의 값은 아래 표와 정확히 같아야 하며, 16.6절의 등가 테스트가 그것을 강제한다. 값은 전부 내장 en.json의 정본이다.
+
+**제7판 — 이 절은 여전히 영문 정본만 싣는다.** `ko.json`이 생겼지만(2.5절) 한글 값을 여기 옮겨 적지 않는다. 이 절이 강제하는 것은 **키와 인자 개수**이고 그것은 언어와 무관하며, 968개 아이템 이름은 애초에 생성물이라 문서에 실을 것이 아니다. 한글 값의 정본은 `ko.json` 자신과 그 입력(`tools/ko-ui.json`)이다. 사전이 이 표의 인자 개수를 어기면 기동 시 `LocalizationCatalog`이 그 항목을 떨어뜨리고 경고한다(S2 3.7 D-L3) — 언어별 문서 표를 두 벌 유지하는 것보다 이쪽이 강제력이 있다.
 
 **D1 정정 — 상수 보유 규칙.** 초판은 "자리표시자가 있는 키만 컴파일 시점 상수를 갖는다"고 적어 놓고(S2 4.6.4의 범위 확정 결정), 실제로는 자리표시자가 없는 다섯 키(`PollingStoppedExited`·`CommitRejectedBanner`·`RateInheritedFooter`·`ItemDroppedRow`·`ItemUnresolvedRow`, §11.8·§18.3)에도 상수를 뒀다 — 문서가 스스로 세운 규칙을 어겼다. **정정된 규칙**: 값에 자리표시자가 있는 키는 예외 없이 컴파일 시점 상수를 갖는다(서식 인자 개수 불일치는 체인 5층 — 키 문자열 그대로 — 만으로는 잡히지 않으므로 §16.2의 문자 단위 테스트가 반드시 필요하다). 자리표시자가 없는 키 중에서도 **사용자가 반드시 봐야 하는 상태 배너·행 텍스트**(위 다섯 키가 정확히 이것이다 — 폴링 정지·거부·승계·미해결·드롭 표시)는 상수를 둔다. 트레이 메뉴 항목처럼 부차적인 나머지 무-자리표시자 키(14.6절 `ui.tray.*` 등)는 상수를 두지 않고 체인 5층으로 충분하다 — 이 문서는 규칙을 상수 목록에 맞춰 고쳤다(상수를 빼는 대신).
 
@@ -1902,6 +1955,89 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | store.extraMatchFault | ExtraMatch 예외 |
 | diagnostics.bufferOverflow | `RollingFileSink` 유실 통지의 `RecentErrorRing` 노출 억제(D2, 신규) |
 
+
+### 14.9 ui.settings.* — 설정 창 고정 문구 (신규 D-SH23, 제7판)
+
+35개 전부 자리표시자가 없고 상수 폴백을 두지 않는다(S3 §5.4.4). 앞의 29개가 `SettingsStrings`의 멤버이며 **표의 순서가 곧 그 클래스의 속성 순서다.**
+
+| 키 | 영문 값 | SettingsStrings 멤버 |
+|---|---|---|
+| ui.settings.title | PoE Market Price Tracker — Settings | Title |
+| ui.settings.firstRun.overflow | The tray icon may be hidden in the overflow area — click the chevron (^) to find it, then pin it. | FirstRunOverflow |
+| ui.settings.firstRun.taskbar | While a game is covering the screen, press the Windows key or Alt+Tab first to raise the taskbar; the tray cannot be clicked otherwise. | FirstRunTaskbar |
+| ui.settings.firstRun.dismiss | Got it | FirstRunDismiss |
+| ui.settings.search.header | Search | SearchHeader |
+| ui.settings.search.add | Add to watchlist | AddToWatchlist |
+| ui.settings.watchlist.header | Watchlist | WatchlistHeader |
+| ui.settings.watchlist.remove | Remove | WatchlistRemove |
+| ui.settings.preferences.header | League, period, language, currency, opacity | PreferencesHeader |
+| ui.settings.league | League | League |
+| ui.settings.leagueInUse | In use | LeagueInUse |
+| ui.settings.leagueList | League list | LeagueList |
+| ui.settings.leagueReload | Reload | LeagueReload |
+| ui.settings.retryNow | Retry now | RetryNow |
+| ui.settings.refreshMinutes | Refresh (min) | RefreshMinutes |
+| ui.settings.language | Language | Language |
+| ui.settings.displayCurrency | Display currency | DisplayCurrency |
+| ui.settings.opacity | Opacity | Opacity |
+| ui.settings.writesBlocked | Settings cannot be saved right now. | WritesBlocked |
+| ui.settings.placement.header | Overlay placement | PlacementHeader |
+| ui.settings.placement.moveMode | Move mode (not saved — always off at next start) | MoveMode |
+| ui.settings.placement.revertHeight | Revert height to automatic | RevertHeight |
+| ui.settings.placement.reset | Reset position and size | ResetPlacement |
+| ui.settings.diagnostics.header | Diagnostics | DiagnosticsHeader |
+| ui.settings.diagnostics.openLogFolder | Open log folder | OpenLogFolder |
+| ui.settings.diagnostics.retryTray | Retry tray registration | RetryTrayRegistration |
+| ui.settings.diagnostics.acknowledgeCorrupt | Acknowledge corrupt settings | AcknowledgeCorrupt |
+| ui.settings.diagnostics.recentHeader | Recent warnings and errors — a warning is something the app worked around. | RecentErrorsHeader |
+| ui.settings.closeNotice | Closing this window does not exit the application. | CloseNotice |
+
+`SettingsStrings`의 30번째 멤버 `Attribution`은 **새 키가 아니다** — 14.7절의 `ui.footer.attribution`을 그대로 쓴다(오버레이 푸터와 같은 문구, S3 §5.4).
+
+검색 결과 상태 — `SearchOutcome` 하나당 한 문장. 뷰모델의 `SearchStatusText`가 고른다(값의 근거는 S3 §5.4.3).
+
+| 키 | 영문 값 | SearchOutcome |
+|---|---|---|
+| ui.settings.search.found | Matches found. | Found |
+| ui.settings.search.notInCache | No match in the data fetched so far — try a category below. | NotInCache |
+| ui.settings.search.cacheEmpty | Waiting for the first refresh — nothing has been fetched yet. | CacheEmpty |
+
+리그 목록 상태 — `LeagueListStatus` 하나당 한 문장. `LeagueStatusText`가 고른다.
+
+| 키 | 영문 값 | LeagueListStatus |
+|---|---|---|
+| ui.settings.leagueStatus.ok | League list loaded. | Ok |
+| ui.settings.leagueStatus.suspicious | League list looks wrong — pick the league by hand if prices are missing. | Suspicious |
+| ui.settings.leagueStatus.failed | League list could not be loaded. | Failed |
+
+### 14.10 ui.category.* — poe.ninja 질의 타입 18개 (신규 D-DL26, 제7판)
+
+`ExchangeCategory`(3.3절)의 멤버 하나당 하나. 열거형 이름은 poe.ninja의 질의 타입이지 사람이 읽을 이름이 아니다(S3 §5.4.3).
+
+**GGG static의 그룹 라벨을 그대로 쓰지 않는다** — poe.ninja의 18개 타입과 1:1이 아니다. 예컨대 `Fragments` 그룹 라벨 하나가 ninja의 `Fragment`와 `Scarab`을 함께 덮는다(`00-api-contract.md` §6). 18줄이므로 직접 쓴다.
+
+| 키 | 영문 값 | ExchangeCategory |
+|---|---|---|
+| ui.category.currency | Currency | Currency |
+| ui.category.fragment | Fragment | Fragment |
+| ui.category.runegraft | Runegraft | Runegraft |
+| ui.category.allflameEmber | Allflame Ember | AllflameEmber |
+| ui.category.tattoo | Tattoo | Tattoo |
+| ui.category.omen | Omen | Omen |
+| ui.category.djinnCoin | Djinn Coin | DjinnCoin |
+| ui.category.ducat | Ducat | Ducat |
+| ui.category.enshroudingCrystal | Enshrouding Crystal | EnshroudingCrystal |
+| ui.category.divinationCard | Divination Card | DivinationCard |
+| ui.category.artifact | Artifact | Artifact |
+| ui.category.oil | Oil | Oil |
+| ui.category.deliriumOrb | Delirium Orb | DeliriumOrb |
+| ui.category.scarab | Scarab | Scarab |
+| ui.category.astrolabe | Astrolabe | Astrolabe |
+| ui.category.fossil | Fossil | Fossil |
+| ui.category.resonator | Resonator | Resonator |
+| ui.category.essence | Essence | Essence |
+
+**목록에 없는 열거형 값은 열거형 이름 그대로 보인다.** `ExchangeCategory`가 늘어나면 이 표와 en.json에 행을 더한다 — 16.7절의 망라 테스트가 빠진 행을 잡는다.
 
 ## 15. 구체 상수 목록
 
@@ -2051,6 +2187,7 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | Localization/FallbackChainTests.cs | 11.6 | L1~L10, **L5b**(`ui.*` 미해결은 Warning으로 남고 `ItemName` 미해결만 Debug로 내려감 — S2 9.4 갈래 회귀) |
 | Localization/PriceTemplateFallbackTests.cs | 11.11 | C1~C7, 14절 카탈로그와 PriceTemplates 상수의 문자 단위 일치(C1)를 리플렉션으로 순회 단언 |
 | Presentation/UiStateTemplateFallbackTests.cs | S3 9.3, 신규 | UiStateTemplates 상수와 14.3절 표의 일치를 C1과 동형으로 단언 |
+| Localization/ShippedDictionaryTests.cs | S3 5.4.4, 제7판 신규 | **동봉되는 모든 사전 파일**(en.json·ko.json)에 대해: ① `UiKeyCatalog`의 전 키가 존재하고 값이 공백이 아님, ② 자리표시자 개수가 14절 표와 일치(= `LocalizationCatalog`이 로드 시 떨어뜨리지 않음), ③ 카탈로그에 없는 `ui.*` 키가 없음(오타 잡기). **ko.json이 en.json의 키 집합을 그대로 덮는지를 확인하는 것이 요점이다** — 한 키가 빠지면 그 자리만 영문으로 남고 아무도 알아채지 못한다 |
 
 ### 16.3 Market
 
@@ -2111,7 +2248,7 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | Presentation/SnapshotFanoutReentrancyTests.cs | S3 8.4, 측정 §10.3 | 경계 트리거+래치 구현이 반복 실패에서 유한 패스 후 수렴함을 단언 — **상한 패스 수 N=7**(E4, `00-shell-measurements.md` §10.3 실측값)로 고정 assert. `>=N` 레벨 구현으로 회귀하면 실패하도록 정확히 7을 assert하며, "N 이하"가 아니라 "정확히 7 이하로 수렴"임을 단언한다 |
 | Presentation/DerivedConditionsTests.cs | S3 9.2 | PollingStopped/RatePending/RowStale/ClassifyRow 네 순수 함수 |
 | Presentation/ViewModelRefreshFailingLatchTests.cs | S3 10.1, B3 | 경계(false->true/true->false)에서만 Set이 호출됨을 단언 — N-1회 실패 시 미호출, N회째 정확히 1회 호출 |
-| Presentation/SettingsViewModelTests.cs | S3 5, 7.4, 7.6, **5.4.3** | 배너 조립 순서, 디바운스, 통과 토글, 델리게이트 경유 명령, **`ActiveLeague`가 해석된 리그를 게시함**(자유 입력 상자가 비어 있는 정상 상태에서 창이 답을 갖도록) |
+| Presentation/SettingsViewModelTests.cs | S3 5, 7.4, 7.6, **5.4.3**, **5.4.4** | 배너 조립 순서, 디바운스, 통과 토글, 델리게이트 경유 명령, **`ActiveLeague`가 해석된 리그를 게시함**(자유 입력 상자가 비어 있는 정상 상태에서 창이 답을 갖도록), **언어 전환이 `Strings`·검색 행·카테고리 라벨·관심목록 이름을 팬아웃 패스 없이 바꿈**(D-PS5/E12 회귀 — `LanguageChanged`만 발생시키고 `Refresh`는 부르지 않은 채 단언해야 구독 누락을 잡는다), **`ExchangeCategory` 전 멤버가 `ui.category.*` 라벨을 갖는지 망라 단언**(14.10절) |
 
 ### 16.9 Diagnostics (E3, 신규)
 

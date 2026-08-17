@@ -20,4 +20,12 @@ namespace PoeOverlay.Core.Presentation.ViewModels.Rows;
 /// </para>
 /// </remarks>
 /// <param name="DisplayName">Localised name, API name, or the slug — the ③④⑤ chain of S2 3.4.</param>
-public sealed record SearchRowViewModel(ItemId Id, string DisplayName, ExchangeCategory Category);
+/// <param name="CategoryLabel">
+/// What the category column draws (S4 14.10). <paramref name="Category"/> stays because the
+/// watchlist entry is built from it; a label cannot stand in for the value.
+/// </param>
+public sealed record SearchRowViewModel(
+    ItemId Id,
+    string DisplayName,
+    ExchangeCategory Category,
+    string CategoryLabel);

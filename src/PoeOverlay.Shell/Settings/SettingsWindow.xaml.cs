@@ -36,9 +36,13 @@ public sealed partial class SettingsWindow : Window
     /// <summary>Builds the settings window.</summary>
     /// <param name="viewModel">The window-scoped view model; disposed when the window closes.</param>
     /// <param name="editor">The five scalar settings Presentation's surface does not carry.</param>
-    /// <param name="attribution">The poe.ninja attribution line (NFR-05).</param>
     /// <param name="owner">The overlay's HWND. Required — see the type remarks.</param>
-    public SettingsWindow(SettingsViewModel viewModel, SettingsEditor editor, string attribution, IntPtr owner)
+    /// <remarks>
+    /// The attribution line used to arrive here as a fourth argument and was written once into a
+    /// named <c>TextBlock</c>. It is <c>viewModel.Strings.Attribution</c> now (S3 5.4.4): written
+    /// once, it was the one string on this window a language change could not reach.
+    /// </remarks>
+    public SettingsWindow(SettingsViewModel viewModel, SettingsEditor editor, IntPtr owner)
     {
         ArgumentNullException.ThrowIfNull(viewModel);
         ArgumentNullException.ThrowIfNull(editor);
@@ -58,7 +62,6 @@ public sealed partial class SettingsWindow : Window
         // Before the source is created, so the ownership is in place from the first CreateWindowEx
         // rather than being retro-fitted to a window that has already been placed in the z-order.
         new WindowInteropHelper(this).Owner = owner;
-        Attribution.Text = attribution;
     }
 
     /// <summary>The scalar settings adapter, bound to by name from the XAML.</summary>

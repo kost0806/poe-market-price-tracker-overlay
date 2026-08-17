@@ -76,17 +76,43 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
     [ObservableProperty]
     private SearchOutcome _searchOutcome = SearchOutcome.CacheEmpty;
 
+    /// <summary>
+    /// The search outcome as a sentence rather than an enum member (S3 5.4.3).
+    /// </summary>
+    /// <remarks>
+    /// Three XAML <c>DataTrigger</c>s held these strings before, which is one of the places the
+    /// window's English was unreachable by any dictionary. Composing here also keeps
+    /// <c>CacheEmpty</c>'s distinct meaning — "nothing fetched yet", not "not in the cache" —
+    /// stated in one place rather than in a style.
+    /// </remarks>
     [ObservableProperty]
-    private IReadOnlyList<ExchangeCategory> _unfetchedCategories = [];
+    private string _searchStatusText = string.Empty;
 
     [ObservableProperty]
-    private IReadOnlyList<WatchlistEntry> _watchlist = [];
+    private IReadOnlyList<CategoryRowViewModel> _unfetchedCategories = [];
+
+    [ObservableProperty]
+    private IReadOnlyList<WatchlistRowViewModel> _watchlist = [];
 
     [ObservableProperty]
     private IReadOnlyList<LeagueEntry> _leagues = [];
 
     [ObservableProperty]
     private LeagueListStatus _leaguesStatus = LeagueListStatus.Failed;
+
+    /// <summary>The league-list status as a sentence (S3 5.4.3 E13).</summary>
+    [ObservableProperty]
+    private string _leagueStatusText = string.Empty;
+
+    /// <summary>
+    /// Every fixed string the window draws (S3 5.4.4 D-SH23).
+    /// </summary>
+    /// <remarks>
+    /// One bundle, swapped whole on a language change, so the switch costs one notification rather
+    /// than thirty.
+    /// </remarks>
+    [ObservableProperty]
+    private SettingsStrings _strings;
 
     /// <summary>
     /// The league the data actually carries, which is not the league the user typed.
@@ -159,6 +185,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
         _marketClient = marketClient;
         _settingsSource = settingsSource;
         _localizer = localizer;
+        _strings = new SettingsStrings(localizer);
         _moveMode = moveMode;
         _geometry = geometry;
         _uiDispatcher = uiDispatcher;
@@ -190,9 +217,17 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
         _moveMode.StateChanged += OnMoveModeChanged;
         _settingsSource.Changed += OnSettingsChanged;
 
-        Watchlist = _settingsSource.Current.Watchlist.ToArray();
+        // D-PS5 (S3 11). Two of the three view models subscribed and this one did not; the 30 s
+        // pass re-ran the search and so the result rows followed a language change by accident,
+        // while the labels had no source at all to recompute. This is the only one of the three
+        // that ends — Dispose detaches it.
+        _localizer.LanguageChanged += OnLanguageChanged;
+
+        Watchlist = BuildWatchlistRows(_settingsSource.Current.Watchlist);
         WritesBlocked = _settingsSource.BlockReason != WriteBlockReason.None;
         ShowFirstRunBanner = !_settingsSource.Current.FirstRunAcknowledged;
+        SearchStatusText = ComposeSearchStatus(SearchOutcome);
+        LeagueStatusText = ComposeLeagueStatus(LeaguesStatus);
     }
 
     /// <summary>Adds the selected hit to the watchlist, fetching its category if the cache lacks it.</summary>
@@ -295,13 +330,14 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
 
         RunSearch();
 
-        Watchlist = _settingsSource.Current.Watchlist.ToArray();
+        Watchlist = BuildWatchlistRows(_settingsSource.Current.Watchlist);
         WritesBlocked = _settingsSource.BlockReason != WriteBlockReason.None;
         ShowFirstRunBanner = !_settingsSource.Current.FirstRunAcknowledged;
         RecentErrors = _errorRing.Snapshot();
 
         Leagues = snapshot.Leagues?.Entries ?? [];
         LeaguesStatus = snapshot.Leagues?.Status ?? LeagueListStatus.Failed;
+        LeagueStatusText = ComposeLeagueStatus(LeaguesStatus);
 
         AcknowledgeCorruptionCommand.NotifyCanExecuteChanged();
     }
@@ -317,6 +353,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
         _disposed = true;
         _moveMode.StateChanged -= OnMoveModeChanged;
         _settingsSource.Changed -= OnSettingsChanged;
+        _localizer.LanguageChanged -= OnLanguageChanged;
         _searchDebounce.Dispose();
     }
 
@@ -352,6 +389,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
         {
             SearchResults = [];
             SearchOutcome = SearchOutcome.CacheEmpty;
+            SearchStatusText = ComposeSearchStatus(SearchOutcome.CacheEmpty);
             UnfetchedCategories = [];
             return;
         }
@@ -362,18 +400,63 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
 
         // The same ③④⑤ chain the matching predicate below already runs on. Binding ApiName
         // directly left every unnamed hit as a row with nothing in it but its category (D-DL16),
-        // and rebuilding here rather than caching is what makes a language change follow: Refresh
-        // calls RunSearch on every pass.
+        // and rebuilding here rather than caching is what makes a language change follow: the
+        // LanguageChanged handler calls RunSearch, and so does every pass.
         var rows = new List<SearchRowViewModel>(result.Hits.Count);
         foreach (var hit in result.Hits)
         {
-            rows.Add(new SearchRowViewModel(hit.Id, _localizer.ItemName(hit.Id, hit.ApiName), hit.Category));
+            rows.Add(new SearchRowViewModel(
+                hit.Id,
+                _localizer.ItemName(hit.Id, hit.ApiName),
+                hit.Category,
+                CategoryLabels.Label(_localizer, hit.Category)));
+        }
+
+        var unfetched = new List<CategoryRowViewModel>(result.UnfetchedCategories.Count);
+        foreach (var category in result.UnfetchedCategories)
+        {
+            unfetched.Add(new CategoryRowViewModel(category, CategoryLabels.Label(_localizer, category)));
         }
 
         SearchResults = rows;
         SearchOutcome = result.Outcome;
-        UnfetchedCategories = result.UnfetchedCategories;
+        SearchStatusText = ComposeSearchStatus(result.Outcome);
+        UnfetchedCategories = unfetched;
     }
+
+    /// <summary>
+    /// The watchlist as rows carrying a name (S3 5.4.3 E14).
+    /// </summary>
+    /// <remarks>
+    /// <c>WatchlistEntry</c> has no API name, so level ④ is skipped and an item the dictionary does
+    /// not have falls to its slug — which is what this list drew for every item before.
+    /// </remarks>
+    private IReadOnlyList<WatchlistRowViewModel> BuildWatchlistRows(IReadOnlyList<WatchlistEntry> entries)
+    {
+        var rows = new List<WatchlistRowViewModel>(entries.Count);
+        foreach (var entry in entries)
+        {
+            rows.Add(new WatchlistRowViewModel(entry.Id, _localizer.ItemName(entry.Id, apiName: null)));
+        }
+
+        return rows;
+    }
+
+    private string ComposeSearchStatus(SearchOutcome outcome)
+        => _localizer.Ui(outcome switch
+        {
+            SearchOutcome.Found => SettingsKeys.SearchFound,
+            SearchOutcome.NotInCache => SettingsKeys.SearchNotInCache,
+            _ => SettingsKeys.SearchCacheEmpty,
+        });
+
+    private string ComposeLeagueStatus(LeagueListStatus status)
+        => _localizer.Ui(status switch
+        {
+            LeagueListStatus.Ok => SettingsKeys.LeagueStatusOk,
+            LeagueListStatus.Suspicious => SettingsKeys.LeagueStatusSuspicious,
+            _ => SettingsKeys.LeagueStatusFailed,
+        });
 
     private bool MatchesLocalisedName(ItemId id, string? apiName)
         => _localizer.ItemName(id, apiName).Contains(SearchQuery, StringComparison.OrdinalIgnoreCase);
@@ -547,7 +630,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
     {
         foreach (var unfetched in UnfetchedCategories)
         {
-            if (unfetched == category)
+            if (unfetched.Category == category)
             {
                 return false;
             }
@@ -565,9 +648,39 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
 
     private void OnSettingsChanged(AppSettings oldSettings, AppSettings newSettings)
     {
-        Watchlist = newSettings.Watchlist.ToArray();
+        Watchlist = BuildWatchlistRows(newSettings.Watchlist);
         WritesBlocked = _settingsSource.BlockReason != WriteBlockReason.None;
         ShowFirstRunBanner = !newSettings.FirstRunAcknowledged;
+    }
+
+    /// <summary>
+    /// Re-resolves every string this window shows, outside a fan-out pass (D-PS5, S3 11).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Language change is Localization's signal, not the Store's, so it arrives on its own channel.
+    /// Unlike the overlay's handler this one cannot leave the rest to the next pass: the labels are
+    /// not derived from a snapshot at all, and the item names in two lists depend on the language
+    /// through the fallback chain (S2 3.4).
+    /// </para>
+    /// <para>
+    /// No file I/O happens here — D-L1 loaded every dictionary at startup precisely so that this
+    /// path, which runs on the UI thread, is nothing but frozen-dictionary lookups.
+    /// </para>
+    /// </remarks>
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        Strings = new SettingsStrings(_localizer);
+        LeagueStatusText = ComposeLeagueStatus(LeaguesStatus);
+        Watchlist = BuildWatchlistRows(_settingsSource.Current.Watchlist);
+
+        // Rebuilds the result rows, their category labels and the status sentence in one call.
+        RunSearch();
     }
 
     private void Log(LogLevel level, string code, string message)

@@ -1,8 +1,10 @@
 using Microsoft.Extensions.Time.Testing;
 using PoeOverlay.Core.Diagnostics;
 using PoeOverlay.Core.Domain;
+using PoeOverlay.Core.Localization;
 using PoeOverlay.Core.Market;
 using PoeOverlay.Core.Presentation.Overlay;
+using PoeOverlay.Core.Presentation.UiState;
 using PoeOverlay.Core.Presentation.ViewModels;
 using PoeOverlay.Core.Presentation.ViewModels.Rows;
 using PoeOverlay.Core.Settings;
@@ -126,6 +128,94 @@ public sealed class SettingsViewModelTests
     }
 
     [Fact]
+    public void ALanguageChange_ReResolvesTheWholeWindow_WithoutWaitingForAPass()
+    {
+        // D-PS5 / S3 0.6 E12. This view model was the one of the three that never subscribed to
+        // LanguageChanged, and the defect hid because Refresh re-runs the search on every 30 s
+        // pass — so the result rows followed a language change by accident while nothing else did.
+        // The test therefore drives LanguageChanged alone and never calls Refresh: with a pass in
+        // the middle it would keep passing against the unsubscribed code.
+        using var fixture = new Fixture();
+
+        fixture.Settings.Update(fixture.Settings.Current with
+        {
+            Watchlist = new EquatableArray<WatchlistEntry>(
+            [
+                new WatchlistEntry(
+                    new ItemId("divine"),
+                    new CategoryRef("Currency", ExchangeCategory.Currency),
+                    null),
+            ]),
+        });
+
+        fixture.Vm.SearchQuery = "divine";
+        fixture.Time.Advance(SettingsViewModel.SearchDebounce);
+        fixture.Dispatcher.Drain();
+
+        var englishLabel = fixture.Vm.Strings.League;
+        Assert.Equal("League", englishLabel);
+        Assert.Equal("Currency", Assert.Single(fixture.Vm.SearchResults).CategoryLabel);
+
+        fixture.Localizer.Marker = "KO:";
+        fixture.Localizer.SetLanguage("ko");
+
+        Assert.Equal("KO:League", fixture.Vm.Strings.League);
+        Assert.StartsWith("KO:", fixture.Vm.Strings.Attribution, StringComparison.Ordinal);
+        Assert.StartsWith("KO:", fixture.Vm.SearchStatusText, StringComparison.Ordinal);
+        Assert.StartsWith("KO:", fixture.Vm.LeagueStatusText, StringComparison.Ordinal);
+
+        var row = Assert.Single(fixture.Vm.SearchResults);
+        Assert.StartsWith("KO:", row.DisplayName, StringComparison.Ordinal);
+        Assert.StartsWith("KO:", row.CategoryLabel, StringComparison.Ordinal);
+        Assert.StartsWith("KO:", Assert.Single(fixture.Vm.Watchlist).DisplayName, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheWatchlistShowsNames_NotSlugs()
+    {
+        // S3 5.4.3 E14: the overlay rows and the search results were both moved onto the name
+        // chain and this list was left behind, so a Korean dictionary would have translated every
+        // list in the window except this one.
+        using var fixture = new Fixture();
+
+        fixture.Settings.Update(fixture.Settings.Current with
+        {
+            Watchlist = new EquatableArray<WatchlistEntry>(
+            [
+                new WatchlistEntry(
+                    new ItemId("divine"),
+                    new CategoryRef("Currency", ExchangeCategory.Currency),
+                    null),
+            ]),
+        });
+
+        fixture.Localizer.Marker = "KO:";
+        fixture.Vm.Refresh(SnapshotBuilder.Empty(), Now);
+
+        // WatchlistEntry carries no API name, so this is the ③⑤ chain: the marker proves the row
+        // went through the localizer at all rather than reading Id.Value straight out.
+        Assert.Equal("KO:divine", Assert.Single(fixture.Vm.Watchlist).DisplayName);
+    }
+
+    [Fact]
+    public void EveryExchangeCategory_HasACataloguedLabelKey()
+    {
+        // S4 14.10. A member added to the enum without a row here draws its own identifier on
+        // screen — which is the state this table was written to end, and it is invisible in
+        // English because several identifiers happen to read as words.
+        foreach (var category in Enum.GetValues<ExchangeCategory>())
+        {
+            var key = CategoryLabels.KeyFor(category);
+
+            Assert.True(key is not null, $"{category} has no ui.category.* key");
+            Assert.True(
+                UiKeyCatalog.TryGetArgumentCount(key!, out var arguments),
+                $"{key} is not in the S4 14 catalogue, so no dictionary is checked against it");
+            Assert.Equal(0, arguments);
+        }
+    }
+
+    [Fact]
     public void TheDebounceCallback_TouchesViewStateOnlyThroughTheDispatcher()
     {
         using var fixture = new Fixture();
@@ -216,7 +306,7 @@ public sealed class SettingsViewModelTests
     {
         using var fixture = new Fixture();
         await fixture.Vm.AddToWatchlistCommand.ExecuteAsync(
-            new SearchRowViewModel(new ItemId("divine"), "Divine Orb", ExchangeCategory.Currency));
+            new SearchRowViewModel(new ItemId("divine"), "Divine Orb", ExchangeCategory.Currency, "Currency"));
 
         Assert.Single(fixture.Settings.Current.Watchlist);
 
@@ -371,11 +461,13 @@ public sealed class SettingsViewModelTests
             Dispatcher = new QueueingUiDispatcher();
             Search = new FakeSearchSource();
 
+            Localizer = new FakeLocalizer();
+
             Vm = new SettingsViewModel(
                 Search,
                 Market,
                 Settings,
-                new FakeLocalizer(),
+                Localizer,
                 MoveMode,
                 Geometry,
                 Dispatcher,
@@ -402,6 +494,8 @@ public sealed class SettingsViewModelTests
         public QueueingUiDispatcher Dispatcher { get; }
 
         public FakeSearchSource Search { get; }
+
+        public FakeLocalizer Localizer { get; }
 
         /// <summary>Everything that reached the <see cref="FetchedListingSink"/>, in order.</summary>
         public List<(string League, int Epoch, ExchangeCategory Category, CategorySnapshot Snapshot)> Published { get; } = [];

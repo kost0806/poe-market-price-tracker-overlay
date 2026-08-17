@@ -37,6 +37,16 @@ internal sealed class FakeLocalizer : ILocalizer
     /// <summary>Set to make <see cref="ItemName"/> throw, standing in for a broken row path.</summary>
     public bool ThrowOnItemName { get; set; }
 
+    /// <summary>
+    /// Prepended to everything this localizer resolves — a stand-in for "a different language".
+    /// </summary>
+    /// <remarks>
+    /// Empty by default, so every existing assertion still sees plain English. Setting it before
+    /// <see cref="SetLanguage"/> is what lets a test tell "re-resolved" from "still holding the
+    /// string it resolved at construction", which asserting on the English alone cannot do.
+    /// </remarks>
+    public string Marker { get; set; } = string.Empty;
+
     public bool TryGetTemplate(string key, out string template)
     {
         if (_entries.TryGetValue(key, out var found) && !string.IsNullOrWhiteSpace(found))
@@ -54,7 +64,7 @@ internal sealed class FakeLocalizer : ILocalizer
         var template = TryGetTemplate(key, out var found) ? found : key;
         try
         {
-            return string.Format(System.Globalization.CultureInfo.InvariantCulture, template, args);
+            return Marker + string.Format(System.Globalization.CultureInfo.InvariantCulture, template, args);
         }
         catch (FormatException)
         {
@@ -65,7 +75,7 @@ internal sealed class FakeLocalizer : ILocalizer
     public string ItemName(ItemId id, string? apiName)
         => ThrowOnItemName
             ? throw new InvalidOperationException("the name path is broken")
-            : apiName ?? id.Value;
+            : Marker + (apiName ?? id.Value);
 
     public void SetLanguage(string tag)
     {
