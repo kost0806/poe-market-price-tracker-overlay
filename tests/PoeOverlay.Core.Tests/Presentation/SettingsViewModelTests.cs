@@ -1,4 +1,7 @@
+using System.IO;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
+using PoeOverlay.Core.Catalog;
 using PoeOverlay.Core.Diagnostics;
 using PoeOverlay.Core.Domain;
 using PoeOverlay.Core.Localization;
@@ -306,7 +309,7 @@ public sealed class SettingsViewModelTests
     {
         using var fixture = new Fixture();
         await fixture.Vm.AddToWatchlistCommand.ExecuteAsync(
-            new SearchRowViewModel(new ItemId("divine"), "Divine Orb", ExchangeCategory.Currency, "Currency"));
+            new SearchRowViewModel(new ItemId("divine"), "Divine Orb", ExchangeCategory.Currency, "Currency", string.Empty));
 
         Assert.Single(fixture.Settings.Current.Watchlist);
 
@@ -445,6 +448,74 @@ public sealed class SettingsViewModelTests
         Assert.False(fixture.Settings.Current.FirstRunAcknowledged);
     }
 
+    [Fact]
+    public void AnItemOnlyTheCatalogueKnows_IsFoundAndMarkedAsHavingNoPrice()
+    {
+        // The whole point of the catalogue. Before it existed this search returned nothing at all
+        // on a build shipping 115 scarab names, because the only thing search could see was the
+        // fetched cache — and a scarab's category is never fetched until someone watches one.
+        using var fixture = new Fixture();
+        fixture.Search.Empty = true;
+        fixture.WriteCatalog("""{ "abyss-scarab": { "cat": "Scarab", "en": "Abyss Scarab" } }""");
+
+        fixture.Vm.SearchQuery = "abyss";
+        fixture.Time.Advance(SettingsViewModel.SearchDebounce);
+        fixture.Dispatcher.Drain();
+
+        var row = Assert.Single(fixture.Vm.SearchResults);
+        Assert.Equal(new ItemId("abyss-scarab"), row.Id);
+        Assert.Equal(ExchangeCategory.Scarab, row.Category);
+        // Compared against the localiser rather than a literal: what matters is that the row shows
+        // the no-price string and the cached row below shows nothing, not what the string says.
+        Assert.Equal(fixture.Localizer.Ui(SettingsKeys.SearchNoPrice), row.PriceText);
+
+        // Rows on screen and "no match in the cache" underneath them would contradict each other.
+        Assert.Equal(SearchOutcome.Found, fixture.Vm.SearchOutcome);
+    }
+
+    [Fact]
+    public void ACachedHit_IsNotRepeatedByTheCatalogue()
+    {
+        using var fixture = new Fixture();
+        fixture.WriteCatalog("""{ "divine": { "cat": "Currency", "en": "Divine Orb" } }""");
+
+        fixture.Vm.SearchQuery = "divine";
+        fixture.Time.Advance(SettingsViewModel.SearchDebounce);
+        fixture.Dispatcher.Drain();
+
+        var row = Assert.Single(fixture.Vm.SearchResults);
+
+        // From the cache, so no marker: the row is priced, whatever this list chooses to draw.
+        Assert.Equal(string.Empty, row.PriceText);
+    }
+
+    [Fact]
+    public async Task ACatalogueHitCanBeWatched_AndThatFetchesItsCategory()
+    {
+        // Finding it is only half of FR-01-1. The row has to be a complete command parameter, and
+        // the category it carries is exactly what the dictionary alone could never supply.
+        using var fixture = new Fixture();
+        fixture.Search.Empty = true;
+        fixture.WriteCatalog("""{ "abyss-scarab": { "cat": "Scarab", "en": "Abyss Scarab" } }""");
+
+        // A settled league first: without one there is no world to tag a fetch with, and the
+        // request is correctly never issued (INV-1). That is a different test from this one.
+        fixture.Vm.Refresh(
+            SnapshotBuilder.Empty() with { DataLeague = SnapshotBuilder.League, DataEpoch = 4 },
+            Now);
+
+        fixture.Vm.SearchQuery = "abyss";
+        fixture.Time.Advance(SettingsViewModel.SearchDebounce);
+        fixture.Dispatcher.Drain();
+
+        await fixture.Vm.AddToWatchlistCommand.ExecuteAsync(Assert.Single(fixture.Vm.SearchResults));
+
+        var entry = Assert.Single(fixture.Settings.Current.Watchlist);
+        Assert.Equal(new ItemId("abyss-scarab"), entry.Id);
+        Assert.Equal(ExchangeCategory.Scarab, entry.Category.Known);
+        Assert.Contains(fixture.Market.Fetches, f => f.Category == ExchangeCategory.Scarab);
+    }
+
     private sealed class CommandingRefreshable(Action onRefresh) : Core.Presentation.Fanout.IRefreshable
     {
         public void Refresh(MarketSnapshot snapshot, DateTimeOffset now) => onRefresh();
@@ -461,10 +532,18 @@ public sealed class SettingsViewModelTests
             Dispatcher = new QueueingUiDispatcher();
             Search = new FakeSearchSource();
 
+            // A real ItemCatalog over an empty folder: the merge runs, finds nothing to add, and
+            // every existing assertion keeps meaning what it meant. WriteCatalog fills it in for
+            // the tests that are about the merge.
+            CatalogDirectory = Path.Combine(Path.GetTempPath(), "PoeOverlay.Catalog." + Guid.NewGuid().ToString("N"));
+            _ = Directory.CreateDirectory(CatalogDirectory);
+            Catalog = new ItemCatalog(CatalogDirectory, NullLogger<ItemCatalog>.Instance);
+
             Localizer = new FakeLocalizer();
 
             Vm = new SettingsViewModel(
                 Search,
+                Catalog,
                 Market,
                 Settings,
                 Localizer,
@@ -495,6 +574,10 @@ public sealed class SettingsViewModelTests
 
         public FakeSearchSource Search { get; }
 
+        public string CatalogDirectory { get; }
+
+        public ItemCatalog Catalog { get; }
+
         public FakeLocalizer Localizer { get; }
 
         /// <summary>Everything that reached the <see cref="FetchedListingSink"/>, in order.</summary>
@@ -508,7 +591,23 @@ public sealed class SettingsViewModelTests
 
         public FakeMarketClient Market { get; } = new();
 
-        public void Dispose() => Vm.Dispose();
+        /// <summary>Writes the shipped catalogue this fixture's ItemCatalog reads.</summary>
+        public void WriteCatalog(string json)
+            => File.WriteAllText(Path.Combine(CatalogDirectory, ItemCatalog.FileName), json);
+
+        public void Dispose()
+        {
+            Vm.Dispose();
+
+            try
+            {
+                Directory.Delete(CatalogDirectory, recursive: true);
+            }
+            catch (IOException)
+            {
+                // A stale temp folder is not a test failure.
+            }
+        }
     }
 
     private sealed class FakeSearchSource : ISearchSource
@@ -516,6 +615,9 @@ public sealed class SettingsViewModelTests
         public int Calls { get; private set; }
 
         public bool Throw { get; set; }
+
+        /// <summary>Makes the cache answer "nothing here", which is where the catalogue takes over.</summary>
+        public bool Empty { get; set; }
 
         /// <summary>The hit's API name; null is the case that used to render as a blank row.</summary>
         public string? HitName { get; set; } = "Divine Orb";
@@ -526,6 +628,11 @@ public sealed class SettingsViewModelTests
             if (Throw)
             {
                 throw new InvalidOperationException("the search index is broken");
+            }
+
+            if (Empty)
+            {
+                return new SearchResult([], SearchOutcome.NotInCache, [ExchangeCategory.Scarab], false);
             }
 
             return new SearchResult(

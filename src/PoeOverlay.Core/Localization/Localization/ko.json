@@ -975,6 +975,7 @@
   "ui.settings.refreshMinutes": "갱신 주기(분)",
   "ui.settings.retryNow": "지금 재시도",
   "ui.settings.search.add": "관심목록에 추가",
+  "ui.settings.search.noPrice": "시세 없음",
   "ui.settings.search.cacheEmpty": "첫 갱신을 기다리는 중입니다 — 아직 받아 온 것이 없습니다.",
   "ui.settings.search.found": "검색 결과가 있습니다.",
   "ui.settings.search.header": "검색",

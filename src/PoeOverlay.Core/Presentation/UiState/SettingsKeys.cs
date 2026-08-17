@@ -115,6 +115,9 @@ internal static class SettingsKeys
     /// <summary>Nothing has been fetched yet — not the same claim (S2 6.7, S3 5.4.3).</summary>
     public const string SearchCacheEmpty = "ui.settings.search.cacheEmpty";
 
+    /// <summary>A catalogue hit whose category has never been fetched (S3 5.4.6, D-DL29).</summary>
+    public const string SearchNoPrice = "ui.settings.search.noPrice";
+
     /// <summary>The league list loaded normally.</summary>
     public const string LeagueStatusOk = "ui.settings.leagueStatus.ok";
 

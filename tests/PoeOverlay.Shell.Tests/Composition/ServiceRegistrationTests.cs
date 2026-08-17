@@ -38,7 +38,8 @@ public sealed class ServiceRegistrationTests : IDisposable
             _root,
             logs,
             Path.Combine(_root, "Localization"),
-            Path.Combine(_root, "Icons"));
+            Path.Combine(_root, "Icons"),
+            Path.Combine(_root, "Catalog"));
         _diagnostics = BootDiagnostics.Open(_paths);
     }
 

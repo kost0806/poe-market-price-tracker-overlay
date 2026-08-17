@@ -371,11 +371,19 @@
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock Grid.Column="0"
                                                    Text="{Binding DisplayName, Mode=OneWay}"
                                                    TextTrimming="CharacterEllipsis" />
+                                        <!-- FR-01-1 / S3 5.4.6: a row the catalogue supplied and the
+                                             cache has never seen says so here. The row stays
+                                             selectable — adding it is what fetches its category. -->
                                         <TextBlock Grid.Column="1"
+                                                   Margin="8,0,0,0"
+                                                   Foreground="{StaticResource FaintInk}"
+                                                   Text="{Binding PriceText, Mode=OneWay}" />
+                                        <TextBlock Grid.Column="2"
                                                    Margin="8,0,0,0"
                                                    Foreground="{StaticResource MutedInk}"
                                                    Text="{Binding CategoryLabel, Mode=OneWay}" />

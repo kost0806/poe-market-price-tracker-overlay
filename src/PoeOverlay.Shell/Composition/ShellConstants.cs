@@ -109,6 +109,9 @@ internal static class ShellConstants
     /// </remarks>
     internal const string IconFolderName = "Icons";
 
+    /// <summary>The shipped item catalogue's folder, beside the exe (FR-01-1, contract §6.8).</summary>
+    internal const string CatalogFolderName = "Catalog";
+
     /// <summary>S4 15.3 — the named <c>IHttpClientFactory</c> client Market resolves.</summary>
     /// <remarks>Duplicated from Core's <c>internal NinjaEndpoints.HttpClientName</c>, which the Shell cannot see.</remarks>
     internal const string HttpClientName = "poe.ninja";

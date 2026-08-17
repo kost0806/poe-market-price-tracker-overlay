@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using PoeOverlay.Core.Catalog;
 using PoeOverlay.Core.Diagnostics;
 using PoeOverlay.Core.Domain;
 using PoeOverlay.Core.Localization;
@@ -47,6 +48,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
     internal const int SearchLimit = 200;
 
     private readonly ISearchSource _searchSource;
+    private readonly ItemCatalog _catalog;
     private readonly IMarketClient _marketClient;
     private readonly ISettingsSource _settingsSource;
     private readonly ILocalizer _localizer;
@@ -151,6 +153,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
     /// </remarks>
     public SettingsViewModel(
         ISearchSource searchSource,
+        ItemCatalog catalog,
         IMarketClient marketClient,
         ISettingsSource settingsSource,
         ILocalizer localizer,
@@ -167,6 +170,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
         ILogger<SettingsViewModel> logger)
     {
         ArgumentNullException.ThrowIfNull(searchSource);
+        ArgumentNullException.ThrowIfNull(catalog);
         ArgumentNullException.ThrowIfNull(marketClient);
         ArgumentNullException.ThrowIfNull(settingsSource);
         ArgumentNullException.ThrowIfNull(localizer);
@@ -182,6 +186,7 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
         ArgumentNullException.ThrowIfNull(logger);
 
         _searchSource = searchSource;
+        _catalog = catalog;
         _marketClient = marketClient;
         _settingsSource = settingsSource;
         _localizer = localizer;
@@ -403,14 +408,19 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
         // and rebuilding here rather than caching is what makes a language change follow: the
         // LanguageChanged handler calls RunSearch, and so does every pass.
         var rows = new List<SearchRowViewModel>(result.Hits.Count);
+        var seen = new HashSet<ItemId>();
         foreach (var hit in result.Hits)
         {
+            _ = seen.Add(hit.Id);
             rows.Add(new SearchRowViewModel(
                 hit.Id,
                 _localizer.ItemName(hit.Id, hit.ApiName),
                 hit.Category,
-                CategoryLabels.Label(_localizer, hit.Category)));
+                CategoryLabels.Label(_localizer, hit.Category),
+                string.Empty));
         }
+
+        AppendCatalogueHits(query, rows, seen);
 
         var unfetched = new List<CategoryRowViewModel>(result.UnfetchedCategories.Count);
         foreach (var category in result.UnfetchedCategories)
@@ -418,10 +428,103 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
             unfetched.Add(new CategoryRowViewModel(category, CategoryLabels.Label(_localizer, category)));
         }
 
+        // A catalogue-only match is still a match. Reporting the Store's "not in the cache" over a
+        // list with rows in it would contradict the screen.
+        var outcome = rows.Count > 0 ? SearchOutcome.Found : result.Outcome;
+
         SearchResults = rows;
-        SearchOutcome = result.Outcome;
-        SearchStatusText = ComposeSearchStatus(result.Outcome);
+        SearchOutcome = outcome;
+        SearchStatusText = ComposeSearchStatus(outcome);
         UnfetchedCategories = unfetched;
+    }
+
+    /// <summary>
+    /// Adds items the catalogue knows and the cache has never seen (S3 5.4.6, HLD D7 as amended).
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The cached hits keep the front of the list: a row with a price is almost always the one the
+    /// user meant, and the Store has already ranked them. Catalogue hits are ranked among
+    /// themselves the same way — whole word, then prefix, then anywhere.
+    /// </para>
+    /// <para>
+    /// This is why an item nobody has fetched is findable at all. Before it existed, searching for
+    /// a scarab returned nothing on a build shipping 115 scarab names, because the only thing
+    /// search could see was the fetched cache.
+    /// </para>
+    /// </remarks>
+    private void AppendCatalogueHits(string query, List<SearchRowViewModel> rows, HashSet<ItemId> seen)
+    {
+        if (rows.Count >= SearchLimit)
+        {
+            return;
+        }
+
+        var matches = new List<(int Rank, SearchRowViewModel Row)>();
+        var noPrice = _localizer.Ui(SettingsKeys.SearchNoPrice);
+
+        foreach (var entry in _catalog.Entries)
+        {
+            if (seen.Contains(entry.Id))
+            {
+                continue;
+            }
+
+            var displayName = _localizer.ItemName(entry.Id, entry.EnglishName);
+
+            // Three spellings of the same item: what the user sees, what the API calls it, and the
+            // slug. A Korean player types the first, an English one the second, and the third is
+            // what they would have copied out of a URL.
+            var rank = Math.Min(
+                MatchRank(displayName, query),
+                Math.Min(MatchRank(entry.EnglishName, query), MatchRank(entry.Id.Value, query)));
+
+            if (rank == int.MaxValue)
+            {
+                continue;
+            }
+
+            matches.Add((rank, new SearchRowViewModel(
+                entry.Id,
+                displayName,
+                entry.Category,
+                CategoryLabels.Label(_localizer, entry.Category),
+                noPrice)));
+        }
+
+        matches.Sort(static (left, right) =>
+        {
+            var byRank = left.Rank.CompareTo(right.Rank);
+            return byRank != 0
+                ? byRank
+                : string.CompareOrdinal(left.Row.Id.Value, right.Row.Id.Value);
+        });
+
+        foreach (var match in matches)
+        {
+            if (rows.Count >= SearchLimit)
+            {
+                return;
+            }
+
+            rows.Add(match.Row);
+        }
+    }
+
+    /// <summary>Exact, then prefix, then substring — the Store's ranking, applied to the catalogue.</summary>
+    private static int MatchRank(string candidate, string query)
+    {
+        if (string.Equals(candidate, query, StringComparison.OrdinalIgnoreCase))
+        {
+            return 0;
+        }
+
+        if (candidate.StartsWith(query, StringComparison.OrdinalIgnoreCase))
+        {
+            return 1;
+        }
+
+        return candidate.Contains(query, StringComparison.OrdinalIgnoreCase) ? 2 : int.MaxValue;
     }
 
     /// <summary>

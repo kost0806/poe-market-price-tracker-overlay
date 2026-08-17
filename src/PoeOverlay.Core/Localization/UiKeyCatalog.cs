@@ -137,6 +137,7 @@ internal static class UiKeyCatalog
             ["ui.settings.search.found"] = 0,
             ["ui.settings.search.notInCache"] = 0,
             ["ui.settings.search.cacheEmpty"] = 0,
+            ["ui.settings.search.noPrice"] = 0,
             ["ui.settings.leagueStatus.ok"] = 0,
             ["ui.settings.leagueStatus.suspicious"] = 0,
             ["ui.settings.leagueStatus.failed"] = 0,

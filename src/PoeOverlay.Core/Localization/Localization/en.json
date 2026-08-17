@@ -96,6 +96,7 @@
 
   "ui.settings.search.found": "Matches found.",
   "ui.settings.search.notInCache": "No match in the data fetched so far — try a category below.",
+  "ui.settings.search.noPrice": "no price yet",
   "ui.settings.search.cacheEmpty": "Waiting for the first refresh — nothing has been fetched yet.",
 
   "ui.settings.leagueStatus.ok": "League list loaded.",

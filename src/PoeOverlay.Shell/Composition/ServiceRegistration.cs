@@ -4,6 +4,7 @@ using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using PoeOverlay.Core.Catalog;
 using PoeOverlay.Core.Diagnostics;
 using PoeOverlay.Core.Domain.Ports;
 using PoeOverlay.Core.Localization;
@@ -114,6 +115,7 @@ internal static class ServiceRegistration
         services.AddSingleton<Func<CancellationToken, SettingsViewModel>>(sp => windowScope =>
             new SettingsViewModel(
                 sp.GetRequiredService<ISearchSource>(),
+                sp.GetRequiredService<ItemCatalog>(),
                 sp.GetRequiredService<IMarketClient>(),
                 sp.GetRequiredService<ISettingsSource>(),
                 sp.GetRequiredService<ILocalizer>(),
@@ -159,6 +161,12 @@ internal static class ServiceRegistration
 
         // The icon source reads nothing until the first row asks for a picture (S3 4.10.2), so it
         // is not a hosted service and adds no step to the boot sequence.
+        // FR-01-1 — the shipped catalogue makes items findable before their prices are. Reads its
+        // file on first use, like the icon source below it.
+        services.AddSingleton(sp => new ItemCatalog(
+            paths.CatalogDirectory,
+            sp.GetRequiredService<ILogger<ItemCatalog>>()));
+
         services.AddSingleton(sp => new ItemIconSource(
             paths.IconDirectory,
             sp.GetRequiredService<ILogger<ItemIconSource>>()));

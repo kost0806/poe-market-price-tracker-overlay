@@ -24,8 +24,15 @@ namespace PoeOverlay.Core.Presentation.ViewModels.Rows;
 /// What the category column draws (S4 14.10). <paramref name="Category"/> stays because the
 /// watchlist entry is built from it; a label cannot stand in for the value.
 /// </param>
+/// <param name="PriceText">
+/// Empty for a row that came from the fetched cache, and <c>ui.settings.search.noPrice</c> for one
+/// that came only from the shipped catalogue (S3 5.4.6, D-DL29). It is a marker, not a price: what
+/// a thing costs is the overlay's column, and an unlabelled number here would have to answer "in
+/// which currency" — a question this list does not exist to ask.
+/// </param>
 public sealed record SearchRowViewModel(
     ItemId Id,
     string DisplayName,
     ExchangeCategory Category,
-    string CategoryLabel);
+    string CategoryLabel,
+    string PriceText);
