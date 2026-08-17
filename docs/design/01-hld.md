@@ -1213,6 +1213,8 @@ sequenceDiagram
 | WPF 진입점 | `EnableDefaultApplicationDefinition=false` + `StartupObject` | §3.2 |
 | 매니페스트 | `app.manifest`에 PerMonitorV2 DPI | D4-e |
 | **아이템 아이콘** | `data/images/*.png`를 **`Content` + `PreserveNewest`로 exe 옆 `Icons/`에 복사**한다. 어셈블리에 넣지 않고, `src/` 안으로 복사해 두지도 않는다 | D23. 5.3 MB이고 리그마다 바뀐다. 취득 도구(`fetch-ko-sources.py`)가 쓰는 곳이 `data/images/`이므로, 프로젝트 안에 사본을 두면 같은 바이트가 리그마다 두 번씩 저장소에 쌓인다. 생성물인 `item-icons.json`만 프로젝트 안에 커밋한다 — `ko.json`과 같은 규칙 |
+| **게시 형태** | **프레임워크 종속.** RID를 지정하지 않고, 자체 포함(self-contained)도 단일 파일도 쓰지 않는다. 출력은 `artifacts/publish/<구성>/` | 트리밍·AOT를 금지한 것과 같은 자리(G1, 본인 전용 로컬 빌드)다 — SDK가 이미 있는 기계에 런타임을 한 벌 더 복사할 이유가 없다. **단일 파일을 쓰지 않는 이유는 별개이고 더 강하다**: 사전(`Localization/*.json`, FR-07-3)과 아이콘(`Icons/`, D23)은 **exe 옆의 파일로 있어야** 사용자가 재빌드 없이 넣고 바꿀 수 있다. 둘 다 그러라고 그 자리에 둔 것이다 |
+| **빌드 스크립트** | `scripts/`의 PowerShell 넷(`build`·`test`·`publish`·`clean`). **MSBuild에 걸리지 않고, `tools/`를 부르지도 않는다** | S4 2.6. `tools/`(데이터 생성기)와 갈리는 디렉터리다 — 이쪽은 SDK만 요구하고 저장소에 아무것도 쓰지 않는다. `tools/`를 부르지 않는 근거는 D-DL25 그대로다 |
 | OxyPlot·SQLite·AngleSharp | **참조하지 않음** | 1차 범위에서 불필요 |
 
 ---

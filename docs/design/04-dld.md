@@ -284,6 +284,29 @@ tools/
 
 **`ko-ui.json`이 별도인 이유.** `ui.*` 문구는 GGG가 주지 않는다 — 사람이 쓴다. 생성기가 `ko.json`을 통째로 덮어쓰므로, 손으로 쓴 부분이 생성 입력 쪽에 있지 않으면 재생성 때마다 사라진다.
 
+### 2.6 scripts/ — 개발자 빌드 스크립트 (신규 D-DL28)
+
+`tools/`가 **데이터 생성기**라면 `scripts/`는 **저장소를 빌드·검증·게시하는 절차**다. 둘 다 빌드 산출물이 아니고 MSBuild에 걸리지 않는다는 점은 같지만 성격이 갈리므로 디렉터리도 가른다: `tools/`는 파이썬과 (재취득 시) 네트워크를 요구하고 리그마다 한 번 돌며 `src/` 안의 **커밋 대상 파일**을 쓴다. `scripts/`는 SDK만 요구하고 저장소에 커밋할 것을 만들지 않는다 — 쓰는 곳이 전부 무시되는 경로다.
+
+```
+scripts/
+  common.ps1     공용. 저장소 루트 해석, dotnet 종료 코드 검사, 단계 로그
+  build.ps1      restore + build. -Configuration(기본 Debug), -NoRestore
+  test.ps1       build + test. -Configuration, -Filter, -Project(All|Core|Shell)
+  publish.ps1    Shell을 artifacts/publish/<구성>/ 에 게시. -Configuration(기본 Release), -SkipTests
+  clean.ps1      bin/ obj/ artifacts/ 제거. -WhatIf
+```
+
+| 결정 | 근거 |
+|---|---|
+| **PowerShell(`.ps1`)** | 대상이 Windows 전용이다(`net8.0-windows`, WPF, User32/Shell32). 실행 못 하는 기계에서는 빌드 결과를 실행할 수도 없으므로 `.sh`를 함께 두는 것은 유지할 이유 없는 두 번째 사본이다 |
+| **`dotnet`의 종료 코드를 매번 검사한다** | `dotnet`은 네이티브 프로세스이므로 `$ErrorActionPreference='Stop'`이 그 실패를 잡지 못한다. 검사하지 않으면 `test.ps1`이 **실패한 빌드 위에서 계속 돌고 0으로 끝난다** — 초록색을 근거로 읽는 순간 이 저장소가 가장 경계하는 실패가 된다 |
+| **`tools/`를 부르지 않는다** | D-DL25 그대로다. 산출물(`ko.json`·`item-icons.json`)은 커밋돼 있고 재생성은 리그가 바뀔 때 사람이 부르는 절차다. 스크립트가 부르면 빌드가 다시 파이썬과 kakaogames 가용성에 묶인다 |
+| `test.ps1`의 기본값은 **솔루션 전체** | 2.4절이 "빌드했다"와 "검증했다"를 갈라 놨다. Windows에서는 `Shell.Tests`가 실제로 돌므로 여기서 나눌 이유가 없고, 나누면 그 구별이 다시 흐려진다. `-Project`는 반복 실행을 줄이려는 사람을 위한 것이지 기본값이 아니다 |
+| 게시는 **프레임워크 종속·RID 미지정·단일 파일 아님** | HLD 9절에 근거와 함께 있다 |
+| 출력은 **`artifacts/publish/`**, `.gitignore`에 등록 | `bin/`·`obj/`와 달리 사람이 열어 보는 결과물이므로 한 곳에 모은다. 커밋 대상이 아닌 것은 같다 |
+| **버전 스탬프·서명·설치 관리자 없음** | G1(본인 전용 로컬 빌드). REQUIREMENTS 3절이 "배포 패키징·자동 업데이트"를 범위 밖으로 확정했다 |
+
 
 ## 3. Domain — 시그니처 확정
 
