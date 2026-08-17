@@ -153,7 +153,7 @@ GET https://poe.ninja/poe1/api/economy/exchange/current/overview?league={league}
 | `topPair.currency` | `lines[].maxVolumeCurrency` | **FR-04-3 `자동` 모드의 판단 근거** |
 | `topPair.rate` | `lines[].maxVolumeRate` | 검산용. 계산 입력으로는 쓰지 않는다 |
 | `changePercent` | `lines[].sparkline.totalChange` | FR-04의 변동률 |
-| (§6에 없음) | **최상위** `items[].image` | 아이콘. 상대 경로이므로 `https://poe.ninja` 접두 필요. **DivinationCard 전 항목에는 없다**(959개 중 576개만 보유). 1차 범위 사용 여부 미정 |
+| (§6에 없음) | **최상위** `items[].image` | 아이콘. 상대 경로이므로 `https://poe.ninja` 접두 필요. **DivinationCard 전 항목에는 없다**(959개 중 576개만 보유). **읽지만 매핑하지 않는다** — FR-04-6은 아이콘을 쓰되 출처를 GGG static으로 잡았다(A7·§6.6). 두 출처의 결측 집합이 같은 것은 우연이 아니라 같은 사실이다 |
 | (§6에 없음) | `core.items[].category` | **`core.items`의** 것. 질의 `type`과 일치하므로 A6의 자기기술 검증에 쓴다 |
 | (§6에 없음) | **최상위** `items[].category` | **표시용 분류**이며 질의 `type`과 **다르다**(`Fragments`·`Cards`·`Essences`·`Catalysts`·`Ancestor`·`Delve`). **A6 검증에 쓰면 안 된다** — 상시 불일치 경고가 뜬다 |
 | (§6에 없음) | `lines[].sparkline.data` | §3.2 참조 |
@@ -215,7 +215,7 @@ GET https://poe.ninja/poe1/api/economy/exchange/current/overview?league={league}
 | A4 | 리그 목록에 현재 챌린지 리그 플래그가 없다 | 첫 원소 채택 + 방어: 배열이 비었거나, 첫 원소가 `Standard`/`Hardcore` 인 경우를 이상으로 간주하고 사용자에게 리그 명시 선택을 요구 |
 | A5 | `valueAlt`가 raw에 없다 | FR-04-5 위반 경로가 구조적으로 부재. 설계는 이 사실을 명시하고 `core.rates` 역수 사용도 함께 금지 |
 | A6 | `core.items[].category` 존재 | FR-01-1 카탈로그가 카테고리별 18회 호출을 하더라도, 각 응답이 자기 카테고리를 자기 기술(self-describing)한다 |
-| A7 | `image`가 상대 경로 | 사용한다면 `https://poe.ninja` 접두. 1차 범위 사용 여부는 S5에서 결정 |
+| A7 | `image`가 상대 경로 | **닫힘 (2026-08-17).** 아이콘을 쓴다(FR-04-6). **다만 poe.ninja의 `image`는 쓰지 않는다** — 이름과 같은 이유로 출처는 GGG trade static이며(§6), 런타임에 CDN을 치지 않고 빌드 타임에 받아 동봉한다(A8과 같은 논거). 매핑·결측·컬러키는 §6.6 |
 | A8 | **이 API는 한글 이름을 어떤 매개변수로도 주지 않는다**(§2.0 말미) | 아이템 이름 사전은 **다른 출처(GGG trade static, §6)에서 빌드 타임에 생성**해 사전 파일로 동봉한다. 런타임에 이 API 밖으로 나가는 호출을 추가하지 않는다 — NFR-02와 어긋나고 앱을 제3의 가용성에 묶는다 |
 
 ---
@@ -304,9 +304,32 @@ KO static.text  ←(엔트리 id·위치)→  EN static.text  ←(영문 표시�
 
 `https://web.poecdn.com` + `entries[].image`의 `/gen/image/...` 경로. 인증 불필요.
 
-**basename만으로 저장하면 안 된다.** 고유 경로 675개에 대해 고유 basename은 640개뿐이고, `MapNumbers*` 계열 16개 이름이 서로 다른 이미지 2~4장에 중복으로 걸린다. 충돌하는 basename은 `<이름>__<경로 끝에서 두 번째 세그먼트>.png`로 저장한다. **아이콘 사용 여부 자체는 여전히 S5 미결정이다**(A7).
+**basename만으로 저장하면 안 된다.** 고유 경로 675개에 대해 고유 basename은 640개뿐이고, `MapNumbers*` 계열 16개 이름이 서로 다른 이미지 2~4장에 중복으로 걸린다. 충돌하는 basename은 `<이름>__<경로 끝에서 두 번째 세그먼트>.png`로 저장한다.
+
+**아이콘을 쓴다 — A7 닫힘(2026-08-17, FR-04-6).** 슬러그 → 파일명 매핑은 이름 사전과 **같은 조인 사슬**(§6.3)로 빌드 타임에 만들어 커밋한다(`tools/build-icon-manifest.py`). 런타임 CDN 접근은 없다.
 
 점술 카드 468종에 `image`가 없는 것은 결측이 아니다 — **게임에서 점술 카드는 전부 같은 아이콘을 쓴다**(2026-08-16 사용자 확인). A7의 「DivinationCard 전 항목 결측」과 같은 사실을 다른 각도에서 본 것이다.
+
+**그 공용 아이콘의 출처** 【실측 2026-08-17】. `entries[].image`에 없으므로 `/gen/image/...` 경로로는 얻을 수 없다. 원본 아트 경로가 답한다:
+
+```
+https://web.poecdn.com/image/Art/2DItems/Divination/InventoryIcon.png   → 200, 78x78 RGBA PNG, 10,836 B
+https://web.poecdn.com/gen/image/...InventoryIcon.png (동일 아트의 gen 경로 추정) → 404
+```
+
+`data/images/DivinationCard.png`로 저장하고 **점술 카드 슬러그 전체가 이 한 장을 가리킨다.** `--icons`가 쓰는 `curl.cfg`에 이 URL 한 줄이 추가로 들어간다.
+
+**적중률** 【실측 2026-08-17, 사전에 든 968 슬러그 기준】
+
+| | |
+|---|---|
+| 개별 아이콘을 얻은 슬러그 | **576** |
+| 공용 카드 아이콘으로 덮이는 슬러그 | **392** (전부 GGG static의 `Cards` 그룹 — 다른 그룹은 0건) |
+| 아이콘이 없는 슬러그 | **0** |
+
+미해결 2건(§6.4)은 이름 사전에도 없으므로 이 셈 밖이며, 이름과 마찬가지로 아이콘도 없다.
+
+**컬러키 충돌은 실측으로 배제했다.** 오버레이는 `LWA_COLORKEY`로 `0x00FF00FF`를 키로 쓴다 — 아이콘 안에 그 색의 불투명 픽셀이 있으면 화면에 구멍이 뚫린다. 675장 전수 스캔 결과 **0개**이며 최근접 픽셀도 거리 4다. 수치와 프로브는 `00-shell-measurements.md` §14. 생성기가 매니페스트를 쓸 때마다 이 스캔을 반복하므로 리그가 바뀌어도 전제가 조용히 깨지지 않는다.
 
 ### 6.7 채택하지 않은 대안
 

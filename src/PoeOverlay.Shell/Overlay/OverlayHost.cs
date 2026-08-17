@@ -43,6 +43,7 @@ internal sealed class OverlayHost : IDisposable
     private readonly ExtendedStyleGate.Factory _gateFactory;
     private readonly LayeredHostWindowFactory _windowFactory;
     private readonly ISettingsSource _settings;
+    private readonly ItemIconSource _icons;
     private readonly ILogger<OverlayHost> _logger;
 
     private LayeredHostWindowHandle? _parent;
@@ -66,24 +67,28 @@ internal sealed class OverlayHost : IDisposable
     /// <param name="gateFactory">Deferred because the HWND does not exist until <see cref="Show"/>.</param>
     /// <param name="windowFactory">Creates the raw layered parent.</param>
     /// <param name="settings">Read for geometry and opacity; written only through the value-capture path.</param>
+    /// <param name="icons">Passed straight to the view, which owns the icon column (S3 4.10).</param>
     /// <param name="logger">Records a refused layered configuration rather than leaving it silent.</param>
     internal OverlayHost(
         OverlayViewModel viewModel,
         ExtendedStyleGate.Factory gateFactory,
         LayeredHostWindowFactory windowFactory,
         ISettingsSource settings,
+        ItemIconSource icons,
         ILogger<OverlayHost> logger)
     {
         ArgumentNullException.ThrowIfNull(viewModel);
         ArgumentNullException.ThrowIfNull(gateFactory);
         ArgumentNullException.ThrowIfNull(windowFactory);
         ArgumentNullException.ThrowIfNull(settings);
+        ArgumentNullException.ThrowIfNull(icons);
         ArgumentNullException.ThrowIfNull(logger);
 
         _viewModel = viewModel;
         _gateFactory = gateFactory;
         _windowFactory = windowFactory;
         _settings = settings;
+        _icons = icons;
         _logger = logger;
 
         _settings.Changed += OnSettingsChanged;
@@ -188,7 +193,7 @@ internal sealed class OverlayHost : IDisposable
         _gate = _gateFactory(_parent.Hwnd);
         ApplyLayeredAttributes();
 
-        _view = new OverlayView(_viewModel);
+        _view = new OverlayView(_viewModel, _icons);
 
         var parameters = new HwndSourceParameters(ShellConstants.OverlayContentWindowTitle)
         {

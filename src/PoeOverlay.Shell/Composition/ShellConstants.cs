@@ -98,6 +98,17 @@ internal static class ShellConstants
     /// <summary>S4 15.1 — provisional footer height in DIPs, the unit of the minimum-visible-area rule.</summary>
     internal const double FooterHeight = 20d;
 
+    /// <summary>
+    /// S4 15.1 — the folder beside the exe holding the item icons and their manifest (FR-04-6).
+    /// </summary>
+    /// <remarks>
+    /// Beside the exe rather than inside the assembly: 5.3 MB of art that is regenerated every
+    /// league, and a user must be able to drop a newer set in (HLD D23). The opposite decision from
+    /// the bundled typeface (D-SH22), for the opposite reason — a missing icon costs a picture,
+    /// a missing font costs the reason the app exists.
+    /// </remarks>
+    internal const string IconFolderName = "Icons";
+
     /// <summary>S4 15.3 — the named <c>IHttpClientFactory</c> client Market resolves.</summary>
     /// <remarks>Duplicated from Core's <c>internal NinjaEndpoints.HttpClientName</c>, which the Shell cannot see.</remarks>
     internal const string HttpClientName = "poe.ninja";

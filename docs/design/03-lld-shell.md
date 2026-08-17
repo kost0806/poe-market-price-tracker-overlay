@@ -138,7 +138,9 @@ src/PoeOverlay.Core/
 src/PoeOverlay/                                                 PoeOverlay.Shell   (net8.0-windows)
   Composition/              Main, HostBuilder 확장, DI 등록
   Interop/                  Win32 P/Invoke 래퍼 (읽고-고쳐-쓰기 캡슐화, 이 폴더 밖으로 HWND 타입이 새지 않는다)
-  Overlay/                  OverlayWindow, IOverlayModeService/IOverlayGeometryService 구현, 높이/클리핑 첨부 동작
+  Overlay/                  OverlayWindow, IOverlayModeService/IOverlayGeometryService 구현, 높이/클리핑 첨부 동작,
+                            ItemIconSource/ItemIconConverter (§4.10, D-SH23)
+  Icons/                    item-icons.json — 슬러그→파일명 생성물. PNG 자체는 data/images/에 있고 빌드가 복사한다
   Settings/                 SettingsWindow
   Tray/                     TrayIconHost(NotifyIcon 래퍼), IUiDispatcher 구현
   Startup/                  단일 인스턴스, 신호 채널, 첫 실행 안내
@@ -562,7 +564,58 @@ HLD D4-b는 "비활동 워치독"을, D4-c는 "마우스 버튼이 눌려 있거
 
 **화면 캡처로는 확인하지 못한다** 【측정 §13.3】. 이 장비에서 하드웨어 렌더된 WPF 표면은 `BitBlt`로도 `PrintWindow`로도 읽히지 않는다. 서체 교체 후의 ClearType 재측정도 그래서 **미측정으로 남았다.**
 
----
+### 4.10 아이템 아이콘 — 이름 왼쪽의 한 칸 【신규 D-SH23, FR-04-6 / HLD D23】
+
+HLD D23이 "매니페스트는 데이터, 픽셀은 `Shell`"까지 정했다. 이 절이 그것을 `Shell` 안의 세 조각으로 나눈다.
+
+| 조각 | 위치 | 하는 일 |
+|---|---|---|
+| `Icons/item-icons.json` | 프로젝트에 커밋, 출력의 `Icons/`로 복사 | 슬러그 → 파일명. 생성물이며 손으로 고치지 않는다 |
+| `Overlay/ItemIconSource` | `Shell` | 매니페스트를 **한 번** 읽고, 슬러그로 물으면 **동결된 `ImageSource`** 또는 `null`을 준다. 결과(실패 포함)를 캐시한다 |
+| `Overlay/ItemIconConverter` | `Shell` | XAML의 `Id` 바인딩을 위 호출로 잇는 `IValueConverter` |
+
+#### 4.10.1 왜 뷰모델이 아니라 뷰인가
+
+`PriceRowViewModel`은 **바뀌지 않는다.** 레코드의 주석이 "이 행은 브러시도 아이콘도 픽셀도 나르지 않는다"고 선언하고 있고, §4.8이 색을 그 규칙대로 처리했다 — `Pricing`은 `Direction`을 주고 브러시는 `DataTrigger`가 고른다. 아이콘도 같다: 행은 이미 `Id`를 나르고 있으므로 **뷰가 그것으로 그림을 고른다.** 새로 나를 것이 없다.
+
+반대안(행에 `IconPath` 문자열을 태우고 `Image.Source`에 그대로 바인딩)은 WPF의 기본 형식 변환이 문자열을 `ImageSource`로 바꿔 주므로 **실제로 동작한다.** 채택하지 않는 이유는 둘이다. ① 경로를 만들려면 `Presentation`이 `AppContext.BaseDirectory`를 알아야 한다 — S2 §10.7이 뷰모델에서 배제한 종류의 지식이다. ② 변환이 바인딩 엔진 안에서 일어나므로 **실패가 조용하다.** 파일이 없으면 바인딩 오류만 남고 로그에도 화면에도 아무것도 남지 않는다.
+
+#### 4.10.2 `ItemIconSource`
+
+```
+internal sealed class ItemIconSource
+{
+    internal ItemIconSource(string iconDirectory, ILogger<ItemIconSource> logger);
+    internal int MappedCount { get; }               // 로드 결과의 관측 표면
+    internal ImageSource? Resolve(ItemId id);       // UI 스레드에서만 호출된다
+}
+```
+
+| 규칙 | 이유 |
+|---|---|
+| 매니페스트는 **첫 `Resolve` 때 지연 로드**한다. `IHostedService`로 만들지 않는다 | `LocalizationCatalog`가 기동 시 로드하는 이유(D-L1)는 **언어 전환 경로에 파일 I/O가 없어야 한다**는 것이다. 아이콘에는 그런 경로가 없다 — 언어가 바뀌어도 아이콘은 그대로다. 기동 순서(HLD §3.5)에 항목을 하나 더 얹을 이유가 없다 |
+| 슬러그당 **한 번만** 시도하고, 실패도 캐시한다(`null`을 기억한다) | 오버레이는 30초마다 전 행을 다시 그린다. 실패를 기억하지 않으면 없는 파일을 30초마다 다시 연다 |
+| `BitmapImage`는 `CacheOption = OnLoad` + `Freeze()` | `OnLoad`가 없으면 **파일 핸들이 프로세스 수명 내내 열려 있다.** 리그 교체 때 `Icons/`를 덮어쓸 수 없게 되고, §16.10이 서체에서 겪은 "매핑된 구역이 열린 파일" IOException을 그대로 재현한다 |
+| 디코드 크기를 지정하지 **않는다**(`DecodePixelWidth/Height` 미설정) | 원본은 대부분 48×48이고 표시 상자는 16 DIP다. 96 DPI가 아닌 화면에서 16으로 디코드하면 실제 필요보다 작게 디코드해 흐려진다. 다운스케일은 렌더러에 맡긴다 |
+| 예외는 **형식을 열거해서** 잡는다 — `IOException` · `NotSupportedException` · `FileFormatException` · `UriFormatException` · `ArgumentException` | `catch (Exception)`은 CA1031로 오류다(§2.2). 관측 가능한 결과는 "그 슬러그는 영구히 아이콘 없음 + Warning 1줄"이며, 시세 행은 그대로 그려진다 |
+| 매니페스트 자체가 없거나 깨졌으면 **빈 사전**으로 계속한다 | 아이콘 전체가 사라질 뿐 앱은 동작한다. 기동을 막을 사유가 아니다(D15의 "결과 있는 실패") |
+
+#### 4.10.3 XAML — 칸의 폭은 아이콘 유무와 무관하다
+
+시세 행 `Grid`에 **`Auto` 폭 칸을 하나 앞에 붙이고** 그 안에 폭·높이가 고정된 `Image`를 둔다. `Source`가 `null`이어도 `Image`는 자기 폭을 차지하므로 **아이콘이 없는 행도 이름이 같은 x좌표에서 시작한다.** 칸을 `Collapsed`로 접는 구현은 금지한다 — 그 행만 목록에서 어긋난다.
+
+```
+<ColumnDefinition Width="Auto" />   <!-- 아이콘. 접지 않는다 -->
+<ColumnDefinition Width="*" />      <!-- 이름 -->
+<ColumnDefinition Width="Auto" />   <!-- 가격 -->
+<ColumnDefinition Width="Auto" />   <!-- 변동률 -->
+```
+
+`RenderOptions.BitmapScalingMode="HighQuality"`를 **명시한다.** 보기 좋으라고가 아니라, `00-shell-measurements.md` §14.4의 컬러키 논증이 **볼록 커널을 전제**하기 때문이다. 오버슈트하는 필터로 바꾸면 그 논증이 무효가 된다.
+
+#### 4.10.4 미측정
+
+**아이콘 상자 16 DIP가 행 높이를 늘리는지 재지 못했다**(§14.5). 12px 텍스트의 줄 상자가 16 DIP보다 작으면 시세 행이 그만큼 높아지고, 화면에 들어가는 행 수가 줄며, `heightMode=auto`에서는 창이 높아진다. **D19의 자동 높이와 `ClippingRowsPanel`이 실제 배치 결과로 다시 계산하므로 결함은 아니다** — 그러나 "높이는 그대로다"라고 주장할 근거도 없다. 폰트 크기(S4 §15.1)와 팔레트를 정하는 §14-12 실험에 이 값을 함께 올린다.
 
 ## 5. `Shell` — 설정 창
 

@@ -12,10 +12,19 @@ namespace PoeOverlay.Composition;
 /// <param name="AppDataDirectory">Holds <c>settings.json</c>, its backup, and the flush-failure trace.</param>
 /// <param name="LogDirectory">Holds the rolling log files.</param>
 /// <param name="LocalizationDirectory">Holds the discovered dictionaries (S2 3.2).</param>
-internal sealed record AppPaths(string AppDataDirectory, string LogDirectory, string LocalizationDirectory)
+/// <param name="IconDirectory">Holds the item icons and their manifest (FR-04-6, HLD D23).</param>
+internal sealed record AppPaths(
+    string AppDataDirectory,
+    string LogDirectory,
+    string LocalizationDirectory,
+    string IconDirectory)
 {
     /// <summary>Builds the production paths under <c>%APPDATA%</c> and the executable's folder.</summary>
     /// <returns>The resolved paths. Directories are created if missing.</returns>
+    /// <remarks>
+    /// The icon folder is <em>not</em> created: it is shipped content, and creating an empty one
+    /// would turn "the build did not copy the icons" into a folder that merely looks right.
+    /// </remarks>
     internal static AppPaths CreateDefault()
     {
         var appData = Path.Combine(
@@ -23,10 +32,11 @@ internal sealed record AppPaths(string AppDataDirectory, string LogDirectory, st
             ShellConstants.AppDataFolderName);
         var logs = Path.Combine(appData, ShellConstants.LogFolderName);
         var localization = Path.Combine(AppContext.BaseDirectory, "Localization");
+        var icons = Path.Combine(AppContext.BaseDirectory, ShellConstants.IconFolderName);
 
         _ = Directory.CreateDirectory(appData);
         _ = Directory.CreateDirectory(logs);
 
-        return new AppPaths(appData, logs, localization);
+        return new AppPaths(appData, logs, localization, icons);
     }
 }
