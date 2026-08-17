@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text.Json;
 using Microsoft.Extensions.Logging.Abstractions;
 using PoeOverlay.Core.Domain;
 using PoeOverlay.Overlay;
@@ -122,7 +123,11 @@ public sealed class ItemIconSourceTests : IDisposable
     [InlineData("")]
     public void AFileNameThatIsNotAPlainName_IsDropped(string fileName)
     {
-        WriteManifest($$"""{ "chaos": "{{fileName}}", "divine": "divine.png" }""");
+        // The name is escaped into the JSON rather than pasted into it. Pasted, `nested\chaos.png`
+        // becomes `\c` — not a valid JSON escape — so the manifest failed to parse and the case
+        // proved nothing about backslashes; it re-ran the unparseable-manifest test above, which is
+        // why `divine` came back null too. The rejection under test happens after parsing.
+        WriteManifest($$"""{ "chaos": {{JsonSerializer.Serialize(fileName)}}, "divine": "divine.png" }""");
         WritePng("divine.png");
 
         var source = Create();
