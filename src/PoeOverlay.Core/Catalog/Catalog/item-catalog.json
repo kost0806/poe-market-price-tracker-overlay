@@ -1,0 +1,3830 @@
+{
+ "a-chilling-wind": {
+  "cat": "DivinationCard",
+  "en": "A Chilling Wind"
+ },
+ "a-dab-of-ink": {
+  "cat": "DivinationCard",
+  "en": "A Dab of Ink"
+ },
+ "a-dusty-memory": {
+  "cat": "DivinationCard",
+  "en": "A Dusty Memory"
+ },
+ "a-familiar-call": {
+  "cat": "DivinationCard",
+  "en": "A Familiar Call"
+ },
+ "a-fate-worse-than-death": {
+  "cat": "DivinationCard",
+  "en": "A Fate Worse Than Death"
+ },
+ "a-modest-request": {
+  "cat": "DivinationCard",
+  "en": "A Modest Request"
+ },
+ "a-mothers-parting-gift": {
+  "cat": "DivinationCard",
+  "en": "A Mother's Parting Gift"
+ },
+ "a-note-in-the-wind": {
+  "cat": "DivinationCard",
+  "en": "A Note in the Wind"
+ },
+ "a-sea-of-blue": {
+  "cat": "DivinationCard",
+  "en": "A Sea of Blue"
+ },
+ "a-stone-perfected": {
+  "cat": "DivinationCard",
+  "en": "A Stone Perfected"
+ },
+ "abandoned-wealth": {
+  "cat": "DivinationCard",
+  "en": "Abandoned Wealth"
+ },
+ "aberrant-fossil": {
+  "cat": "Fossil",
+  "en": "Aberrant Fossil"
+ },
+ "abrasive-catalyst": {
+  "cat": "Currency",
+  "en": "Abrasive Catalyst"
+ },
+ "abyss-scarab": {
+  "cat": "Scarab",
+  "en": "Abyss Scarab"
+ },
+ "abyss-scarab-of-crystals": {
+  "cat": "Scarab",
+  "en": "Abyss Scarab of Crystals"
+ },
+ "abyss-scarab-of-descending": {
+  "cat": "Scarab",
+  "en": "Abyss Scarab of Descending"
+ },
+ "abyss-scarab-of-multitudes": {
+  "cat": "Scarab",
+  "en": "Abyss Scarab of Multitudes"
+ },
+ "abyss-scarab-of-the-consort": {
+  "cat": "Scarab",
+  "en": "Abyss Scarab of the Consort"
+ },
+ "accelerating-catalyst": {
+  "cat": "Currency",
+  "en": "Accelerating Catalyst"
+ },
+ "acclimatisation": {
+  "cat": "DivinationCard",
+  "en": "Acclimatisation"
+ },
+ "aetheric-fossil": {
+  "cat": "Fossil",
+  "en": "Aetheric Fossil"
+ },
+ "akils-prophecy": {
+  "cat": "DivinationCard",
+  "en": "Akil's Prophecy"
+ },
+ "al-hezmins-crest": {
+  "cat": "Fragment",
+  "en": "Al-Hezmin's Crest"
+ },
+ "alch": {
+  "cat": "Currency",
+  "en": "Orb of Alchemy"
+ },
+ "alchemy-shard": {
+  "cat": "Currency",
+  "en": "Alchemy Shard"
+ },
+ "alivias-grace": {
+  "cat": "DivinationCard",
+  "en": "Alivia's Grace"
+ },
+ "allflame-ember-of-flesh": {
+  "cat": "AllflameEmber",
+  "en": "Allflame Ember of Flesh"
+ },
+ "allflame-ember-of-kulemak": {
+  "cat": "AllflameEmber",
+  "en": "Allflame Ember of Kulemak"
+ },
+ "allflame-ember-of-propagation": {
+  "cat": "AllflameEmber",
+  "en": "Allflame Ember of Propagation"
+ },
+ "allflame-ember-of-resplendence": {
+  "cat": "AllflameEmber",
+  "en": "Allflame Ember of Resplendence"
+ },
+ "allflame-ember-of-the-ethereal": {
+  "cat": "AllflameEmber",
+  "en": "Allflame Ember of the Ethereal"
+ },
+ "allflame-ember-of-the-gilded": {
+  "cat": "AllflameEmber",
+  "en": "Allflame Ember of the Gilded"
+ },
+ "allflame-ember-of-the-wildwood": {
+  "cat": "AllflameEmber",
+  "en": "Allflame Ember of the Wildwood"
+ },
+ "allflame-ember-of-toads": {
+  "cat": "AllflameEmber",
+  "en": "Allflame Ember of Toads"
+ },
+ "alluring-bounty": {
+  "cat": "DivinationCard",
+  "en": "Alluring Bounty"
+ },
+ "alone-in-the-darkness": {
+  "cat": "DivinationCard",
+  "en": "Alone in the Darkness"
+ },
+ "alt": {
+  "cat": "Currency",
+  "en": "Orb of Alteration"
+ },
+ "alteration-shard": {
+  "cat": "Currency",
+  "en": "Alteration Shard"
+ },
+ "altered-perception": {
+  "cat": "DivinationCard",
+  "en": "Altered Perception"
+ },
+ "amber-oil": {
+  "cat": "Oil",
+  "en": "Amber Oil"
+ },
+ "ambitious-obsession": {
+  "cat": "DivinationCard",
+  "en": "Ambitious Obsession"
+ },
+ "ambush-scarab": {
+  "cat": "Scarab",
+  "en": "Ambush Scarab"
+ },
+ "ambush-scarab-of-containment": {
+  "cat": "Scarab",
+  "en": "Ambush Scarab of Containment"
+ },
+ "ambush-scarab-of-discernment": {
+  "cat": "Scarab",
+  "en": "Ambush Scarab of Discernment"
+ },
+ "ambush-scarab-of-hidden-compartments": {
+  "cat": "Scarab",
+  "en": "Ambush Scarab of Hidden Compartments"
+ },
+ "ambush-scarab-of-potency": {
+  "cat": "Scarab",
+  "en": "Ambush Scarab of Potency"
+ },
+ "an-audience-with-the-king": {
+  "cat": "Fragment",
+  "en": "An Audience With The King"
+ },
+ "anarchy-scarab": {
+  "cat": "Scarab",
+  "en": "Anarchy Scarab"
+ },
+ "anarchy-scarab-of-gigantification": {
+  "cat": "Scarab",
+  "en": "Anarchy Scarab of Gigantification"
+ },
+ "anarchy-scarab-of-partnership": {
+  "cat": "Scarab",
+  "en": "Anarchy Scarab of Partnership"
+ },
+ "anarchy-scarab-of-the-exceptional": {
+  "cat": "Scarab",
+  "en": "Anarchy Scarab of the Exceptional"
+ },
+ "anarchys-price": {
+  "cat": "DivinationCard",
+  "en": "Anarchy's Price"
+ },
+ "ancient-orb": {
+  "cat": "Currency",
+  "en": "Ancient Orb"
+ },
+ "annul": {
+  "cat": "Currency",
+  "en": "Orb of Annulment"
+ },
+ "apocalypse": {
+  "cat": "DivinationCard",
+  "en": "Apocalypse"
+ },
+ "armoursmiths-delirium-orb": {
+  "cat": "DeliriumOrb",
+  "en": "Armoursmith's Delirium Orb"
+ },
+ "arrogance-of-the-vaal": {
+  "cat": "DivinationCard",
+  "en": "Arrogance of the Vaal"
+ },
+ "assassins-favour": {
+  "cat": "DivinationCard",
+  "en": "Assassin's Favour"
+ },
+ "assassins-gift": {
+  "cat": "DivinationCard",
+  "en": "Assassin's Gift"
+ },
+ "astragali": {
+  "cat": "Artifact",
+  "en": "Astragali"
+ },
+ "astral-protection": {
+  "cat": "DivinationCard",
+  "en": "Astral Protection"
+ },
+ "atziris-arsenal": {
+  "cat": "DivinationCard",
+  "en": "Atziri's Arsenal"
+ },
+ "aug": {
+  "cat": "Currency",
+  "en": "Orb of Augmentation"
+ },
+ "auspicious-ambitions": {
+  "cat": "DivinationCard",
+  "en": "Auspicious Ambitions"
+ },
+ "avian-pursuit": {
+  "cat": "DivinationCard",
+  "en": "Avian Pursuit"
+ },
+ "awakeners-orb": {
+  "cat": "Currency",
+  "en": "Awakener's Orb"
+ },
+ "awakening-fragment": {
+  "cat": "Fragment",
+  "en": "Awakening Fragment"
+ },
+ "azure-oil": {
+  "cat": "Oil",
+  "en": "Azure Oil"
+ },
+ "azyrans-reward": {
+  "cat": "DivinationCard",
+  "en": "Azyran's Reward"
+ },
+ "baited-expectations": {
+  "cat": "DivinationCard",
+  "en": "Baited Expectations"
+ },
+ "barans-crest": {
+  "cat": "Fragment",
+  "en": "Baran's Crest"
+ },
+ "bauble": {
+  "cat": "Currency",
+  "en": "Glassblower's Bauble"
+ },
+ "beauty-through-death": {
+  "cat": "DivinationCard",
+  "en": "Beauty Through Death"
+ },
+ "bestiary-scarab": {
+  "cat": "Scarab",
+  "en": "Bestiary Scarab"
+ },
+ "bestiary-scarab-of-duplicating": {
+  "cat": "Scarab",
+  "en": "Bestiary Scarab of Duplicating"
+ },
+ "bestiary-scarab-of-the-herd": {
+  "cat": "Scarab",
+  "en": "Bestiary Scarab of the Herd"
+ },
+ "betrayal-scarab": {
+  "cat": "Scarab",
+  "en": "Betrayal Scarab"
+ },
+ "betrayal-scarab-of-perpetuation": {
+  "cat": "Scarab",
+  "en": "Betrayal Scarab of Unbreaking"
+ },
+ "betrayal-scarab-of-reinforcements": {
+  "cat": "Scarab",
+  "en": "Betrayal Scarab of Reinforcements"
+ },
+ "betrayal-scarab-of-the-allflame": {
+  "cat": "Scarab",
+  "en": "Betrayal Scarab of the Allflame"
+ },
+ "beyond-scarab": {
+  "cat": "Scarab",
+  "en": "Beyond Scarab"
+ },
+ "beyond-scarab-of-haemophilia": {
+  "cat": "Scarab",
+  "en": "Beyond Scarab of Haemophilia"
+ },
+ "beyond-scarab-of-resurgence": {
+  "cat": "Scarab",
+  "en": "Beyond Scarab of Resurgence"
+ },
+ "beyond-scarab-of-the-invasion": {
+  "cat": "Scarab",
+  "en": "Beyond Scarab of the Invasion"
+ },
+ "bijoux": {
+  "cat": "DivinationCard",
+  "en": "Bijoux"
+ },
+ "black-oil": {
+  "cat": "Oil",
+  "en": "Black Oil"
+ },
+ "blacksmiths-delirium-orb": {
+  "cat": "DeliriumOrb",
+  "en": "Blacksmith's Delirium Orb"
+ },
+ "blazing-fragment": {
+  "cat": "Fragment",
+  "en": "Blazing Fragment"
+ },
+ "blessed": {
+  "cat": "Currency",
+  "en": "Blessed Orb"
+ },
+ "blight-scarab": {
+  "cat": "Scarab",
+  "en": "Blight Scarab"
+ },
+ "blight-scarab-of-blooming": {
+  "cat": "Scarab",
+  "en": "Blight Scarab of Blooming"
+ },
+ "blight-scarab-of-invigoration": {
+  "cat": "Scarab",
+  "en": "Blight Scarab of Invigoration"
+ },
+ "blight-scarab-of-the-blightheart": {
+  "cat": "Scarab",
+  "en": "Blight Scarab of the Blightheart"
+ },
+ "blighted-delirium-orb": {
+  "cat": "DeliriumOrb",
+  "en": "Blighted Delirium Orb"
+ },
+ "blind-venture": {
+  "cat": "DivinationCard",
+  "en": "Blind Venture"
+ },
+ "bloodstained-fossil": {
+  "cat": "Fossil",
+  "en": "Bloodstained Fossil"
+ },
+ "boon-of-the-first-ones": {
+  "cat": "DivinationCard",
+  "en": "Boon of the First Ones"
+ },
+ "bound-by-flame": {
+  "cat": "DivinationCard",
+  "en": "Bound by Flame"
+ },
+ "bound-fossil": {
+  "cat": "Fossil",
+  "en": "Bound Fossil"
+ },
+ "bowyers-dream": {
+  "cat": "DivinationCard",
+  "en": "Bowyer's Dream"
+ },
+ "breach-scarab": {
+  "cat": "Scarab",
+  "en": "Breach Scarab of the Hive"
+ },
+ "breach-scarab-of-lordship": {
+  "cat": "Scarab",
+  "en": "Breach Scarab of Instability"
+ },
+ "breach-scarab-of-resonant-cascade": {
+  "cat": "Scarab",
+  "en": "Breach Scarab of Resonant Cascade"
+ },
+ "breach-scarab-of-snares": {
+  "cat": "Scarab",
+  "en": "Breach Scarab of the Incensed Swarm"
+ },
+ "breach-scarab-of-splintering": {
+  "cat": "Scarab",
+  "en": "Breach Scarab of the Marshal"
+ },
+ "brinehooks-ducat": {
+  "cat": "Ducat",
+  "en": "Brinehook's Ducat"
+ },
+ "broken-truce": {
+  "cat": "DivinationCard",
+  "en": "Broken Truce"
+ },
+ "brotherhood-in-exile": {
+  "cat": "DivinationCard",
+  "en": "Brotherhood in Exile"
+ },
+ "brothers-gift": {
+  "cat": "DivinationCard",
+  "en": "Brother's Gift"
+ },
+ "brothers-stash": {
+  "cat": "DivinationCard",
+  "en": "Brother's Stash"
+ },
+ "brush-paint-and-palette": {
+  "cat": "DivinationCard",
+  "en": "Brush, Paint and Palette"
+ },
+ "burial-medallion": {
+  "cat": "Artifact",
+  "en": "Burial Medallion"
+ },
+ "call-to-the-first-ones": {
+  "cat": "DivinationCard",
+  "en": "Call to the First Ones"
+ },
+ "camerias-cut": {
+  "cat": "DivinationCard",
+  "en": "Cameria's Cut"
+ },
+ "cartographers-delight": {
+  "cat": "DivinationCard",
+  "en": "Cartographer's Delight"
+ },
+ "cartographers-delirium-orb": {
+  "cat": "DeliriumOrb",
+  "en": "Cartographer's Delirium Orb"
+ },
+ "cartography-scarab-of-corruption": {
+  "cat": "Scarab",
+  "en": "Cartography Scarab of Corruption"
+ },
+ "cartography-scarab-of-escalation": {
+  "cat": "Scarab",
+  "en": "Cartography Scarab of Escalation"
+ },
+ "cartography-scarab-of-risk": {
+  "cat": "Scarab",
+  "en": "Cartography Scarab of Risk"
+ },
+ "cartography-scarab-of-the-multitude": {
+  "cat": "Scarab",
+  "en": "Cartography Scarab of the Multitude"
+ },
+ "chance": {
+  "cat": "Currency",
+  "en": "Orb of Chance"
+ },
+ "chaos": {
+  "cat": "Currency",
+  "en": "Chaos Orb"
+ },
+ "chaotic-astrolabe": {
+  "cat": "Astrolabe",
+  "en": "Chaotic Astrolabe"
+ },
+ "chaotic-disposition": {
+  "cat": "DivinationCard",
+  "en": "Chaotic Disposition"
+ },
+ "chasing-risk": {
+  "cat": "DivinationCard",
+  "en": "Chasing Risk"
+ },
+ "checkmate": {
+  "cat": "DivinationCard",
+  "en": "Checkmate"
+ },
+ "chimer": {
+  "cat": "Fragment",
+  "en": "Fragment of the Chimera"
+ },
+ "choking-guilt": {
+  "cat": "DivinationCard",
+  "en": "Choking Guilt"
+ },
+ "chrome": {
+  "cat": "Currency",
+  "en": "Chromatic Orb"
+ },
+ "clear-oil": {
+  "cat": "Oil",
+  "en": "Clear Oil"
+ },
+ "corroded-fossil": {
+  "cat": "Fossil",
+  "en": "Corroded Fossil"
+ },
+ "cosmic-fragment": {
+  "cat": "Fragment",
+  "en": "Cosmic Fragment"
+ },
+ "costly-curio": {
+  "cat": "DivinationCard",
+  "en": "Costly Curio"
+ },
+ "council-of-cats": {
+  "cat": "DivinationCard",
+  "en": "Council of Cats"
+ },
+ "crescent-splinter": {
+  "cat": "Fragment",
+  "en": "Crescent Splinter"
+ },
+ "crimson-oil": {
+  "cat": "Oil",
+  "en": "Crimson Oil"
+ },
+ "crusaders-exalted-orb": {
+  "cat": "Currency",
+  "en": "Crusader's Exalted Orb"
+ },
+ "cursed-words": {
+  "cat": "DivinationCard",
+  "en": "Cursed Words"
+ },
+ "cyaxans-ducat": {
+  "cat": "Ducat",
+  "en": "Cyaxan's Ducat"
+ },
+ "damnation": {
+  "cat": "DivinationCard",
+  "en": "Damnation"
+ },
+ "dark-temptation": {
+  "cat": "DivinationCard",
+  "en": "Dark Temptation"
+ },
+ "darker-half": {
+  "cat": "DivinationCard",
+  "en": "Darker Half"
+ },
+ "dawn": {
+  "cat": "Fragment",
+  "en": "Sacrifice at Dawn"
+ },
+ "dead-mans-sulphur": {
+  "cat": "Currency",
+  "en": "Dead Man's Sulphur"
+ },
+ "deadly-joy": {
+  "cat": "DivinationCard",
+  "en": "Deadly Joy"
+ },
+ "deafening-essence-of-anger": {
+  "cat": "Essence",
+  "en": "Deafening Essence of Anger"
+ },
+ "deafening-essence-of-anguish": {
+  "cat": "Essence",
+  "en": "Deafening Essence of Anguish"
+ },
+ "deafening-essence-of-contempt": {
+  "cat": "Essence",
+  "en": "Deafening Essence of Contempt"
+ },
+ "deafening-essence-of-doubt": {
+  "cat": "Essence",
+  "en": "Deafening Essence of Doubt"
+ },
+ "deafening-essence-of-dread": {
+  "cat": "Essence",
+  "en": "Deafening Essence of Dread"
+ },
+ "deafening-essence-of-envy": {
+  "cat": "Essence",
+  "en": "Deafening Essence of Envy"
+ },
+ "deafening-essence-of-fear": {
+  "cat": "Essence",
+  "en": "Deafening Essence of Fear"
+ },
+ "deafening-essence-of-greed": {
+  "cat": "Essence",
+  "en": "Deafening Essence of Greed"
+ },
+ "deafening-essence-of-hatred": {
+  "cat": "Essence",
+  "en": "Deafening Essence of Hatred"
+ },
+ "deafening-essence-of-loathing": {
+  "cat": "Essence",
+  "en": "Deafening Essence of Loathing"
+ },
+ "deafening-essence-of-misery": {
+  "cat": "Essence",
+  "en": "Deafening Essence of Misery"
+ },
+ "deafening-essence-of-rage": {
+  "cat": "Essence",
+  "en": "Deafening Essence of Rage"
+ },
+ "deafening-essence-of-scorn": {
+  "cat": "Essence",
+  "en": "Deafening Essence of Scorn"
+ },
+ "deafening-essence-of-sorrow": {
+  "cat": "Essence",
+  "en": "Deafening Essence of Sorrow"
+ },
+ "deafening-essence-of-spite": {
+  "cat": "Essence",
+  "en": "Deafening Essence of Spite"
+ },
+ "deafening-essence-of-suffering": {
+  "cat": "Essence",
+  "en": "Deafening Essence of Suffering"
+ },
+ "deafening-essence-of-torment": {
+  "cat": "Essence",
+  "en": "Deafening Essence of Torment"
+ },
+ "deafening-essence-of-woe": {
+  "cat": "Essence",
+  "en": "Deafening Essence of Woe"
+ },
+ "deafening-essence-of-wrath": {
+  "cat": "Essence",
+  "en": "Deafening Essence of Wrath"
+ },
+ "deafening-essence-of-zeal": {
+  "cat": "Essence",
+  "en": "Deafening Essence of Zeal"
+ },
+ "death": {
+  "cat": "DivinationCard",
+  "en": "Death"
+ },
+ "deathly-designs": {
+  "cat": "DivinationCard",
+  "en": "Deathly Designs"
+ },
+ "decaying-fragment": {
+  "cat": "Fragment",
+  "en": "Decaying Fragment"
+ },
+ "deceptive-astrolabe": {
+  "cat": "Astrolabe",
+  "en": "Deceptive Astrolabe"
+ },
+ "deft-fossil": {
+  "cat": "Fossil",
+  "en": "Deft Fossil"
+ },
+ "delirium-scarab": {
+  "cat": "Scarab",
+  "en": "Delirium Scarab"
+ },
+ "delirium-scarab-of-delusions": {
+  "cat": "Scarab",
+  "en": "Delirium Scarab of Delusions"
+ },
+ "delirium-scarab-of-mania": {
+  "cat": "Scarab",
+  "en": "Delirium Scarab of Mania"
+ },
+ "delirium-scarab-of-neuroses": {
+  "cat": "Scarab",
+  "en": "Delirium Scarab of Neuroses"
+ },
+ "delirium-scarab-of-paranoia": {
+  "cat": "Scarab",
+  "en": "Delirium Scarab of Paranoia"
+ },
+ "dementophobia": {
+  "cat": "DivinationCard",
+  "en": "Dementophobia"
+ },
+ "demigods-wager": {
+  "cat": "DivinationCard",
+  "en": "Demigod's Wager"
+ },
+ "dense-fossil": {
+  "cat": "Fossil",
+  "en": "Dense Fossil"
+ },
+ "desecrated-virtue": {
+  "cat": "DivinationCard",
+  "en": "Desecrated Virtue"
+ },
+ "desperate-crusade": {
+  "cat": "DivinationCard",
+  "en": "Desperate Crusade"
+ },
+ "destined-to-crumble": {
+  "cat": "DivinationCard",
+  "en": "Destined to Crumble"
+ },
+ "devouring-fragment": {
+  "cat": "Fragment",
+  "en": "Devouring Fragment"
+ },
+ "diallas-subjugation": {
+  "cat": "DivinationCard",
+  "en": "Dialla's Subjugation"
+ },
+ "disdain": {
+  "cat": "DivinationCard",
+  "en": "Disdain"
+ },
+ "divination-scarab-of-pilfering": {
+  "cat": "Scarab",
+  "en": "Divination Scarab of Pilfering"
+ },
+ "divination-scarab-of-plenty": {
+  "cat": "Scarab",
+  "en": "Divination Scarab of Plenty"
+ },
+ "divination-scarab-of-the-cloister": {
+  "cat": "Scarab",
+  "en": "Divination Scarab of The Cloister"
+ },
+ "divine": {
+  "cat": "Currency",
+  "en": "Divine Orb"
+ },
+ "divine-beauty": {
+  "cat": "DivinationCard",
+  "en": "Divine Beauty"
+ },
+ "divine-justice": {
+  "cat": "DivinationCard",
+  "en": "Divine Justice"
+ },
+ "divine-shard": {
+  "cat": "DivinationCard",
+  "en": "Divine Shard"
+ },
+ "divine-vessel": {
+  "cat": "Fragment",
+  "en": "Divine Vessel"
+ },
+ "diviners-delirium-orb": {
+  "cat": "DeliriumOrb",
+  "en": "Diviner's Delirium Orb"
+ },
+ "doedres-madness": {
+  "cat": "DivinationCard",
+  "en": "Doedre's Madness"
+ },
+ "domination-scarab": {
+  "cat": "Scarab",
+  "en": "Domination Scarab"
+ },
+ "domination-scarab-of-apparitions": {
+  "cat": "Scarab",
+  "en": "Domination Scarab of Apparitions"
+ },
+ "domination-scarab-of-evolution": {
+  "cat": "Scarab",
+  "en": "Domination Scarab of Evolution"
+ },
+ "domination-scarab-of-terrors": {
+  "cat": "Scarab",
+  "en": "Domination Scarab of Terrors"
+ },
+ "doryanis-epiphany": {
+  "cat": "DivinationCard",
+  "en": "Doryani's Epiphany"
+ },
+ "draped-in-dreams": {
+  "cat": "DivinationCard",
+  "en": "Draped in Dreams"
+ },
+ "droxs-crest": {
+  "cat": "Fragment",
+  "en": "Drox's Crest"
+ },
+ "dusk": {
+  "cat": "Fragment",
+  "en": "Sacrifice at Dusk"
+ },
+ "dying-anguish": {
+  "cat": "DivinationCard",
+  "en": "Dying Anguish"
+ },
+ "dying-light": {
+  "cat": "DivinationCard",
+  "en": "Dying Light"
+ },
+ "earth-drinker": {
+  "cat": "DivinationCard",
+  "en": "Earth Drinker"
+ },
+ "echo-of-loneliness": {
+  "cat": "Fragment",
+  "en": "Echo of Loneliness"
+ },
+ "echo-of-reverence": {
+  "cat": "Fragment",
+  "en": "Echo of Reverence"
+ },
+ "echo-of-trauma": {
+  "cat": "Fragment",
+  "en": "Echo of Trauma"
+ },
+ "elders-exalted-orb": {
+  "cat": "Currency",
+  "en": "Elder's Exalted Orb"
+ },
+ "eldritch-chaos-orb": {
+  "cat": "Currency",
+  "en": "Eldritch Chaos Orb"
+ },
+ "eldritch-exalted-orb": {
+  "cat": "Currency",
+  "en": "Eldritch Exalted Orb"
+ },
+ "eldritch-orb-of-annulment": {
+  "cat": "Currency",
+  "en": "Eldritch Orb of Annulment"
+ },
+ "eldritch-perfection": {
+  "cat": "DivinationCard",
+  "en": "Eldritch Perfection"
+ },
+ "emperor-of-purity": {
+  "cat": "DivinationCard",
+  "en": "Emperor of Purity"
+ },
+ "emperors-luck": {
+  "cat": "DivinationCard",
+  "en": "Emperor's Luck"
+ },
+ "endless-night": {
+  "cat": "DivinationCard",
+  "en": "Endless Night"
+ },
+ "energy-sword": {
+  "cat": "DivinationCard",
+  "en": "Energy Sword"
+ },
+ "enkindling-orb": {
+  "cat": "Currency",
+  "en": "Enkindling Orb"
+ },
+ "essence-of-delirium": {
+  "cat": "Essence",
+  "en": "Essence of Delirium"
+ },
+ "essence-of-horror": {
+  "cat": "Essence",
+  "en": "Essence of Horror"
+ },
+ "essence-of-hysteria": {
+  "cat": "Essence",
+  "en": "Essence of Hysteria"
+ },
+ "essence-of-insanity": {
+  "cat": "Essence",
+  "en": "Essence of Insanity"
+ },
+ "essence-scarab": {
+  "cat": "Scarab",
+  "en": "Essence Scarab"
+ },
+ "essence-scarab-of-adaptation": {
+  "cat": "Scarab",
+  "en": "Essence Scarab of Adaptation"
+ },
+ "essence-scarab-of-ascent": {
+  "cat": "Scarab",
+  "en": "Essence Scarab of Ascent"
+ },
+ "essence-scarab-of-calcification": {
+  "cat": "Scarab",
+  "en": "Essence Scarab of Calcification"
+ },
+ "essence-scarab-of-stability": {
+  "cat": "Scarab",
+  "en": "Essence Scarab of Stability"
+ },
+ "etched-in-blood": {
+  "cat": "DivinationCard",
+  "en": "Etched in Blood"
+ },
+ "eternal-bonds": {
+  "cat": "DivinationCard",
+  "en": "Eternal Bonds"
+ },
+ "exalted": {
+  "cat": "Currency",
+  "en": "Exalted Orb"
+ },
+ "exceptional-eldritch-ember": {
+  "cat": "Currency",
+  "en": "Exceptional Eldritch Ember"
+ },
+ "exceptional-eldritch-ichor": {
+  "cat": "Currency",
+  "en": "Exceptional Eldritch Ichor"
+ },
+ "exotic-coinage": {
+  "cat": "Artifact",
+  "en": "Exotic Coinage"
+ },
+ "expedition-scarab": {
+  "cat": "Scarab",
+  "en": "Expedition Scarab"
+ },
+ "expedition-scarab-of-archaeology": {
+  "cat": "Scarab",
+  "en": "Expedition Scarab of Archaeology"
+ },
+ "expedition-scarab-of-runefinding": {
+  "cat": "Scarab",
+  "en": "Expedition Scarab of Runefinding"
+ },
+ "expedition-scarab-of-the-skald": {
+  "cat": "Scarab",
+  "en": "Expedition Scarab of Infusion"
+ },
+ "expedition-scarab-of-verisium-powder": {
+  "cat": "Scarab",
+  "en": "Expedition Scarab of Verisium Powder"
+ },
+ "faceted-fossil": {
+  "cat": "Fossil",
+  "en": "Faceted Fossil"
+ },
+ "fateful-meeting": {
+  "cat": "DivinationCard",
+  "en": "Fateful Meeting"
+ },
+ "fathers-love": {
+  "cat": "DivinationCard",
+  "en": "Father's Love"
+ },
+ "fertile-catalyst": {
+  "cat": "Currency",
+  "en": "Fertile Catalyst"
+ },
+ "fine-delirium-orb": {
+  "cat": "DeliriumOrb",
+  "en": "Fine Delirium Orb"
+ },
+ "fire-of-unknown-origin": {
+  "cat": "DivinationCard",
+  "en": "Fire Of Unknown Origin"
+ },
+ "flesh-of-xesht": {
+  "cat": "Currency",
+  "en": "Flesh of Xesht"
+ },
+ "forbidden-power": {
+  "cat": "DivinationCard",
+  "en": "Forbidden Power"
+ },
+ "foulborn-exalted-orb": {
+  "cat": "Currency",
+  "en": "Foulborn Exalted Orb"
+ },
+ "foulborn-orb-of-augmentation": {
+  "cat": "Currency",
+  "en": "Foulborn Orb of Augmentation"
+ },
+ "foulborn-regal-orb": {
+  "cat": "Currency",
+  "en": "Foulborn Regal Orb"
+ },
+ "fractured-fossil": {
+  "cat": "Fossil",
+  "en": "Fractured Fossil"
+ },
+ "fracturing-orb": {
+  "cat": "Currency",
+  "en": "Fracturing Orb"
+ },
+ "fracturing-shard": {
+  "cat": "Currency",
+  "en": "Fracturing Shard"
+ },
+ "fragment-of-constriction": {
+  "cat": "Fragment",
+  "en": "Fragment of Constriction"
+ },
+ "fragment-of-emptiness": {
+  "cat": "Fragment",
+  "en": "Fragment of Emptiness"
+ },
+ "fragment-of-enslavement": {
+  "cat": "Fragment",
+  "en": "Fragment of Enslavement"
+ },
+ "fragment-of-eradication": {
+  "cat": "Fragment",
+  "en": "Fragment of Eradication"
+ },
+ "fragment-of-knowledge": {
+  "cat": "Fragment",
+  "en": "Fragment of Knowledge"
+ },
+ "fragment-of-purification": {
+  "cat": "Fragment",
+  "en": "Fragment of Purification"
+ },
+ "fragment-of-shape": {
+  "cat": "Fragment",
+  "en": "Fragment of Shape"
+ },
+ "fragment-of-terror": {
+  "cat": "Fragment",
+  "en": "Fragment of Terror"
+ },
+ "fragmented-delirium-orb": {
+  "cat": "DeliriumOrb",
+  "en": "Fragmented Delirium Orb"
+ },
+ "friendship": {
+  "cat": "DivinationCard",
+  "en": "Friendship"
+ },
+ "frigid-fossil": {
+  "cat": "Fossil",
+  "en": "Frigid Fossil"
+ },
+ "from-bone-to-ashes": {
+  "cat": "DivinationCard",
+  "en": "From Bone to Ashes"
+ },
+ "fruiting-astrolabe": {
+  "cat": "Astrolabe",
+  "en": "Fruiting Astrolabe"
+ },
+ "fundamental-fossil": {
+  "cat": "Fossil",
+  "en": "Fundamental Fossil"
+ },
+ "fungal-astrolabe": {
+  "cat": "Astrolabe",
+  "en": "Fungal Astrolabe"
+ },
+ "fusing": {
+  "cat": "Currency",
+  "en": "Orb of Fusing"
+ },
+ "gcp": {
+  "cat": "Currency",
+  "en": "Gemcutter's Prism"
+ },
+ "gemcutters-mercy": {
+  "cat": "DivinationCard",
+  "en": "Gemcutter's Mercy"
+ },
+ "gemcutters-promise": {
+  "cat": "DivinationCard",
+  "en": "Gemcutter's Promise"
+ },
+ "gift-of-asenath": {
+  "cat": "DivinationCard",
+  "en": "Gift of Asenath"
+ },
+ "gift-of-the-gemling-queen": {
+  "cat": "DivinationCard",
+  "en": "Gift of the Gemling Queen"
+ },
+ "gilded-fossil": {
+  "cat": "Fossil",
+  "en": "Gilded Fossil"
+ },
+ "glimmer-of-hope": {
+  "cat": "DivinationCard",
+  "en": "Glimmer of Hope"
+ },
+ "glyphic-fossil": {
+  "cat": "Fossil",
+  "en": "Glyphic Fossil"
+ },
+ "golden-oil": {
+  "cat": "Oil",
+  "en": "Golden Oil"
+ },
+ "grand-eldritch-ember": {
+  "cat": "Currency",
+  "en": "Grand Eldritch Ember"
+ },
+ "grand-eldritch-ichor": {
+  "cat": "Currency",
+  "en": "Grand Eldritch Ichor"
+ },
+ "grasping-astrolabe": {
+  "cat": "Astrolabe",
+  "en": "Grasping Astrolabe"
+ },
+ "grave-knowledge": {
+  "cat": "DivinationCard",
+  "en": "Grave Knowledge"
+ },
+ "greater-eldritch-ember": {
+  "cat": "Currency",
+  "en": "Greater Eldritch Ember"
+ },
+ "greater-eldritch-ichor": {
+  "cat": "Currency",
+  "en": "Greater Eldritch Ichor"
+ },
+ "grie": {
+  "cat": "Fragment",
+  "en": "Mortal Grief"
+ },
+ "guardians-challenge": {
+  "cat": "DivinationCard",
+  "en": "Guardian's Challenge"
+ },
+ "harvest-scarab": {
+  "cat": "Scarab",
+  "en": "Harvest Scarab"
+ },
+ "harvest-scarab-of-cornucopia": {
+  "cat": "Scarab",
+  "en": "Harvest Scarab of Cornucopia"
+ },
+ "harvest-scarab-of-doubling": {
+  "cat": "Scarab",
+  "en": "Harvest Scarab of Doubling"
+ },
+ "haunting-shadows": {
+  "cat": "DivinationCard",
+  "en": "Haunting Shadows"
+ },
+ "her-mask": {
+  "cat": "DivinationCard",
+  "en": "Her Mask"
+ },
+ "heterochromia": {
+  "cat": "DivinationCard",
+  "en": "Heterochromia"
+ },
+ "hinekoras-lock": {
+  "cat": "Currency",
+  "en": "Hinekora's Lock"
+ },
+ "history": {
+  "cat": "DivinationCard",
+  "en": "History"
+ },
+ "hivebrain-gland": {
+  "cat": "Fragment",
+  "en": "Hivebrain Gland"
+ },
+ "hollow-fossil": {
+  "cat": "Fossil",
+  "en": "Hollow Fossil"
+ },
+ "home": {
+  "cat": "DivinationCard",
+  "en": "Home"
+ },
+ "hope": {
+  "cat": "Fragment",
+  "en": "Mortal Hope"
+ },
+ "hope-card": {
+  "cat": "DivinationCard",
+  "en": "Hope"
+ },
+ "horned-scarab-of-awakening": {
+  "cat": "Scarab",
+  "en": "Horned Scarab of Awakening"
+ },
+ "horned-scarab-of-bloodlines": {
+  "cat": "Scarab",
+  "en": "Horned Scarab of Bloodlines"
+ },
+ "horned-scarab-of-glittering": {
+  "cat": "Scarab",
+  "en": "Horned Scarab of Glittering"
+ },
+ "horned-scarab-of-nemeses": {
+  "cat": "Scarab",
+  "en": "Horned Scarab of Nemeses"
+ },
+ "horned-scarab-of-pandemonium": {
+  "cat": "Scarab",
+  "en": "Horned Scarab of Pandemonium"
+ },
+ "horned-scarab-of-preservation": {
+  "cat": "Scarab",
+  "en": "Horned Scarab of Preservation"
+ },
+ "horned-scarab-of-tradition": {
+  "cat": "Scarab",
+  "en": "Horned Scarab of Tradition"
+ },
+ "house-of-mirrors": {
+  "cat": "DivinationCard",
+  "en": "House of Mirrors"
+ },
+ "hubris": {
+  "cat": "DivinationCard",
+  "en": "Hubris"
+ },
+ "humility": {
+  "cat": "DivinationCard",
+  "en": "Humility"
+ },
+ "hunters-exalted-orb": {
+  "cat": "Currency",
+  "en": "Hunter's Exalted Orb"
+ },
+ "hunters-reward": {
+  "cat": "DivinationCard",
+  "en": "Hunter's Reward"
+ },
+ "hydra": {
+  "cat": "Fragment",
+  "en": "Fragment of the Hydra"
+ },
+ "i-see-brothers": {
+  "cat": "DivinationCard",
+  "en": "I See Brothers"
+ },
+ "ign": {
+  "cat": "Fragment",
+  "en": "Mortal Ignorance"
+ },
+ "imbued-catalyst": {
+  "cat": "Currency",
+  "en": "Imbued Catalyst"
+ },
+ "imperfect-memories": {
+  "cat": "DivinationCard",
+  "en": "Imperfect Memories"
+ },
+ "imperial-enshrouding-crystal": {
+  "cat": "EnshroudingCrystal",
+  "en": "Imperial Enshrouding Crystal"
+ },
+ "imperial-legacy": {
+  "cat": "DivinationCard",
+  "en": "Imperial Legacy"
+ },
+ "incursion-scarab": {
+  "cat": "Scarab",
+  "en": "Incursion Scarab"
+ },
+ "incursion-scarab-of-champions": {
+  "cat": "Scarab",
+  "en": "Incursion Scarab of Champions"
+ },
+ "incursion-scarab-of-invasion": {
+  "cat": "Scarab",
+  "en": "Incursion Scarab of Invasion"
+ },
+ "incursion-scarab-of-timelines": {
+  "cat": "Scarab",
+  "en": "Incursion Scarab of Timelines"
+ },
+ "indigo-oil": {
+  "cat": "Oil",
+  "en": "Indigo Oil"
+ },
+ "influencing-scarab-of-conversion": {
+  "cat": "Scarab",
+  "en": "Influencing Scarab of Interference"
+ },
+ "influencing-scarab-of-hordes": {
+  "cat": "Scarab",
+  "en": "Influencing Scarab of Hordes"
+ },
+ "influencing-scarab-of-the-elder": {
+  "cat": "Scarab",
+  "en": "Influencing Scarab of the Elder"
+ },
+ "influencing-scarab-of-the-shaper": {
+  "cat": "Scarab",
+  "en": "Influencing Scarab of the Shaper"
+ },
+ "instilling-orb": {
+  "cat": "Currency",
+  "en": "Instilling Orb"
+ },
+ "intrinsic-catalyst": {
+  "cat": "Currency",
+  "en": "Intrinsic Catalyst"
+ },
+ "jack-in-the-box": {
+  "cat": "DivinationCard",
+  "en": "Jack in the Box"
+ },
+ "jagged-fossil": {
+  "cat": "Fossil",
+  "en": "Jagged Fossil"
+ },
+ "jewellers": {
+  "cat": "Currency",
+  "en": "Jeweller's Orb"
+ },
+ "jewellers-delirium-orb": {
+  "cat": "DeliriumOrb",
+  "en": "Jeweller's Delirium Orb"
+ },
+ "journey-tattoo-of-the-body": {
+  "cat": "Tattoo",
+  "en": "Journey Tattoo of the Body"
+ },
+ "journey-tattoo-of-the-mind": {
+  "cat": "Tattoo",
+  "en": "Journey Tattoo of the Mind"
+ },
+ "journey-tattoo-of-the-soul": {
+  "cat": "Tattoo",
+  "en": "Journey Tattoo of the Soul"
+ },
+ "judging-voices": {
+  "cat": "DivinationCard",
+  "en": "Judging Voices"
+ },
+ "justified-ambition": {
+  "cat": "DivinationCard",
+  "en": "Justified Ambition"
+ },
+ "kalguuran-scarab": {
+  "cat": "Scarab",
+  "en": "Kalguuran Scarab"
+ },
+ "kalguuran-scarab-of-enriching": {
+  "cat": "Scarab",
+  "en": "Kalguuran Scarab of Enriching"
+ },
+ "kalguuran-scarab-of-guarded-riches": {
+  "cat": "Scarab",
+  "en": "Kalguuran Scarab of Guarded Riches"
+ },
+ "kalguuran-scarab-of-refinement": {
+  "cat": "Scarab",
+  "en": "Kalguuran Scarab of Refinement"
+ },
+ "karui-enshrouding-crystal": {
+  "cat": "EnshroudingCrystal",
+  "en": "Karui Enshrouding Crystal"
+ },
+ "katakohis-ducat": {
+  "cat": "Ducat",
+  "en": "Katakohi's Ducat"
+ },
+ "keepers-corruption": {
+  "cat": "DivinationCard",
+  "en": "Keeper's Corruption"
+ },
+ "kisharas-ducat": {
+  "cat": "Ducat",
+  "en": "Kishara's Ducat"
+ },
+ "lachrymal-necrosis": {
+  "cat": "DivinationCard",
+  "en": "Lachrymal Necrosis"
+ },
+ "lantadors-lost-love": {
+  "cat": "DivinationCard",
+  "en": "Lantador's Lost Love"
+ },
+ "last-hope": {
+  "cat": "DivinationCard",
+  "en": "Last Hope"
+ },
+ "left-to-fate": {
+  "cat": "DivinationCard",
+  "en": "Left to Fate"
+ },
+ "legion-scarab": {
+  "cat": "Scarab",
+  "en": "Legion Scarab"
+ },
+ "legion-scarab-of-command": {
+  "cat": "Scarab",
+  "en": "Legion Scarab of Treasures"
+ },
+ "legion-scarab-of-eternal-conflict": {
+  "cat": "Scarab",
+  "en": "Legion Scarab of Eternal Conflict"
+ },
+ "legion-scarab-of-officers": {
+  "cat": "Scarab",
+  "en": "Legion Scarab of Officers"
+ },
+ "lesser-eldritch-ember": {
+  "cat": "Currency",
+  "en": "Lesser Eldritch Ember"
+ },
+ "lesser-eldritch-ichor": {
+  "cat": "Currency",
+  "en": "Lesser Eldritch Ichor"
+ },
+ "lethean-temptation": {
+  "cat": "DivinationCard",
+  "en": "Lethean Temptation"
+ },
+ "light-and-truth": {
+  "cat": "DivinationCard",
+  "en": "Light and Truth"
+ },
+ "lightless-astrolabe": {
+  "cat": "Astrolabe",
+  "en": "Lightless Astrolabe"
+ },
+ "lingering-remnants": {
+  "cat": "DivinationCard",
+  "en": "Lingering Remnants"
+ },
+ "lonely-fragment": {
+  "cat": "Fragment",
+  "en": "Lonely Fragment"
+ },
+ "lonely-warrior": {
+  "cat": "DivinationCard",
+  "en": "Lonely Warrior"
+ },
+ "love-through-ice": {
+  "cat": "DivinationCard",
+  "en": "Love Through Ice"
+ },
+ "lucent-fossil": {
+  "cat": "Fossil",
+  "en": "Lucent Fossil"
+ },
+ "lucky-bastion": {
+  "cat": "DivinationCard",
+  "en": "Lucky Bastion"
+ },
+ "lucky-connections": {
+  "cat": "DivinationCard",
+  "en": "Lucky Connections"
+ },
+ "lucky-deck": {
+  "cat": "DivinationCard",
+  "en": "Lucky Deck"
+ },
+ "luminous-trove": {
+  "cat": "DivinationCard",
+  "en": "Luminous Trove"
+ },
+ "man-with-bear": {
+  "cat": "DivinationCard",
+  "en": "Man With Bear"
+ },
+ "maraketh-enshrouding-crystal": {
+  "cat": "EnshroudingCrystal",
+  "en": "Maraketh Enshrouding Crystal"
+ },
+ "matryoshka": {
+  "cat": "DivinationCard",
+  "en": "Matryoshka"
+ },
+ "mavens-chisel-of-avarice": {
+  "cat": "Currency",
+  "en": "Maven's Chisel of Avarice"
+ },
+ "mavens-chisel-of-divination": {
+  "cat": "Currency",
+  "en": "Maven's Chisel of Divination"
+ },
+ "mavens-chisel-of-procurement": {
+  "cat": "Currency",
+  "en": "Maven's Chisel of Procurement"
+ },
+ "mavens-chisel-of-proliferation": {
+  "cat": "Currency",
+  "en": "Maven's Chisel of Proliferation"
+ },
+ "mavens-chisel-of-scarabs": {
+  "cat": "Currency",
+  "en": "Maven's Chisel of Scarabs"
+ },
+ "mavens-orb": {
+  "cat": "Currency",
+  "en": "Orb of Dominance"
+ },
+ "mawr-blaidd": {
+  "cat": "DivinationCard",
+  "en": "Mawr Blaidd"
+ },
+ "memory-of-loneliness": {
+  "cat": "Fragment",
+  "en": "Memory of Loneliness"
+ },
+ "memory-of-reverence": {
+  "cat": "Fragment",
+  "en": "Memory of Reverence"
+ },
+ "memory-of-trauma": {
+  "cat": "Fragment",
+  "en": "Memory of Trauma"
+ },
+ "merciless-armament": {
+  "cat": "DivinationCard",
+  "en": "Merciless Armament"
+ },
+ "merricks-ducat": {
+  "cat": "Ducat",
+  "en": "Merrick's Ducat"
+ },
+ "message-in-a-bottle": {
+  "cat": "Fragment",
+  "en": "Message in a Bottle"
+ },
+ "metallic-fossil": {
+  "cat": "Fossil",
+  "en": "Metallic Fossil"
+ },
+ "mid": {
+  "cat": "Fragment",
+  "en": "Sacrifice at Midnight"
+ },
+ "minot": {
+  "cat": "Fragment",
+  "en": "Fragment of the Minotaur"
+ },
+ "mirror": {
+  "cat": "Currency",
+  "en": "Mirror of Kalandra"
+ },
+ "mirror-shard": {
+  "cat": "Currency",
+  "en": "Mirror Shard"
+ },
+ "misery-in-darkness": {
+  "cat": "DivinationCard",
+  "en": "Misery in Darkness"
+ },
+ "mitts": {
+  "cat": "DivinationCard",
+  "en": "Mitts"
+ },
+ "monochrome": {
+  "cat": "DivinationCard",
+  "en": "Monochrome"
+ },
+ "more-is-never-enough": {
+  "cat": "DivinationCard",
+  "en": "More is Never Enough"
+ },
+ "muttering-essence-of-anger": {
+  "cat": "Essence",
+  "en": "Muttering Essence of Anger"
+ },
+ "muttering-essence-of-contempt": {
+  "cat": "Essence",
+  "en": "Muttering Essence of Contempt"
+ },
+ "muttering-essence-of-fear": {
+  "cat": "Essence",
+  "en": "Muttering Essence of Fear"
+ },
+ "muttering-essence-of-greed": {
+  "cat": "Essence",
+  "en": "Muttering Essence of Greed"
+ },
+ "muttering-essence-of-sorrow": {
+  "cat": "Essence",
+  "en": "Muttering Essence of Sorrow"
+ },
+ "muttering-essence-of-torment": {
+  "cat": "Essence",
+  "en": "Muttering Essence of Torment"
+ },
+ "muttering-essence-of-woe": {
+  "cat": "Essence",
+  "en": "Muttering Essence of Woe"
+ },
+ "nameless-astrolabe": {
+  "cat": "Astrolabe",
+  "en": "Nameless Astrolabe"
+ },
+ "no-traces": {
+  "cat": "DivinationCard",
+  "en": "No Traces"
+ },
+ "noon": {
+  "cat": "Fragment",
+  "en": "Sacrifice at Noon"
+ },
+ "noxious-catalyst": {
+  "cat": "Currency",
+  "en": "Noxious Catalyst"
+ },
+ "offer": {
+  "cat": "Fragment",
+  "en": "Offering to the Goddess"
+ },
+ "offer-dedication": {
+  "cat": "Fragment",
+  "en": "Dedication to the Goddess"
+ },
+ "offer-gift": {
+  "cat": "Fragment",
+  "en": "Gift to the Goddess"
+ },
+ "offer-tribute": {
+  "cat": "Fragment",
+  "en": "Tribute to the Goddess"
+ },
+ "omen-of-adrenaline": {
+  "cat": "Omen",
+  "en": "Omen of Adrenaline"
+ },
+ "omen-of-amelioration": {
+  "cat": "Omen",
+  "en": "Omen of Amelioration"
+ },
+ "omen-of-brilliance": {
+  "cat": "Omen",
+  "en": "Omen of Brilliance"
+ },
+ "omen-of-connections": {
+  "cat": "Omen",
+  "en": "Omen of Connections"
+ },
+ "omen-of-death-dancing": {
+  "cat": "Omen",
+  "en": "Omen of Death-dancing"
+ },
+ "omen-of-deaths-door": {
+  "cat": "Omen",
+  "en": "Omen of Death's Door"
+ },
+ "omen-of-fortune": {
+  "cat": "Omen",
+  "en": "Omen of Fortune"
+ },
+ "omen-of-refreshment": {
+  "cat": "Omen",
+  "en": "Omen of Refreshment"
+ },
+ "omen-of-return": {
+  "cat": "Omen",
+  "en": "Omen of Return"
+ },
+ "omen-of-the-jeweller": {
+  "cat": "Omen",
+  "en": "Omen of the Jeweller"
+ },
+ "omen-of-the-soul-devourer": {
+  "cat": "Omen",
+  "en": "Omen of the Soul Devourer"
+ },
+ "omen-of-trichromatism": {
+  "cat": "Omen",
+  "en": "Omen of Trichromatism"
+ },
+ "one-last-score": {
+  "cat": "DivinationCard",
+  "en": "One Last Score"
+ },
+ "opalescent-oil": {
+  "cat": "Oil",
+  "en": "Opalescent Oil"
+ },
+ "opulent-fossil": {
+  "cat": "Fossil",
+  "en": "Opulent Fossil"
+ },
+ "orb-of-binding": {
+  "cat": "Currency",
+  "en": "Orb of Binding"
+ },
+ "orb-of-conflict": {
+  "cat": "Currency",
+  "en": "Orb of Conflict"
+ },
+ "orb-of-intention": {
+  "cat": "Currency",
+  "en": "Orb of Intention"
+ },
+ "orb-of-remembrance": {
+  "cat": "Currency",
+  "en": "Orb of Remembrance"
+ },
+ "orb-of-unmaking": {
+  "cat": "Currency",
+  "en": "Orb of Unmaking"
+ },
+ "orb-of-unravelling": {
+  "cat": "Currency",
+  "en": "Orb of Unravelling"
+ },
+ "outfoxed": {
+  "cat": "DivinationCard",
+  "en": "Outfoxed"
+ },
+ "peaceful-moments": {
+  "cat": "DivinationCard",
+  "en": "Peaceful Moments"
+ },
+ "pearls-before-swine": {
+  "cat": "DivinationCard",
+  "en": "Pearls Before Swine"
+ },
+ "perfection": {
+  "cat": "DivinationCard",
+  "en": "Perfection"
+ },
+ "phoenix": {
+  "cat": "Fragment",
+  "en": "Fragment of the Phoenix"
+ },
+ "poisoned-faith": {
+  "cat": "DivinationCard",
+  "en": "Poisoned Faith"
+ },
+ "portal": {
+  "cat": "Currency",
+  "en": "Portal Scroll"
+ },
+ "potent-chaotic-resonator": {
+  "cat": "Resonator",
+  "en": "Potent Chaotic Resonator"
+ },
+ "powerful-chaotic-resonator": {
+  "cat": "Resonator",
+  "en": "Powerful Chaotic Resonator"
+ },
+ "prejudice": {
+  "cat": "DivinationCard",
+  "en": "Prejudice"
+ },
+ "pride-before-the-fall": {
+  "cat": "DivinationCard",
+  "en": "Pride Before the Fall"
+ },
+ "pride-of-the-first-ones": {
+  "cat": "DivinationCard",
+  "en": "Pride of the First Ones"
+ },
+ "primal-lifeforce": {
+  "cat": "Currency",
+  "en": "Primal Crystallised Lifeforce"
+ },
+ "prime-chaotic-resonator": {
+  "cat": "Resonator",
+  "en": "Prime Chaotic Resonator"
+ },
+ "primitive-chaotic-resonator": {
+  "cat": "Resonator",
+  "en": "Primitive Chaotic Resonator"
+ },
+ "prismatic-catalyst": {
+  "cat": "Currency",
+  "en": "Prismatic Catalyst"
+ },
+ "prismatic-fossil": {
+  "cat": "Fossil",
+  "en": "Prismatic Fossil"
+ },
+ "prismatic-oil": {
+  "cat": "Oil",
+  "en": "Prismatic Oil"
+ },
+ "pristine-fossil": {
+  "cat": "Fossil",
+  "en": "Pristine Fossil"
+ },
+ "rage": {
+  "cat": "Fragment",
+  "en": "Mortal Rage"
+ },
+ "rain-of-chaos": {
+  "cat": "DivinationCard",
+  "en": "Rain of Chaos"
+ },
+ "reality-fragment": {
+  "cat": "Fragment",
+  "en": "Reality Fragment"
+ },
+ "rebirth": {
+  "cat": "DivinationCard",
+  "en": "Rebirth"
+ },
+ "rebirth-and-renewal": {
+  "cat": "DivinationCard",
+  "en": "Rebirth and Renewal"
+ },
+ "reckless-ambition": {
+  "cat": "DivinationCard",
+  "en": "Reckless Ambition"
+ },
+ "redeemers-exalted-orb": {
+  "cat": "Currency",
+  "en": "Redeemer's Exalted Orb"
+ },
+ "reflecting-mist": {
+  "cat": "Currency",
+  "en": "Reflecting Mist"
+ },
+ "reflection-of-the-heart": {
+  "cat": "DivinationCard",
+  "en": "Reflection of the Heart"
+ },
+ "reflective-oil": {
+  "cat": "Oil",
+  "en": "Reflective Oil"
+ },
+ "regal": {
+  "cat": "Currency",
+  "en": "Regal Orb"
+ },
+ "regret": {
+  "cat": "Currency",
+  "en": "Orb of Regret"
+ },
+ "remembrance": {
+  "cat": "DivinationCard",
+  "en": "Remembrance"
+ },
+ "reverent-fragment": {
+  "cat": "Fragment",
+  "en": "Reverent Fragment"
+ },
+ "ritual-scarab-of-abundance": {
+  "cat": "Scarab",
+  "en": "Ritual Scarab of Abundance"
+ },
+ "ritual-scarab-of-corpses": {
+  "cat": "Scarab",
+  "en": "Ritual Scarab of Corpses"
+ },
+ "ritual-scarab-of-selectiveness": {
+  "cat": "Scarab",
+  "en": "Ritual Scarab of Selectiveness"
+ },
+ "ritual-scarab-of-wisps": {
+  "cat": "Scarab",
+  "en": "Ritual Scarab of Wisps"
+ },
+ "ritual-splinter": {
+  "cat": "Fragment",
+  "en": "Ritual Splinter"
+ },
+ "ritual-vessel": {
+  "cat": "Fragment",
+  "en": "Ritual Vessel"
+ },
+ "rogues-marker": {
+  "cat": "Currency",
+  "en": "Rogue's Marker"
+ },
+ "rotmothers-ducat": {
+  "cat": "Ducat",
+  "en": "Rotmother's Ducat"
+ },
+ "runegraft-of-bellows": {
+  "cat": "Runegraft",
+  "en": "Runegraft of Bellows"
+ },
+ "runegraft-of-blasphemy": {
+  "cat": "Runegraft",
+  "en": "Runegraft of Blasphemy"
+ },
+ "runegraft-of-connection": {
+  "cat": "Runegraft",
+  "en": "Runegraft of Connection"
+ },
+ "runegraft-of-consecration": {
+  "cat": "Runegraft",
+  "en": "Runegraft of Consecration"
+ },
+ "runegraft-of-fury": {
+  "cat": "Runegraft",
+  "en": "Runegraft of Fury"
+ },
+ "runegraft-of-gemcraft": {
+  "cat": "Runegraft",
+  "en": "Runegraft of Gemcraft"
+ },
+ "runegraft-of-loyalty": {
+  "cat": "Runegraft",
+  "en": "Runegraft of Loyalty"
+ },
+ "runegraft-of-quaffing": {
+  "cat": "Runegraft",
+  "en": "Runegraft of Quaffing"
+ },
+ "runegraft-of-rallying": {
+  "cat": "Runegraft",
+  "en": "Runegraft of Rallying"
+ },
+ "runegraft-of-refraction": {
+  "cat": "Runegraft",
+  "en": "Runegraft of Refraction"
+ },
+ "runegraft-of-restitching": {
+  "cat": "Runegraft",
+  "en": "Runegraft of Restitching"
+ },
+ "runegraft-of-resurgence": {
+  "cat": "Runegraft",
+  "en": "Runegraft of Resurgence"
+ },
+ "runegraft-of-rotblood": {
+  "cat": "Runegraft",
+  "en": "Runegraft of Rotblood"
+ },
+ "runegraft-of-stability": {
+  "cat": "Runegraft",
+  "en": "Runegraft of Stability"
+ },
+ "runegraft-of-suffering": {
+  "cat": "Runegraft",
+  "en": "Runegraft of Suffering"
+ },
+ "runegraft-of-the-agile": {
+  "cat": "Runegraft",
+  "en": "Runegraft of the Agile"
+ },
+ "runegraft-of-the-angler": {
+  "cat": "Runegraft",
+  "en": "Runegraft of the Angler"
+ },
+ "runegraft-of-the-bound": {
+  "cat": "Runegraft",
+  "en": "Runegraft of the Bound"
+ },
+ "runegraft-of-the-combatant": {
+  "cat": "Runegraft",
+  "en": "Runegraft of the Combatant"
+ },
+ "runegraft-of-the-fortress": {
+  "cat": "Runegraft",
+  "en": "Runegraft of the Fortress"
+ },
+ "runegraft-of-the-imbued": {
+  "cat": "Runegraft",
+  "en": "Runegraft of the Imbued"
+ },
+ "runegraft-of-the-jeweller": {
+  "cat": "Runegraft",
+  "en": "Runegraft of the Jeweller"
+ },
+ "runegraft-of-the-novamark": {
+  "cat": "Runegraft",
+  "en": "Runegraft of the Novamark"
+ },
+ "runegraft-of-the-river": {
+  "cat": "Runegraft",
+  "en": "Runegraft of the River"
+ },
+ "runegraft-of-the-sinistral": {
+  "cat": "Runegraft",
+  "en": "Runegraft of the Sinistral"
+ },
+ "runegraft-of-the-soulwick": {
+  "cat": "Runegraft",
+  "en": "Runegraft of the Soulwick"
+ },
+ "runegraft-of-the-spellbound": {
+  "cat": "Runegraft",
+  "en": "Runegraft of the Spellbound"
+ },
+ "runegraft-of-the-warp": {
+  "cat": "Runegraft",
+  "en": "Runegraft of the Warp"
+ },
+ "runegraft-of-the-witchmark": {
+  "cat": "Runegraft",
+  "en": "Runegraft of the Witchmark"
+ },
+ "runegraft-of-time": {
+  "cat": "Runegraft",
+  "en": "Runegraft of Time"
+ },
+ "runegraft-of-treachery": {
+  "cat": "Runegraft",
+  "en": "Runegraft of Treachery"
+ },
+ "runic-astrolabe": {
+  "cat": "Astrolabe",
+  "en": "Runic Astrolabe"
+ },
+ "runic-luck": {
+  "cat": "DivinationCard",
+  "en": "Runic Luck"
+ },
+ "sacred-blossom": {
+  "cat": "Fragment",
+  "en": "Sacred Blossom"
+ },
+ "sacred-lifeforce": {
+  "cat": "Currency",
+  "en": "Sacred Crystallised Lifeforce"
+ },
+ "sacred-orb": {
+  "cat": "Currency",
+  "en": "Sacred Orb"
+ },
+ "sambodhis-vow": {
+  "cat": "DivinationCard",
+  "en": "Sambodhi's Vow"
+ },
+ "sambodhis-wisdom": {
+  "cat": "DivinationCard",
+  "en": "Sambodhi's Wisdom"
+ },
+ "sanctified-fossil": {
+  "cat": "Fossil",
+  "en": "Sanctified Fossil"
+ },
+ "sandswept-lifeforce": {
+  "cat": "Currency",
+  "en": "Crystallised Rancour"
+ },
+ "scarab-of-adversaries": {
+  "cat": "Scarab",
+  "en": "Scarab of Adversaries"
+ },
+ "scarab-of-divinity": {
+  "cat": "Scarab",
+  "en": "Scarab of Divinity"
+ },
+ "scarab-of-monstrous-lineage": {
+  "cat": "Scarab",
+  "en": "Scarab of Monstrous Lineage"
+ },
+ "scarab-of-radiant-storms": {
+  "cat": "Scarab",
+  "en": "Scarab of Radiant Storms"
+ },
+ "scarab-of-stability": {
+  "cat": "Scarab",
+  "en": "Scarab of Stability"
+ },
+ "scarab-of-the-dextral": {
+  "cat": "Scarab",
+  "en": "Scarab of the Dextral"
+ },
+ "scarab-of-the-sinistral": {
+  "cat": "Scarab",
+  "en": "Scarab of the Sinistral"
+ },
+ "scarab-of-wisps": {
+  "cat": "Scarab",
+  "en": "Scarab of Wisps"
+ },
+ "scholar-of-the-seas": {
+  "cat": "DivinationCard",
+  "en": "Scholar of the Seas"
+ },
+ "scorched-fossil": {
+  "cat": "Fossil",
+  "en": "Scorched Fossil"
+ },
+ "scour": {
+  "cat": "Currency",
+  "en": "Orb of Scouring"
+ },
+ "scrap": {
+  "cat": "Currency",
+  "en": "Armourer's Scrap"
+ },
+ "scrap-metal": {
+  "cat": "Artifact",
+  "en": "Scrap Metal"
+ },
+ "screaming-essence-of-anger": {
+  "cat": "Essence",
+  "en": "Screaming Essence of Anger"
+ },
+ "screaming-essence-of-anguish": {
+  "cat": "Essence",
+  "en": "Screaming Essence of Anguish"
+ },
+ "screaming-essence-of-contempt": {
+  "cat": "Essence",
+  "en": "Screaming Essence of Contempt"
+ },
+ "screaming-essence-of-doubt": {
+  "cat": "Essence",
+  "en": "Screaming Essence of Doubt"
+ },
+ "screaming-essence-of-dread": {
+  "cat": "Essence",
+  "en": "Screaming Essence of Dread"
+ },
+ "screaming-essence-of-envy": {
+  "cat": "Essence",
+  "en": "Screaming Essence of Envy"
+ },
+ "screaming-essence-of-fear": {
+  "cat": "Essence",
+  "en": "Screaming Essence of Fear"
+ },
+ "screaming-essence-of-greed": {
+  "cat": "Essence",
+  "en": "Screaming Essence of Greed"
+ },
+ "screaming-essence-of-hatred": {
+  "cat": "Essence",
+  "en": "Screaming Essence of Hatred"
+ },
+ "screaming-essence-of-loathing": {
+  "cat": "Essence",
+  "en": "Screaming Essence of Loathing"
+ },
+ "screaming-essence-of-misery": {
+  "cat": "Essence",
+  "en": "Screaming Essence of Misery"
+ },
+ "screaming-essence-of-rage": {
+  "cat": "Essence",
+  "en": "Screaming Essence of Rage"
+ },
+ "screaming-essence-of-scorn": {
+  "cat": "Essence",
+  "en": "Screaming Essence of Scorn"
+ },
+ "screaming-essence-of-sorrow": {
+  "cat": "Essence",
+  "en": "Screaming Essence of Sorrow"
+ },
+ "screaming-essence-of-spite": {
+  "cat": "Essence",
+  "en": "Screaming Essence of Spite"
+ },
+ "screaming-essence-of-suffering": {
+  "cat": "Essence",
+  "en": "Screaming Essence of Suffering"
+ },
+ "screaming-essence-of-torment": {
+  "cat": "Essence",
+  "en": "Screaming Essence of Torment"
+ },
+ "screaming-essence-of-woe": {
+  "cat": "Essence",
+  "en": "Screaming Essence of Woe"
+ },
+ "screaming-essence-of-wrath": {
+  "cat": "Essence",
+  "en": "Screaming Essence of Wrath"
+ },
+ "screaming-essence-of-zeal": {
+  "cat": "Essence",
+  "en": "Screaming Essence of Zeal"
+ },
+ "sepia-oil": {
+  "cat": "Oil",
+  "en": "Sepia Oil"
+ },
+ "serrated-fossil": {
+  "cat": "Fossil",
+  "en": "Serrated Fossil"
+ },
+ "seven-years-bad-luck": {
+  "cat": "DivinationCard",
+  "en": "Seven Years Bad Luck"
+ },
+ "shapers-exalted-orb": {
+  "cat": "Currency",
+  "en": "Shaper's Exalted Orb"
+ },
+ "shard-of-fate": {
+  "cat": "DivinationCard",
+  "en": "Shard of Fate"
+ },
+ "shrieking-essence-of-anger": {
+  "cat": "Essence",
+  "en": "Shrieking Essence of Anger"
+ },
+ "shrieking-essence-of-anguish": {
+  "cat": "Essence",
+  "en": "Shrieking Essence of Anguish"
+ },
+ "shrieking-essence-of-contempt": {
+  "cat": "Essence",
+  "en": "Shrieking Essence of Contempt"
+ },
+ "shrieking-essence-of-doubt": {
+  "cat": "Essence",
+  "en": "Shrieking Essence of Doubt"
+ },
+ "shrieking-essence-of-dread": {
+  "cat": "Essence",
+  "en": "Shrieking Essence of Dread"
+ },
+ "shrieking-essence-of-envy": {
+  "cat": "Essence",
+  "en": "Shrieking Essence of Envy"
+ },
+ "shrieking-essence-of-fear": {
+  "cat": "Essence",
+  "en": "Shrieking Essence of Fear"
+ },
+ "shrieking-essence-of-greed": {
+  "cat": "Essence",
+  "en": "Shrieking Essence of Greed"
+ },
+ "shrieking-essence-of-hatred": {
+  "cat": "Essence",
+  "en": "Shrieking Essence of Hatred"
+ },
+ "shrieking-essence-of-loathing": {
+  "cat": "Essence",
+  "en": "Shrieking Essence of Loathing"
+ },
+ "shrieking-essence-of-misery": {
+  "cat": "Essence",
+  "en": "Shrieking Essence of Misery"
+ },
+ "shrieking-essence-of-rage": {
+  "cat": "Essence",
+  "en": "Shrieking Essence of Rage"
+ },
+ "shrieking-essence-of-scorn": {
+  "cat": "Essence",
+  "en": "Shrieking Essence of Scorn"
+ },
+ "shrieking-essence-of-sorrow": {
+  "cat": "Essence",
+  "en": "Shrieking Essence of Sorrow"
+ },
+ "shrieking-essence-of-spite": {
+  "cat": "Essence",
+  "en": "Shrieking Essence of Spite"
+ },
+ "shrieking-essence-of-suffering": {
+  "cat": "Essence",
+  "en": "Shrieking Essence of Suffering"
+ },
+ "shrieking-essence-of-torment": {
+  "cat": "Essence",
+  "en": "Shrieking Essence of Torment"
+ },
+ "shrieking-essence-of-woe": {
+  "cat": "Essence",
+  "en": "Shrieking Essence of Woe"
+ },
+ "shrieking-essence-of-wrath": {
+  "cat": "Essence",
+  "en": "Shrieking Essence of Wrath"
+ },
+ "shrieking-essence-of-zeal": {
+  "cat": "Essence",
+  "en": "Shrieking Essence of Zeal"
+ },
+ "shuddering-fossil": {
+  "cat": "Fossil",
+  "en": "Shuddering Fossil"
+ },
+ "silence-and-frost": {
+  "cat": "DivinationCard",
+  "en": "Silence and Frost"
+ },
+ "silver-oil": {
+  "cat": "Oil",
+  "en": "Silver Oil"
+ },
+ "simulacrum": {
+  "cat": "Fragment",
+  "en": "Simulacrum"
+ },
+ "simulacrum-splinter": {
+  "cat": "Fragment",
+  "en": "Simulacrum Splinter"
+ },
+ "singular-delirium-orb": {
+  "cat": "DeliriumOrb",
+  "en": "Singular Delirium Orb"
+ },
+ "skittering-delirium-orb": {
+  "cat": "DeliriumOrb",
+  "en": "Skittering Delirium Orb"
+ },
+ "societys-remorse": {
+  "cat": "DivinationCard",
+  "en": "Society's Remorse"
+ },
+ "something-dark": {
+  "cat": "DivinationCard",
+  "en": "Something Dark"
+ },
+ "squandered-prosperity": {
+  "cat": "DivinationCard",
+  "en": "Squandered Prosperity"
+ },
+ "stacked-deck": {
+  "cat": "Currency",
+  "en": "Stacked Deck"
+ },
+ "succor-of-the-sinless": {
+  "cat": "DivinationCard",
+  "en": "Succor of the Sinless"
+ },
+ "sulphite-scarab": {
+  "cat": "Scarab",
+  "en": "Sulphite Scarab"
+ },
+ "sulphite-scarab-of-fumes": {
+  "cat": "Scarab",
+  "en": "Sulphite Scarab of Fumes"
+ },
+ "syndicate-medallion": {
+  "cat": "Fragment",
+  "en": "Syndicate Medallion"
+ },
+ "synthesising-fragment": {
+  "cat": "Fragment",
+  "en": "Synthesising Fragment"
+ },
+ "tailoring-orb": {
+  "cat": "Currency",
+  "en": "Tailoring Orb"
+ },
+ "tainted-armourers-scrap": {
+  "cat": "Currency",
+  "en": "Tainted Armourer's Scrap"
+ },
+ "tainted-blacksmiths-whetstone": {
+  "cat": "Currency",
+  "en": "Tainted Blacksmith's Whetstone"
+ },
+ "tainted-catalyst": {
+  "cat": "Currency",
+  "en": "Tainted Catalyst"
+ },
+ "tainted-chaos-orb": {
+  "cat": "Currency",
+  "en": "Tainted Chaos Orb"
+ },
+ "tainted-chromatic-orb": {
+  "cat": "Currency",
+  "en": "Tainted Chromatic Orb"
+ },
+ "tainted-divine-orb": {
+  "cat": "Currency",
+  "en": "Volatile Vaal Orb"
+ },
+ "tainted-divine-teardrop": {
+  "cat": "Currency",
+  "en": "Tainted Divine Teardrop"
+ },
+ "tainted-exalted-orb": {
+  "cat": "Currency",
+  "en": "Tainted Exalted Orb"
+ },
+ "tainted-jewellers-orb": {
+  "cat": "Currency",
+  "en": "Tainted Jeweller's Orb"
+ },
+ "tainted-mythic-orb": {
+  "cat": "Currency",
+  "en": "Tainted Mythic Orb"
+ },
+ "tainted-oil": {
+  "cat": "Oil",
+  "en": "Tainted Oil"
+ },
+ "tainted-orb-of-fusing": {
+  "cat": "Currency",
+  "en": "Tainted Orb of Fusing"
+ },
+ "tangled-fossil": {
+  "cat": "Fossil",
+  "en": "Tangled Fossil"
+ },
+ "tattoo-of-the-arohongui-moonwarden": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Arohongui Moonwarden"
+ },
+ "tattoo-of-the-arohongui-scout": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Arohongui Scout"
+ },
+ "tattoo-of-the-arohongui-shaman": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Arohongui Shaman"
+ },
+ "tattoo-of-the-arohongui-warmonger": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Arohongui Warmonger"
+ },
+ "tattoo-of-the-arohongui-warrior": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Arohongui Warrior"
+ },
+ "tattoo-of-the-hinekora-deathwarden": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Hinekora Deathwarden"
+ },
+ "tattoo-of-the-hinekora-shaman": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Hinekora Shaman"
+ },
+ "tattoo-of-the-hinekora-storyteller": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Hinekora Storyteller"
+ },
+ "tattoo-of-the-hinekora-warmonger": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Hinekora Warmonger"
+ },
+ "tattoo-of-the-hinekora-warrior": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Hinekora Warrior"
+ },
+ "tattoo-of-the-kitava-blood-drinker": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Kitava Blood Drinker"
+ },
+ "tattoo-of-the-kitava-heart-eater": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Kitava Heart Eater"
+ },
+ "tattoo-of-the-kitava-rebel": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Kitava Rebel"
+ },
+ "tattoo-of-the-kitava-shaman": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Kitava Shaman"
+ },
+ "tattoo-of-the-kitava-warrior": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Kitava Warrior"
+ },
+ "tattoo-of-the-ngamahu-firewalker": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Ngamahu Firewalker"
+ },
+ "tattoo-of-the-ngamahu-shaman": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Ngamahu Shaman"
+ },
+ "tattoo-of-the-ngamahu-warmonger": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Ngamahu Warmonger"
+ },
+ "tattoo-of-the-ngamahu-warrior": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Ngamahu Warrior"
+ },
+ "tattoo-of-the-ngamahu-woodcarver": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Ngamahu Woodcarver"
+ },
+ "tattoo-of-the-ramako-archer": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Ramako Archer"
+ },
+ "tattoo-of-the-ramako-fleetfoot": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Ramako Fleetfoot"
+ },
+ "tattoo-of-the-ramako-scout": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Ramako Scout"
+ },
+ "tattoo-of-the-ramako-shaman": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Ramako Shaman"
+ },
+ "tattoo-of-the-ramako-sniper": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Ramako Sniper"
+ },
+ "tattoo-of-the-rongokurai-brute": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Rongokurai Brute"
+ },
+ "tattoo-of-the-rongokurai-goliath": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Rongokurai Goliath"
+ },
+ "tattoo-of-the-rongokurai-guard": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Rongokurai Guard"
+ },
+ "tattoo-of-the-rongokurai-turtle": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Rongokurai Turtle"
+ },
+ "tattoo-of-the-rongokurai-warrior": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Rongokurai Warrior"
+ },
+ "tattoo-of-the-tasalio-bladedancer": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Tasalio Bladedancer"
+ },
+ "tattoo-of-the-tasalio-scout": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Tasalio Scout"
+ },
+ "tattoo-of-the-tasalio-shaman": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Tasalio Shaman"
+ },
+ "tattoo-of-the-tasalio-tideshifter": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Tasalio Tideshifter"
+ },
+ "tattoo-of-the-tasalio-warrior": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Tasalio Warrior"
+ },
+ "tattoo-of-the-tawhoa-herbalist": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Tawhoa Herbalist"
+ },
+ "tattoo-of-the-tawhoa-naturalist": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Tawhoa Naturalist"
+ },
+ "tattoo-of-the-tawhoa-scout": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Tawhoa Scout"
+ },
+ "tattoo-of-the-tawhoa-shaman": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Tawhoa Shaman"
+ },
+ "tattoo-of-the-tawhoa-warrior": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Tawhoa Warrior"
+ },
+ "tattoo-of-the-tukohama-brawler": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Tukohama Brawler"
+ },
+ "tattoo-of-the-tukohama-shaman": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Tukohama Shaman"
+ },
+ "tattoo-of-the-tukohama-warcaller": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Tukohama Warcaller"
+ },
+ "tattoo-of-the-tukohama-warmonger": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Tukohama Warmonger"
+ },
+ "tattoo-of-the-tukohama-warrior": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Tukohama Warrior"
+ },
+ "tattoo-of-the-valako-scout": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Valako Scout"
+ },
+ "tattoo-of-the-valako-shaman": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Valako Shaman"
+ },
+ "tattoo-of-the-valako-shieldbearer": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Valako Shieldbearer"
+ },
+ "tattoo-of-the-valako-stormrider": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Valako Stormrider"
+ },
+ "tattoo-of-the-valako-warrior": {
+  "cat": "Tattoo",
+  "en": "Tattoo of the Valako Warrior"
+ },
+ "teal-oil": {
+  "cat": "Oil",
+  "en": "Teal Oil"
+ },
+ "telesias-ducat": {
+  "cat": "Ducat",
+  "en": "Telesia's Ducat"
+ },
+ "temperance": {
+  "cat": "DivinationCard",
+  "en": "Temperance"
+ },
+ "tempering-catalyst": {
+  "cat": "Currency",
+  "en": "Tempering Catalyst"
+ },
+ "tempering-orb": {
+  "cat": "Currency",
+  "en": "Tempering Orb"
+ },
+ "templar-astrolabe": {
+  "cat": "Astrolabe",
+  "en": "Templar Astrolabe"
+ },
+ "templar-enshrouding-crystal": {
+  "cat": "EnshroudingCrystal",
+  "en": "Templar Enshrouding Crystal"
+ },
+ "terrible-secret-of-space": {
+  "cat": "DivinationCard",
+  "en": "Terrible Secret of Space"
+ },
+ "thaumaturges-delirium-orb": {
+  "cat": "DeliriumOrb",
+  "en": "Thaumaturge's Delirium Orb"
+ },
+ "the-academic": {
+  "cat": "DivinationCard",
+  "en": "The Academic"
+ },
+ "the-admirer": {
+  "cat": "DivinationCard",
+  "en": "The Admirer"
+ },
+ "the-adventuring-spirit": {
+  "cat": "DivinationCard",
+  "en": "The Adventuring Spirit"
+ },
+ "the-aesthete": {
+  "cat": "DivinationCard",
+  "en": "The Aesthete"
+ },
+ "the-apothecary": {
+  "cat": "DivinationCard",
+  "en": "The Apothecary"
+ },
+ "the-army-of-blood": {
+  "cat": "DivinationCard",
+  "en": "The Army of Blood"
+ },
+ "the-artist": {
+  "cat": "DivinationCard",
+  "en": "The Artist"
+ },
+ "the-aspirant": {
+  "cat": "DivinationCard",
+  "en": "The Aspirant"
+ },
+ "the-astromancer": {
+  "cat": "DivinationCard",
+  "en": "The Astromancer"
+ },
+ "the-avenger": {
+  "cat": "DivinationCard",
+  "en": "The Avenger"
+ },
+ "the-awakened": {
+  "cat": "DivinationCard",
+  "en": "The Awakened"
+ },
+ "the-battle-born": {
+  "cat": "DivinationCard",
+  "en": "The Battle Born"
+ },
+ "the-bear-woman": {
+  "cat": "DivinationCard",
+  "en": "The Bear Woman"
+ },
+ "the-bitter-blossom": {
+  "cat": "DivinationCard",
+  "en": "The Bitter Blossom"
+ },
+ "the-blessing-of-moosh": {
+  "cat": "DivinationCard",
+  "en": "The Blessing of Moosh"
+ },
+ "the-body": {
+  "cat": "DivinationCard",
+  "en": "The Body"
+ },
+ "the-brawny-battle-mage": {
+  "cat": "DivinationCard",
+  "en": "The Brawny Battle Mage"
+ },
+ "the-breach": {
+  "cat": "DivinationCard",
+  "en": "The Breach"
+ },
+ "the-brittle-emperor": {
+  "cat": "DivinationCard",
+  "en": "The Brittle Emperor"
+ },
+ "the-cache": {
+  "cat": "DivinationCard",
+  "en": "The Cache"
+ },
+ "the-cacophony": {
+  "cat": "DivinationCard",
+  "en": "The Cacophony"
+ },
+ "the-calling": {
+  "cat": "DivinationCard",
+  "en": "The Calling"
+ },
+ "the-card-sharp": {
+  "cat": "DivinationCard",
+  "en": "The Card Sharp"
+ },
+ "the-carrion-crow": {
+  "cat": "DivinationCard",
+  "en": "The Carrion Crow"
+ },
+ "the-cataclysm": {
+  "cat": "DivinationCard",
+  "en": "The Cataclysm"
+ },
+ "the-catalyst": {
+  "cat": "DivinationCard",
+  "en": "The Catalyst"
+ },
+ "the-catch": {
+  "cat": "DivinationCard",
+  "en": "The Catch"
+ },
+ "the-celestial-stone": {
+  "cat": "DivinationCard",
+  "en": "The Celestial Stone"
+ },
+ "the-chains-that-bind": {
+  "cat": "DivinationCard",
+  "en": "The Chains that Bind"
+ },
+ "the-changelings-ducat": {
+  "cat": "Ducat",
+  "en": "The Changeling's Ducat"
+ },
+ "the-chosen": {
+  "cat": "DivinationCard",
+  "en": "The Chosen"
+ },
+ "the-coming-storm": {
+  "cat": "DivinationCard",
+  "en": "The Coming Storm"
+ },
+ "the-cursed-king": {
+  "cat": "DivinationCard",
+  "en": "The Cursed King"
+ },
+ "the-damned": {
+  "cat": "DivinationCard",
+  "en": "The Damned"
+ },
+ "the-dapper-prodigy": {
+  "cat": "DivinationCard",
+  "en": "The Dapper Prodigy"
+ },
+ "the-darkest-dream": {
+  "cat": "DivinationCard",
+  "en": "The Darkest Dream"
+ },
+ "the-deal": {
+  "cat": "DivinationCard",
+  "en": "The Deal"
+ },
+ "the-deceiver": {
+  "cat": "DivinationCard",
+  "en": "The Deceiver"
+ },
+ "the-deep-ones": {
+  "cat": "DivinationCard",
+  "en": "The Deep Ones"
+ },
+ "the-demon": {
+  "cat": "DivinationCard",
+  "en": "The Demon"
+ },
+ "the-destination": {
+  "cat": "DivinationCard",
+  "en": "The Destination"
+ },
+ "the-doctor": {
+  "cat": "DivinationCard",
+  "en": "The Doctor"
+ },
+ "the-doppelganger": {
+  "cat": "DivinationCard",
+  "en": "The Doppelganger"
+ },
+ "the-dragon": {
+  "cat": "DivinationCard",
+  "en": "The Dragon"
+ },
+ "the-dragons-heart": {
+  "cat": "DivinationCard",
+  "en": "The Dragon's Heart"
+ },
+ "the-dreamer": {
+  "cat": "DivinationCard",
+  "en": "The Dreamer"
+ },
+ "the-drunken-aristocrat": {
+  "cat": "DivinationCard",
+  "en": "The Drunken Aristocrat"
+ },
+ "the-dungeon-master": {
+  "cat": "DivinationCard",
+  "en": "The Dungeon Master"
+ },
+ "the-easy-stroll": {
+  "cat": "DivinationCard",
+  "en": "The Easy Stroll"
+ },
+ "the-eldritch-decay": {
+  "cat": "DivinationCard",
+  "en": "The Eldritch Decay"
+ },
+ "the-endless-darkness": {
+  "cat": "DivinationCard",
+  "en": "The Endless Darkness"
+ },
+ "the-endurance": {
+  "cat": "DivinationCard",
+  "en": "The Endurance"
+ },
+ "the-enforcer": {
+  "cat": "DivinationCard",
+  "en": "The Enforcer"
+ },
+ "the-enlightened": {
+  "cat": "DivinationCard",
+  "en": "The Enlightened"
+ },
+ "the-enthusiasts": {
+  "cat": "DivinationCard",
+  "en": "The Enthusiasts"
+ },
+ "the-escape": {
+  "cat": "DivinationCard",
+  "en": "The Escape"
+ },
+ "the-eternal-war": {
+  "cat": "DivinationCard",
+  "en": "The Eternal War"
+ },
+ "the-ethereal": {
+  "cat": "DivinationCard",
+  "en": "The Ethereal"
+ },
+ "the-everlasting": {
+  "cat": "DivinationCard",
+  "en": "The Everlasting"
+ },
+ "the-eye-of-terror": {
+  "cat": "DivinationCard",
+  "en": "The Eye of Terror"
+ },
+ "the-eye-of-the-dragon": {
+  "cat": "DivinationCard",
+  "en": "The Eye of the Dragon"
+ },
+ "the-feast": {
+  "cat": "DivinationCard",
+  "en": "The Feast"
+ },
+ "the-fiend": {
+  "cat": "DivinationCard",
+  "en": "The Fiend"
+ },
+ "the-finishing-touch": {
+  "cat": "DivinationCard",
+  "en": "The Finishing Touch"
+ },
+ "the-fishmonger": {
+  "cat": "DivinationCard",
+  "en": "The Fishmonger"
+ },
+ "the-fletcher": {
+  "cat": "DivinationCard",
+  "en": "The Fletcher"
+ },
+ "the-fool": {
+  "cat": "DivinationCard",
+  "en": "The Fool"
+ },
+ "the-forbidden-fruit": {
+  "cat": "DivinationCard",
+  "en": "The Forbidden Fruit"
+ },
+ "the-forgotten-treasure": {
+  "cat": "DivinationCard",
+  "en": "The Forgotten Treasure"
+ },
+ "the-formless-sea": {
+  "cat": "DivinationCard",
+  "en": "The Formless Sea"
+ },
+ "the-forsaken": {
+  "cat": "DivinationCard",
+  "en": "The Forsaken"
+ },
+ "the-fortunate": {
+  "cat": "DivinationCard",
+  "en": "The Fortunate"
+ },
+ "the-forward-gaze": {
+  "cat": "DivinationCard",
+  "en": "The Forward Gaze"
+ },
+ "the-fox": {
+  "cat": "DivinationCard",
+  "en": "The Fox"
+ },
+ "the-fox-in-the-brambles": {
+  "cat": "DivinationCard",
+  "en": "The Fox in the Brambles"
+ },
+ "the-gambler": {
+  "cat": "DivinationCard",
+  "en": "The Gambler"
+ },
+ "the-garish-power": {
+  "cat": "DivinationCard",
+  "en": "The Garish Power"
+ },
+ "the-gemcutter": {
+  "cat": "DivinationCard",
+  "en": "The Gemcutter"
+ },
+ "the-genteels-ducat": {
+  "cat": "Ducat",
+  "en": "The Genteel's Ducat"
+ },
+ "the-gentleman": {
+  "cat": "DivinationCard",
+  "en": "The Gentleman"
+ },
+ "the-golden-era": {
+  "cat": "DivinationCard",
+  "en": "The Golden Era"
+ },
+ "the-greatest-intentions": {
+  "cat": "DivinationCard",
+  "en": "The Greatest Intentions"
+ },
+ "the-gulf": {
+  "cat": "DivinationCard",
+  "en": "The Gulf"
+ },
+ "the-hermit": {
+  "cat": "DivinationCard",
+  "en": "The Hermit"
+ },
+ "the-heroic-shot": {
+  "cat": "DivinationCard",
+  "en": "The Heroic Shot"
+ },
+ "the-hive-of-knowledge": {
+  "cat": "DivinationCard",
+  "en": "The Hive of Knowledge"
+ },
+ "the-hoarder": {
+  "cat": "DivinationCard",
+  "en": "The Hoarder"
+ },
+ "the-hook": {
+  "cat": "DivinationCard",
+  "en": "The Hook"
+ },
+ "the-hunger": {
+  "cat": "DivinationCard",
+  "en": "The Hunger"
+ },
+ "the-immortal": {
+  "cat": "DivinationCard",
+  "en": "The Immortal"
+ },
+ "the-incantation": {
+  "cat": "DivinationCard",
+  "en": "The Incantation"
+ },
+ "the-innocent": {
+  "cat": "DivinationCard",
+  "en": "The Innocent"
+ },
+ "the-insane-cat": {
+  "cat": "DivinationCard",
+  "en": "The Insane Cat"
+ },
+ "the-inventor": {
+  "cat": "DivinationCard",
+  "en": "The Inventor"
+ },
+ "the-jester": {
+  "cat": "DivinationCard",
+  "en": "The Jester"
+ },
+ "the-journalist": {
+  "cat": "DivinationCard",
+  "en": "The Journalist"
+ },
+ "the-journey": {
+  "cat": "DivinationCard",
+  "en": "The Journey"
+ },
+ "the-kings-blade": {
+  "cat": "DivinationCard",
+  "en": "The King's Blade"
+ },
+ "the-kings-heart": {
+  "cat": "DivinationCard",
+  "en": "The King's Heart"
+ },
+ "the-lake": {
+  "cat": "DivinationCard",
+  "en": "The Lake"
+ },
+ "the-last-laugh": {
+  "cat": "DivinationCard",
+  "en": "The Last Laugh"
+ },
+ "the-last-one-standing": {
+  "cat": "DivinationCard",
+  "en": "The Last One Standing"
+ },
+ "the-last-supper": {
+  "cat": "DivinationCard",
+  "en": "The Last Supper"
+ },
+ "the-leviathan": {
+  "cat": "DivinationCard",
+  "en": "The Leviathan"
+ },
+ "the-life-thief": {
+  "cat": "DivinationCard",
+  "en": "The Life Thief"
+ },
+ "the-lion": {
+  "cat": "DivinationCard",
+  "en": "The Lion"
+ },
+ "the-long-con": {
+  "cat": "DivinationCard",
+  "en": "The Long Con"
+ },
+ "the-long-watch": {
+  "cat": "DivinationCard",
+  "en": "The Long Watch"
+ },
+ "the-lord-in-black": {
+  "cat": "DivinationCard",
+  "en": "The Lord in Black"
+ },
+ "the-lord-of-celebration": {
+  "cat": "DivinationCard",
+  "en": "The Lord of Celebration"
+ },
+ "the-lover": {
+  "cat": "DivinationCard",
+  "en": "The Lover"
+ },
+ "the-lunaris-priestess": {
+  "cat": "DivinationCard",
+  "en": "The Lunaris Priestess"
+ },
+ "the-mad-king": {
+  "cat": "DivinationCard",
+  "en": "The Mad King"
+ },
+ "the-magma-crab": {
+  "cat": "DivinationCard",
+  "en": "The Magma Crab"
+ },
+ "the-master-artisan": {
+  "cat": "DivinationCard",
+  "en": "The Master Artisan"
+ },
+ "the-mavens-writ": {
+  "cat": "Fragment",
+  "en": "The Maven's Writ"
+ },
+ "the-mayor": {
+  "cat": "DivinationCard",
+  "en": "The Mayor"
+ },
+ "the-mercenary": {
+  "cat": "DivinationCard",
+  "en": "The Mercenary"
+ },
+ "the-messenger": {
+  "cat": "DivinationCard",
+  "en": "The Messenger"
+ },
+ "the-minds-eyes": {
+  "cat": "DivinationCard",
+  "en": "The Mind's Eyes"
+ },
+ "the-miracle": {
+  "cat": "DivinationCard",
+  "en": "The Miracle"
+ },
+ "the-mountain": {
+  "cat": "DivinationCard",
+  "en": "The Mountain"
+ },
+ "the-nurse": {
+  "cat": "DivinationCard",
+  "en": "The Nurse"
+ },
+ "the-oath": {
+  "cat": "DivinationCard",
+  "en": "The Oath"
+ },
+ "the-offering": {
+  "cat": "DivinationCard",
+  "en": "The Offering"
+ },
+ "the-offspring": {
+  "cat": "DivinationCard",
+  "en": "The Offspring"
+ },
+ "the-old-man": {
+  "cat": "DivinationCard",
+  "en": "The Old Man"
+ },
+ "the-one-that-got-away": {
+  "cat": "DivinationCard",
+  "en": "The One That Got Away"
+ },
+ "the-one-with-all": {
+  "cat": "DivinationCard",
+  "en": "The One With All"
+ },
+ "the-opulent": {
+  "cat": "DivinationCard",
+  "en": "The Opulent"
+ },
+ "the-pact": {
+  "cat": "DivinationCard",
+  "en": "The Pact"
+ },
+ "the-patient": {
+  "cat": "DivinationCard",
+  "en": "The Patient"
+ },
+ "the-penitent": {
+  "cat": "DivinationCard",
+  "en": "The Penitent"
+ },
+ "the-poet": {
+  "cat": "DivinationCard",
+  "en": "The Poet"
+ },
+ "the-polymath": {
+  "cat": "DivinationCard",
+  "en": "The Polymath"
+ },
+ "the-porcupine": {
+  "cat": "DivinationCard",
+  "en": "The Porcupine"
+ },
+ "the-price-of-devotion": {
+  "cat": "DivinationCard",
+  "en": "The Price of Devotion"
+ },
+ "the-price-of-loyalty": {
+  "cat": "DivinationCard",
+  "en": "The Price of Loyalty"
+ },
+ "the-price-of-prescience": {
+  "cat": "DivinationCard",
+  "en": "The Price of Prescience"
+ },
+ "the-price-of-protection": {
+  "cat": "DivinationCard",
+  "en": "The Price of Protection"
+ },
+ "the-primordial": {
+  "cat": "DivinationCard",
+  "en": "The Primordial"
+ },
+ "the-prince-of-darkness": {
+  "cat": "DivinationCard",
+  "en": "The Prince of Darkness"
+ },
+ "the-professor": {
+  "cat": "DivinationCard",
+  "en": "The Professor"
+ },
+ "the-progeny-of-lunaris": {
+  "cat": "DivinationCard",
+  "en": "The Progeny of Lunaris"
+ },
+ "the-queen": {
+  "cat": "DivinationCard",
+  "en": "The Queen"
+ },
+ "the-rabbits-foot": {
+  "cat": "DivinationCard",
+  "en": "The Rabbit's Foot"
+ },
+ "the-realm": {
+  "cat": "DivinationCard",
+  "en": "The Realm"
+ },
+ "the-return-of-the-rat": {
+  "cat": "DivinationCard",
+  "en": "The Return of the Rat"
+ },
+ "the-risk": {
+  "cat": "DivinationCard",
+  "en": "The Risk"
+ },
+ "the-rite-of-elements": {
+  "cat": "DivinationCard",
+  "en": "The Rite of Elements"
+ },
+ "the-road-to-power": {
+  "cat": "DivinationCard",
+  "en": "The Road to Power"
+ },
+ "the-rusted-bard": {
+  "cat": "DivinationCard",
+  "en": "The Rusted Bard"
+ },
+ "the-ruthless-ceinture": {
+  "cat": "DivinationCard",
+  "en": "The Ruthless Ceinture"
+ },
+ "the-sacrifice": {
+  "cat": "DivinationCard",
+  "en": "The Sacrifice"
+ },
+ "the-saints-treasure": {
+  "cat": "DivinationCard",
+  "en": "The Saint's Treasure"
+ },
+ "the-samurais-eye": {
+  "cat": "DivinationCard",
+  "en": "The Samurai's Eye"
+ },
+ "the-scholar": {
+  "cat": "DivinationCard",
+  "en": "The Scholar"
+ },
+ "the-scout": {
+  "cat": "DivinationCard",
+  "en": "The Scout"
+ },
+ "the-seeker": {
+  "cat": "DivinationCard",
+  "en": "The Seeker"
+ },
+ "the-sephirot": {
+  "cat": "DivinationCard",
+  "en": "The Sephirot"
+ },
+ "the-shepherds-sandals": {
+  "cat": "DivinationCard",
+  "en": "The Shepherd's Sandals"
+ },
+ "the-shieldbearer": {
+  "cat": "DivinationCard",
+  "en": "The Shieldbearer"
+ },
+ "the-shortcut": {
+  "cat": "DivinationCard",
+  "en": "The Shortcut"
+ },
+ "the-side-quest": {
+  "cat": "DivinationCard",
+  "en": "The Side Quest"
+ },
+ "the-sigil": {
+  "cat": "DivinationCard",
+  "en": "The Sigil"
+ },
+ "the-silly-boy": {
+  "cat": "DivinationCard",
+  "en": "The Silly Boy"
+ },
+ "the-slumbering-beast": {
+  "cat": "DivinationCard",
+  "en": "The Slumbering Beast"
+ },
+ "the-soul": {
+  "cat": "DivinationCard",
+  "en": "The Soul"
+ },
+ "the-spark-and-the-flame": {
+  "cat": "DivinationCard",
+  "en": "The Spark and the Flame"
+ },
+ "the-spoiled-prince": {
+  "cat": "DivinationCard",
+  "en": "The Spoiled Prince"
+ },
+ "the-stormcaller": {
+  "cat": "DivinationCard",
+  "en": "The Stormcaller"
+ },
+ "the-strategist": {
+  "cat": "DivinationCard",
+  "en": "The Strategist"
+ },
+ "the-summoner": {
+  "cat": "DivinationCard",
+  "en": "The Summoner"
+ },
+ "the-sun": {
+  "cat": "DivinationCard",
+  "en": "The Sun"
+ },
+ "the-surgeon": {
+  "cat": "DivinationCard",
+  "en": "The Surgeon"
+ },
+ "the-thaumaturgist": {
+  "cat": "DivinationCard",
+  "en": "The Thaumaturgist"
+ },
+ "the-throne": {
+  "cat": "DivinationCard",
+  "en": "The Throne"
+ },
+ "the-tinkerers-table": {
+  "cat": "DivinationCard",
+  "en": "The Tinkerer's Table"
+ },
+ "the-tireless-extractor": {
+  "cat": "DivinationCard",
+  "en": "The Tireless Extractor"
+ },
+ "the-traitor": {
+  "cat": "DivinationCard",
+  "en": "The Traitor"
+ },
+ "the-transformation": {
+  "cat": "DivinationCard",
+  "en": "The Transformation"
+ },
+ "the-tumbleweed": {
+  "cat": "DivinationCard",
+  "en": "The Tumbleweed"
+ },
+ "the-twilight-moon": {
+  "cat": "DivinationCard",
+  "en": "The Twilight Moon"
+ },
+ "the-tyrant": {
+  "cat": "DivinationCard",
+  "en": "The Tyrant"
+ },
+ "the-undaunted": {
+  "cat": "DivinationCard",
+  "en": "The Undaunted"
+ },
+ "the-undisputed": {
+  "cat": "DivinationCard",
+  "en": "The Undisputed"
+ },
+ "the-union": {
+  "cat": "DivinationCard",
+  "en": "The Union"
+ },
+ "the-valkyrie": {
+  "cat": "DivinationCard",
+  "en": "The Valkyrie"
+ },
+ "the-vast": {
+  "cat": "DivinationCard",
+  "en": "The Vast"
+ },
+ "the-visionary": {
+  "cat": "DivinationCard",
+  "en": "The Visionary"
+ },
+ "the-void": {
+  "cat": "DivinationCard",
+  "en": "The Void"
+ },
+ "the-warlord": {
+  "cat": "DivinationCard",
+  "en": "The Warlord"
+ },
+ "the-watcher": {
+  "cat": "DivinationCard",
+  "en": "The Watcher"
+ },
+ "the-web": {
+  "cat": "DivinationCard",
+  "en": "The Web"
+ },
+ "the-wedding-gift": {
+  "cat": "DivinationCard",
+  "en": "The Wedding Gift"
+ },
+ "the-white-knight": {
+  "cat": "DivinationCard",
+  "en": "The White Knight"
+ },
+ "the-whiteout": {
+  "cat": "DivinationCard",
+  "en": "The Whiteout"
+ },
+ "the-wilted-rose": {
+  "cat": "DivinationCard",
+  "en": "The Wilted Rose"
+ },
+ "the-wind": {
+  "cat": "DivinationCard",
+  "en": "The Wind"
+ },
+ "the-wolfs-legacy": {
+  "cat": "DivinationCard",
+  "en": "The Wolf's Legacy"
+ },
+ "the-wolfs-shadow": {
+  "cat": "DivinationCard",
+  "en": "The Wolf's Shadow"
+ },
+ "the-world-eater": {
+  "cat": "DivinationCard",
+  "en": "The World Eater"
+ },
+ "the-wrath": {
+  "cat": "DivinationCard",
+  "en": "The Wrath"
+ },
+ "the-wretched": {
+  "cat": "DivinationCard",
+  "en": "The Wretched"
+ },
+ "three-faces-in-the-dark": {
+  "cat": "DivinationCard",
+  "en": "Three Faces in the Dark"
+ },
+ "three-voices": {
+  "cat": "DivinationCard",
+  "en": "Three Voices"
+ },
+ "time-lost-relic": {
+  "cat": "DivinationCard",
+  "en": "Time-Lost Relic"
+ },
+ "timeless-astrolabe": {
+  "cat": "Astrolabe",
+  "en": "Timeless Astrolabe"
+ },
+ "timeless-eternal-emblem": {
+  "cat": "Fragment",
+  "en": "Timeless Eternal Emblem"
+ },
+ "timeless-eternal-empire-splinter": {
+  "cat": "Fragment",
+  "en": "Timeless Eternal Empire Splinter"
+ },
+ "timeless-karui-emblem": {
+  "cat": "Fragment",
+  "en": "Timeless Karui Emblem"
+ },
+ "timeless-karui-splinter": {
+  "cat": "Fragment",
+  "en": "Timeless Karui Splinter"
+ },
+ "timeless-maraketh-emblem": {
+  "cat": "Fragment",
+  "en": "Timeless Maraketh Emblem"
+ },
+ "timeless-maraketh-splinter": {
+  "cat": "Fragment",
+  "en": "Timeless Maraketh Splinter"
+ },
+ "timeless-templar-emblem": {
+  "cat": "Fragment",
+  "en": "Timeless Templar Emblem"
+ },
+ "timeless-templar-splinter": {
+  "cat": "Fragment",
+  "en": "Timeless Templar Splinter"
+ },
+ "timeless-vaal-emblem": {
+  "cat": "Fragment",
+  "en": "Timeless Vaal Emblem"
+ },
+ "timeless-vaal-splinter": {
+  "cat": "Fragment",
+  "en": "Timeless Vaal Splinter"
+ },
+ "titanic-scarab": {
+  "cat": "Scarab",
+  "en": "Titanic Scarab"
+ },
+ "titanic-scarab-of-legend": {
+  "cat": "Scarab",
+  "en": "Titanic Scarab of Legend"
+ },
+ "titanic-scarab-of-treasures": {
+  "cat": "Scarab",
+  "en": "Titanic Scarab of Treasures"
+ },
+ "torment-scarab": {
+  "cat": "Scarab",
+  "en": "Torment Scarab"
+ },
+ "torment-scarab-of-peculiarity": {
+  "cat": "Scarab",
+  "en": "Torment Scarab of Peculiarity"
+ },
+ "torment-scarab-of-possession": {
+  "cat": "Scarab",
+  "en": "Torment Scarab of Possession"
+ },
+ "toxic-tidings": {
+  "cat": "DivinationCard",
+  "en": "Toxic Tidings"
+ },
+ "tranquillity": {
+  "cat": "DivinationCard",
+  "en": "Tranquillity"
+ },
+ "transmutation-shard": {
+  "cat": "Currency",
+  "en": "Transmutation Shard"
+ },
+ "transmute": {
+  "cat": "Currency",
+  "en": "Orb of Transmutation"
+ },
+ "trarthan-scarab": {
+  "cat": "Scarab",
+  "en": "Trarthan Scarab"
+ },
+ "trarthan-scarab-of-infamy": {
+  "cat": "Scarab",
+  "en": "Trarthan Scarab of Infamy"
+ },
+ "trarthan-scarab-of-renown": {
+  "cat": "Scarab",
+  "en": "Trarthan Scarab of Renown"
+ },
+ "trarthan-scarab-of-surprising-alliances": {
+  "cat": "Scarab",
+  "en": "Trarthan Scarab of Surprising Alliances"
+ },
+ "traumatic-fragment": {
+  "cat": "Fragment",
+  "en": "Traumatic Fragment"
+ },
+ "treasure-hunter": {
+  "cat": "DivinationCard",
+  "en": "Treasure Hunter"
+ },
+ "triskaidekaphobia": {
+  "cat": "DivinationCard",
+  "en": "Triskaidekaphobia"
+ },
+ "turbulent-catalyst": {
+  "cat": "Currency",
+  "en": "Turbulent Catalyst"
+ },
+ "turn-the-other-cheek": {
+  "cat": "DivinationCard",
+  "en": "Turn the Other Cheek"
+ },
+ "tzamotos-ducat": {
+  "cat": "Ducat",
+  "en": "Tzamoto's Ducat"
+ },
+ "ukatoas-ducat": {
+  "cat": "Ducat",
+  "en": "Ukatoa's Ducat"
+ },
+ "ultimatum-scarab": {
+  "cat": "Scarab",
+  "en": "Ultimatum Scarab"
+ },
+ "ultimatum-scarab-of-bribing": {
+  "cat": "Scarab",
+  "en": "Ultimatum Scarab of Bribing"
+ },
+ "ultimatum-scarab-of-catalysing": {
+  "cat": "Scarab",
+  "en": "Ultimatum Scarab of Catalysing"
+ },
+ "ultimatum-scarab-of-dueling": {
+  "cat": "Scarab",
+  "en": "Ultimatum Scarab of Dueling"
+ },
+ "ultimatum-scarab-of-inscription": {
+  "cat": "Scarab",
+  "en": "Ultimatum Scarab of Inscription"
+ },
+ "unchained": {
+  "cat": "DivinationCard",
+  "en": "Unchained"
+ },
+ "underground-forest": {
+  "cat": "DivinationCard",
+  "en": "Underground Forest"
+ },
+ "unrequited-love": {
+  "cat": "DivinationCard",
+  "en": "Unrequited Love"
+ },
+ "unstable-catalyst": {
+  "cat": "Currency",
+  "en": "Unstable Catalyst"
+ },
+ "vaal": {
+  "cat": "Currency",
+  "en": "Vaal Orb"
+ },
+ "vaal-enshrouding-crystal": {
+  "cat": "EnshroudingCrystal",
+  "en": "Vaal Enshrouding Crystal"
+ },
+ "valdos-puzzle-box": {
+  "cat": "Fragment",
+  "en": "Valdo's Puzzle Box"
+ },
+ "vanity": {
+  "cat": "DivinationCard",
+  "en": "Vanity"
+ },
+ "veiled-chaos-orb": {
+  "cat": "Currency",
+  "en": "Veiled Chaos Orb"
+ },
+ "veiled-exalted-orb": {
+  "cat": "Currency",
+  "en": "Veiled Exalted Orb"
+ },
+ "verdant-oil": {
+  "cat": "Oil",
+  "en": "Verdant Oil"
+ },
+ "veritanias-crest": {
+  "cat": "Fragment",
+  "en": "Veritania's Crest"
+ },
+ "vile-power": {
+  "cat": "DivinationCard",
+  "en": "Vile Power"
+ },
+ "vinias-token": {
+  "cat": "DivinationCard",
+  "en": "Vinia's Token"
+ },
+ "violet-oil": {
+  "cat": "Oil",
+  "en": "Violet Oil"
+ },
+ "vivid-lifeforce": {
+  "cat": "Currency",
+  "en": "Vivid Crystallised Lifeforce"
+ },
+ "void-of-the-elements": {
+  "cat": "DivinationCard",
+  "en": "Void of the Elements"
+ },
+ "voidborn-reliquary-key": {
+  "cat": "Fragment",
+  "en": "Voidborn Reliquary Key"
+ },
+ "volatile-power": {
+  "cat": "DivinationCard",
+  "en": "Volatile Power"
+ },
+ "wailing-essence-of-anger": {
+  "cat": "Essence",
+  "en": "Wailing Essence of Anger"
+ },
+ "wailing-essence-of-contempt": {
+  "cat": "Essence",
+  "en": "Wailing Essence of Contempt"
+ },
+ "wailing-essence-of-doubt": {
+  "cat": "Essence",
+  "en": "Wailing Essence of Doubt"
+ },
+ "wailing-essence-of-fear": {
+  "cat": "Essence",
+  "en": "Wailing Essence of Fear"
+ },
+ "wailing-essence-of-hatred": {
+  "cat": "Essence",
+  "en": "Wailing Essence of Hatred"
+ },
+ "wailing-essence-of-rage": {
+  "cat": "Essence",
+  "en": "Wailing Essence of Rage"
+ },
+ "wailing-essence-of-sorrow": {
+  "cat": "Essence",
+  "en": "Wailing Essence of Sorrow"
+ },
+ "wailing-essence-of-spite": {
+  "cat": "Essence",
+  "en": "Wailing Essence of Spite"
+ },
+ "wailing-essence-of-suffering": {
+  "cat": "Essence",
+  "en": "Wailing Essence of Suffering"
+ },
+ "wailing-essence-of-torment": {
+  "cat": "Essence",
+  "en": "Wailing Essence of Torment"
+ },
+ "wailing-essence-of-woe": {
+  "cat": "Essence",
+  "en": "Wailing Essence of Woe"
+ },
+ "wailing-essence-of-wrath": {
+  "cat": "Essence",
+  "en": "Wailing Essence of Wrath"
+ },
+ "wailing-essence-of-zeal": {
+  "cat": "Essence",
+  "en": "Wailing Essence of Zeal"
+ },
+ "warlords-exalted-orb": {
+  "cat": "Currency",
+  "en": "Warlord's Exalted Orb"
+ },
+ "wealth-and-power": {
+  "cat": "DivinationCard",
+  "en": "Wealth and Power"
+ },
+ "weeping-essence-of-anger": {
+  "cat": "Essence",
+  "en": "Weeping Essence of Anger"
+ },
+ "weeping-essence-of-contempt": {
+  "cat": "Essence",
+  "en": "Weeping Essence of Contempt"
+ },
+ "weeping-essence-of-doubt": {
+  "cat": "Essence",
+  "en": "Weeping Essence of Doubt"
+ },
+ "weeping-essence-of-fear": {
+  "cat": "Essence",
+  "en": "Weeping Essence of Fear"
+ },
+ "weeping-essence-of-greed": {
+  "cat": "Essence",
+  "en": "Weeping Essence of Greed"
+ },
+ "weeping-essence-of-rage": {
+  "cat": "Essence",
+  "en": "Weeping Essence of Rage"
+ },
+ "weeping-essence-of-sorrow": {
+  "cat": "Essence",
+  "en": "Weeping Essence of Sorrow"
+ },
+ "weeping-essence-of-torment": {
+  "cat": "Essence",
+  "en": "Weeping Essence of Torment"
+ },
+ "weeping-essence-of-woe": {
+  "cat": "Essence",
+  "en": "Weeping Essence of Woe"
+ },
+ "weeping-essence-of-wrath": {
+  "cat": "Essence",
+  "en": "Weeping Essence of Wrath"
+ },
+ "when-currents-blaze": {
+  "cat": "DivinationCard",
+  "en": "When Currents Blaze"
+ },
+ "whetstone": {
+  "cat": "Currency",
+  "en": "Blacksmith's Whetstone"
+ },
+ "whispering-delirium-orb": {
+  "cat": "DeliriumOrb",
+  "en": "Whispering Delirium Orb"
+ },
+ "whispering-essence-of-greed": {
+  "cat": "Essence",
+  "en": "Whispering Essence of Greed"
+ },
+ "whispering-essence-of-woe": {
+  "cat": "Essence",
+  "en": "Whispering Essence of Woe"
+ },
+ "who-asked": {
+  "cat": "DivinationCard",
+  "en": "Who Asked"
+ },
+ "wild-lifeforce": {
+  "cat": "Currency",
+  "en": "Wild Crystallised Lifeforce"
+ },
+ "winters-embrace": {
+  "cat": "DivinationCard",
+  "en": "Winter's Embrace"
+ },
+ "wisdom": {
+  "cat": "Currency",
+  "en": "Scroll of Wisdom"
+ },
+ "zoraths-eye-of-authority": {
+  "cat": "Fragment",
+  "en": "Zorath's Eye of Authority"
+ },
+ "zoraths-eye-of-malevolence": {
+  "cat": "Fragment",
+  "en": "Zorath's Eye of Malevolence"
+ },
+ "zoraths-eye-of-the-endless": {
+  "cat": "Fragment",
+  "en": "Zorath's Eye of the Endless"
+ },
+ "zoraths-eye-of-the-inevitable": {
+  "cat": "Fragment",
+  "en": "Zorath's Eye of the Inevitable"
+ }
+}

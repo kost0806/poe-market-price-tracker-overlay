@@ -115,10 +115,52 @@ def icon_config(ko):
     print('       --parallel --parallel-max 8 -A "Mozilla/5.0" -K curl.cfg')
 
 
+def fetch_ninja():
+    """slug -> {en, cat} for every exchange category, saved as data/ninja-items.json.
+
+    The category half is the reason this is written out rather than kept in a local. It is the
+    only place either source states which category a slug belongs to, and the shipped catalogue
+    (build-item-catalog.py) cannot be regenerated without it -- the GGG static groups are GGG's
+    own and their entry ids are trade ids ("alt"), not poe.ninja slugs.
+
+    The first version of this script threw the categories away here, which is why the app could
+    ship 968 item names and still be unable to search for a scarab.
+    """
+    league = get(NINJA_LEAGUES)[0]["id"]
+    print(f"poe.ninja league: {league}")
+
+    ninja = {}
+    for category in CATEGORIES:
+        overview = get(NINJA_OVERVIEW.format(league=league, type=category))
+        for item in overview.get("items", []):
+            ninja[item["id"]] = {"en": item.get("name", ""), "cat": category}
+
+    (DATA / "ninja-items.json").write_text(
+        json.dumps(
+            {"generatedFor": league, "items": dict(sorted(ninja.items()))},
+            ensure_ascii=False,
+            indent=1,
+        ) + "\n",
+        encoding="utf-8",
+    )
+    print(f"wrote data/ninja-items.json: {len(ninja)} slugs over {len(CATEGORIES)} categories")
+    return league, ninja
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--icons", action="store_true", help="also write curl.cfg for the icon pull")
+    parser.add_argument(
+        "--catalog-only",
+        action="store_true",
+        help="fetch only the poe.ninja overviews (data/ninja-items.json) and leave the statics alone",
+    )
     args = parser.parse_args()
+
+    if args.catalog_only:
+        fetch_ninja()
+        print("\nnow run: python3 tools/build-item-catalog.py")
+        return 0
 
     print("fetching English static ...")
     en = get(EN_STATIC)
@@ -133,14 +175,7 @@ def main():
     names = build_name_map(en, ko)
     print(f"joined {len(names)} English names to Korean")
 
-    league = get(NINJA_LEAGUES)[0]["id"]
-    print(f"poe.ninja league: {league}")
-
-    ninja = {}
-    for category in CATEGORIES:
-        overview = get(NINJA_OVERVIEW.format(league=league, type=category))
-        for item in overview.get("items", []):
-            ninja[item["id"]] = {"en": item.get("name", ""), "cat": category}
+    league, ninja = fetch_ninja()
 
     resolved = {slug: names[meta["en"]] for slug, meta in sorted(ninja.items()) if meta["en"] in names}
     unresolved = [
