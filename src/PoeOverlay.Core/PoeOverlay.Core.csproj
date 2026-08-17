@@ -21,6 +21,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- FR-01-1 / D7 — the item catalogue travels beside the exe rather than inside the assembly.
+         It is regenerated whenever the league turns over (00-api-contract.md 6.8), and a user who
+         wants a newer one should be able to drop the file in. Same reasoning as the item icons
+         (HLD D23); the opposite of en.json below, which is a fallback floor and cannot be absent. -->
+    <None Update="Catalog\Catalog\item-catalog.json" Link="Catalog\item-catalog.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- S2 3.3 (D3): en.json is the floor of the fallback chain, so it ships twice — embedded in
          the assembly (level ③, which cannot be absent) and copied to Localization/ in the output
          (level ②, which a translator may edit). The link keeps the output path at
