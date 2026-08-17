@@ -954,6 +954,22 @@ sequenceDiagram
 | 이동 모드 진입 시 | **재검증한다.** 사용자가 이동 모드를 켰다는 것 자체가 위치 문제를 겪고 있다는 신호다 |
 | 명령 | 설정 창에 **"오버레이 위치·크기 초기화"** 를 둔다 (FR-08-3 목록, §6.0 내용) |
 
+### D23. 아이템 아이콘 — 매니페스트는 데이터, 픽셀은 `Shell` (신설, FR-04-6)
+
+시세 행이 이름 왼쪽에 아이콘을 그린다. 아이콘은 **빌드 타임에 받아 exe 옆에 놓는 로컬 파일**이며 런타임에 CDN을 치지 않는다(계약 A7·A8).
+
+| 쟁점 | 결정 | 근거 |
+|---|---|---|
+| 슬러그 → 파일명 매핑 | **생성해 커밋한다** — `tools/build-icon-manifest.py`가 `item-icons.json`을 쓴다. 조인 사슬은 이름 사전과 **같다**(계약 §6.3) | 같은 출처·같은 재생성 트리거(리그 교체)를 가진 두 산출물이 서로 다른 절차를 갖게 두면 하나만 갱신된다 |
+| **그 매핑을 어느 모듈이 갖는가** | **`Shell`.** `Core`에 아홉 번째 모듈을 만들지 않는다 | 소비자가 렌더러 하나뿐이고, 소비 형태가 **아트**다. §2.3 규칙 2("뷰모델에 픽셀이 없다")를 지키는 가장 싼 방법은 뷰모델에 아이콘을 태우지 않는 것이다 |
+| 뷰모델이 아이콘을 나르는가 | **아니다.** `PriceRowViewModel`은 지금 그대로 — 뷰가 `Id`로 아이콘을 고른다 | §6.3이 색을 다루는 방식과 같다: `Pricing`이 `Direction`을 주고 **브러시는 뷰가 고른다.** 아이콘도 슬러그를 받아 뷰가 고른다. 행 레코드는 여전히 브러시도 아이콘도 픽셀도 나르지 않는다 |
+| 배포 형태 | **exe 옆 `Icons/`** — 어셈블리에 넣지 않는다 | 5.3 MB이고 **리그마다 바뀐다.** 동봉 서체(D-SH22)와 반대 결정이며 이유도 반대다: 서체는 없으면 조용히 대체돼 앱의 목적이 무너지지만, 아이콘은 없으면 빈 칸이 남을 뿐이고 사용자가 폴더에 새 파일을 떨어뜨려 고칠 수 있어야 한다 |
+| 아이콘이 없는 아이템 | 점술 카드(392)는 **공용 카드 아이콘 한 장**, 그 밖의 결측은 **빈 칸을 유지** | 칸을 접으면 그 행만 이름이 왼쪽으로 밀려 목록의 세로선이 어긋난다 |
+| 읽기 실패 | 값으로 처리한다 — 아이콘 없이 행을 그리고 기록한다. 슬러그당 한 번만 시도한다 | 아이콘은 시세 표시의 전제가 아니다. 매 패스마다 없는 파일을 다시 열면 30초마다 같은 I/O를 반복한다 |
+| **컬러키** | 아이콘 픽셀이 키 색(`0x00FF00FF`)과 같으면 **구멍이 된다.** 675장 전수 스캔으로 0개를 확인했고, 생성기가 매번 다시 확인한다 | 【측정】 `00-shell-measurements.md` §14. §12.8 표의 마지막 행이 「현재 형상에서는 발생할 수 없다」고 적은 근거를 이 기능이 깬다 — 그 전제가 깨지는 첫 변경이다 |
+
+**설정 창에는 넣지 않는다.** 검색 결과와 관심목록에도 같은 아이콘을 놓을 수 있으나 요청은 오버레이였고, 두 표면은 잘리는 규칙(D19)도 폭 예산도 다르다. 넣고 싶어지면 그때 이 결정을 확장한다.
+
 ---
 
 ## 6. 화면 구성과 표시 규칙
@@ -1006,12 +1022,12 @@ sequenceDiagram
 │ ⚠ 리그를 확인할 수 없습니다.                   │ ← 배너: LeagueUnresolved,
 │   트레이에서 설정을 여세요                     │    PollingStopped, SettingsCorrupt 등
 ├───────────────────────────────────────────────┤    상태가 있을 때만 나타난다
-│ Vivid Crystallised Lifeforce                  │
+│ ▣ Vivid Crystallised Lifeforce                │
 │                     1d당 3,040개      ▲30.5%  │ ← 시세 행 영역
-│ Essence of Horror          43.5c       ▼6.2%  │    유일하게 잘릴 수 있는 구간
-│ Horned Scarab of Pandemonium                  │    스크롤 없음, 클릭 없음
+│ ▣ Essence of Horror        43.5c       ▼6.2%  │    유일하게 잘릴 수 있는 구간
+│ ▣ Horned Scarab of Pandemonium                │    스크롤 없음, 클릭 없음
 │                     359.7c (1.85d)     ▲2.9%  │
-│ Sacred Crystallised Lifeforce   갱신 실패 12분 │
+│ ▣ Sacred Crystallised Lifeforce 갱신 실패 12분 │
 │ 외 3개 더                                      │ ← 넘칠 때만. 높이를 먼저 예약한다
 ├───────────────────────────────────────────────┤
 │ 최근 갱신 2분 전      ⚠ 1개 카테고리 갱신 실패 │ ┐
@@ -1019,6 +1035,8 @@ sequenceDiagram
 └───────────────────────────────────────────────┘
    전 영역 클릭 통과. 이동 모드에서만 안쪽 테두리와 그립 표시
    루트 트리는 전 구간 Auto 행 — ScrollViewer 나 Height 별표 행 금지 (D19)
+   ▣ = 아이템 아이콘 (FR-04-6, D23). 아이콘 칸은 폭이 고정이며
+      아이콘이 없어도 접지 않는다 — 접으면 그 행만 이름이 왼쪽으로 밀린다
 ```
 
 **변동률** (`lines[].sparkline.totalChange`)
@@ -1149,6 +1167,7 @@ sequenceDiagram
 | FR-04-3 | 표시통화 auto/chaos/divine | `Pricing`(§6.2) + `Settings` + `SettingsViewModel` | S2, S3 |
 | FR-04-4 | 5행 표기 규칙 | `Pricing` **단독** (§6.1) | S2 |
 | FR-04-5 | 환산 정밀도 | `Pricing`(`primaryValue ÷ divine.primaryValue`) + `Market`(`core.rates` 역수 금지). **`valueAlt`는 raw에 부재** | S2 |
+| FR-04-6 | **아이템 아이콘** | `Shell` **단독** (D23) — 매니페스트·비트맵 캐시·XAML 칸. `Core`는 관여하지 않으며 `PriceRowViewModel`도 바뀌지 않는다. 생성기는 `tools/build-icon-manifest.py` | S3 |
 | FR-05-1 | Topmost | `Shell` (D4-a) | S3 |
 | FR-05-2 | **전체 클릭 통과** | `Shell` — `WS_EX_TRANSPARENT` 상시 (D4-a) | S3 |
 | FR-05-3 | 절대 포커스 없음 | `Shell` — `WS_EX_NOACTIVATE` **상시, 이동 모드 포함**. 【측정】 캡처가 정상 동작하므로 예외 조항 없음 (D4-b) | S3 |
@@ -1193,6 +1212,7 @@ sequenceDiagram
 | 테스트 | xUnit — `Pricing`(§6.1 5행, §6.2 폴백, 상대 시각), `Market` 매핑(`core.items` 조인, D8 구조 검사), `Polling`(D8 문맥 검사, epoch 거부, 하트비트 임계), `Settings` 직렬화·검증·격리 | §7 / G3 |
 | WPF 진입점 | `EnableDefaultApplicationDefinition=false` + `StartupObject` | §3.2 |
 | 매니페스트 | `app.manifest`에 PerMonitorV2 DPI | D4-e |
+| **아이템 아이콘** | `data/images/*.png`를 **`Content` + `PreserveNewest`로 exe 옆 `Icons/`에 복사**한다. 어셈블리에 넣지 않고, `src/` 안으로 복사해 두지도 않는다 | D23. 5.3 MB이고 리그마다 바뀐다. 취득 도구(`fetch-ko-sources.py`)가 쓰는 곳이 `data/images/`이므로, 프로젝트 안에 사본을 두면 같은 바이트가 리그마다 두 번씩 저장소에 쌓인다. 생성물인 `item-icons.json`만 프로젝트 안에 커밋한다 — `ko.json`과 같은 규칙 |
 | OxyPlot·SQLite·AngleSharp | **참조하지 않음** | 1차 범위에서 불필요 |
 
 ---

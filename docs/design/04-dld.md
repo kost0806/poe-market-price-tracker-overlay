@@ -242,7 +242,13 @@ NoWarn의 WFAC010은 net8.0(비 Windows) 프로젝트에는 의미가 없는 경
 
 ### 2.4 테스트 프로젝트
 
-tests/PoeOverlay.Core.Tests(net8.0, xunit + xunit.runner.visualstudio + Microsoft.Extensions.TimeProvider.Testing의 FakeTimeProvider)만 둔다. Shell 전용 테스트 프로젝트는 만들지 않는다 — S2 11절 "S3 로직은 테스트하지 않는다. Core 전용 테스트 프로젝트가 도달할 수 없다"를 그대로 받아들인다(S3 13-31이 재확인). Presentation은 net8.0이므로 이 프로젝트가 도달 가능하고, 9.2절(파생 조건 순수 함수)과 뷰모델 로직 중 UI 비의존 부분은 여기서 검증한다(16절).
+tests/PoeOverlay.Core.Tests(net8.0, xunit + xunit.runner.visualstudio + Microsoft.Extensions.TimeProvider.Testing의 FakeTimeProvider)가 주 테스트 프로젝트다. Presentation은 net8.0이므로 이 프로젝트가 도달 가능하고, 9.2절(파생 조건 순수 함수)과 뷰모델 로직 중 UI 비의존 부분은 여기서 검증한다(16절).
+
+**정정 (2026-08-17).** 초판은 여기에 "Shell 전용 테스트 프로젝트는 만들지 않는다 — S2 11절을 그대로 받아들인다(S3 13-31이 재확인)"고 적었으나, **`tests/PoeOverlay.Shell.Tests`(net8.0-windows, `UseWPF`+`UseWindowsForms`)는 이미 존재하며 16.10절이 그것을 전제로 서술한다.** 문서 두 곳이 서로를 반박하고 있었고, 반박당한 쪽은 이 절이다 — 서체 리소스·`ClippingRowsPanel`·`OverlayGeometryValidator`·`InstanceSignal`처럼 **Core.Tests가 타입 수준에서 도달할 수 없는** 것들이 실제로 검증되고 있다. 원래 문장의 논거("Core 전용 테스트가 도달할 수 없다")는 **Shell 테스트를 만들지 않을 이유가 아니라 만들 이유**였다.
+
+기준은 이렇게 다시 적는다: **Shell 테스트는 순수 로직과 자산(asset)만 다룬다.** HWND·메시지 펌프·실제 렌더링을 요구하는 것은 여전히 테스트하지 않으며(그것이 `00-shell-measurements.md`의 프로브가 하는 일이다), 계산이 net8.0으로 내려갈 수 있으면 Core.Tests에 둔다.
+
+**빌드와 실행은 갈린다** 【확인 2026-08-17, Linux 컨테이너 · SDK 8.0.424】. `net8.0-windows` + `UseWPF` 프로젝트는 **Linux에서 컴파일된다** — `dotnet build -p:EnableWindowsTargeting=true`가 참조 어셈블리를 받아 오며, XAML 마크업 컴파일까지 통과한다. **실행은 안 된다**: `Microsoft.WindowsDesktop.App` 런타임은 Linux 빌드가 존재하지 않으므로 `dotnet test`는 "No frameworks were found"로 중단한다. 즉 **비-Windows 환경에서도 Shell의 타입 오류·XAML 오류는 잡히고, Shell 테스트의 통과 여부는 잡히지 않는다.** 이 구별을 적어 두는 이유는 "빌드했다"를 "검증했다"로 읽는 일을 막기 위해서다.
 
 ### 2.5 tools/ — 빌드 타임 생성기 (신규 D-DL25)
 
@@ -252,9 +258,23 @@ tests/PoeOverlay.Core.Tests(net8.0, xunit + xunit.runner.visualstudio + Microsof
 tools/
   build-ko-dictionary.py     data/statics.json + data/statics.en.json + data/ko-items.json
                              + tools/ko-ui.json  →  src/.../Localization/Localization/ko.json
+  build-icon-manifest.py     data/statics.json + data/ko-items.json + data/images/
+                             →  src/PoeOverlay.Shell/Icons/item-icons.json     (신규 D-DL27)
   fetch-ko-sources.py        두 static 응답과 아이콘을 다시 받는다. 네트워크가 필요한 유일한 스크립트
   ko-ui.json                 ui.* 한글 문구의 정본. 손으로 쓴다 — 외부 출처가 없다
 ```
+
+**재생성 순서는 셋 다 한 줄로 이어진다**: `fetch-ko-sources.py --icons` → `curl -K curl.cfg` → `build-ko-dictionary.py` → `build-icon-manifest.py`. 앞의 둘이 `data/`를 채우고 뒤의 둘이 `src/` 안의 두 생성물을 쓴다.
+
+**`build-icon-manifest.py`가 쓰기를 거부하는 조건** — `build-ko-dictionary.py`와 같은 성격이다. 아래 중 하나라도 걸리면 아무것도 쓰지 않고 그 목록을 낸다.
+
+| 검사 | 이 검사가 없으면 |
+|---|---|
+| 매니페스트의 모든 값이 `data/images/`에 실제로 있다 | 화면에서만 조용히 빈 칸이 된다 |
+| 한 한글 이름이 서로 다른 아이콘 둘 이상에 걸리지 않는다 | 셋 중 하나를 임의로 골라 **틀린 그림**을 그린다. 실측: `지도 (N등급)` 16개 이름이 그렇고, 현재 슬러그 집합은 그중 어느 것에도 닿지 않는다 |
+| 참조된 아이콘에 컬러키(`#FF00FF`) 불투명 픽셀이 없다 | 화면에 구멍이 뚫리고 그 모양대로 클릭이 통과한다(`00-shell-measurements.md` §14) |
+| 점술 카드 슬러그가 전부 공용 카드 아이콘에 매핑된다 | 절반이 빈 칸으로 남는다 — 968 중 392다 |
+| 값에 경로 구분자·`..`가 없다 | 읽는 쪽이 `Icons/` 밖을 열게 된다 |
 
 | 결정 | 근거 |
 |---|---|
@@ -1728,7 +1748,7 @@ internal sealed class OverlayHost : IDisposable
 
 public sealed partial class OverlayView : UserControl
 {
-    public OverlayView(OverlayViewModel viewModel);
+    internal OverlayView(OverlayViewModel viewModel, ItemIconSource icons);   // icons: FR-04-6, S3 §4.10
     internal void AttachRowsPanel(ClippingRowsPanel panel);   // ClippingRowsPanel이 시각 트리를 거슬러 올라와 부른다
     internal void Detach();
 }
@@ -1743,6 +1763,38 @@ public sealed partial class SettingsWindow : Window
 }
 ```
 두 창의 XAML 마크업 자체는 이 문서의 범위 밖이다(구역 확정은 S3 5.4) — 코드비하인드 생성자 시그니처만 확정한다. ExtendedStyleGate.Factory는 `public delegate ExtendedStyleGate Factory(IntPtr hwnd);` — `Show()` 시점에야 HWND가 존재하므로 생성자 주입이 아니라 팩터리로 지연시킨다.
+
+### 12.7 아이템 아이콘 — 시그니처 확정 (신규 D-DL27, FR-04-6 / HLD D23 / S3 §4.10)
+
+```
+internal sealed class ItemIconSource
+{
+    internal const string ManifestFileName = "item-icons.json";
+
+    internal ItemIconSource(string iconDirectory, ILogger<ItemIconSource> logger);
+
+    internal int MappedCount { get; }                 // 매니페스트 항목 수. 로드되기 전에는 -1
+    internal ImageSource? Resolve(ItemId id);         // UI 스레드 전용. 실패도 캐시한다
+}
+
+internal sealed class ItemIconConverter : IValueConverter
+{
+    internal const string ResourceKey = "ItemIcon";   // OverlayView가 Resources에 넣는 키. XAML이 같은 문자열을 쓴다
+
+    internal ItemIconConverter(ItemIconSource source);
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture);
+    public object ConvertBack(...);                   // NotSupportedException. 단방향이다
+}
+
+internal sealed record AppPaths(string AppDataDirectory, string LogDirectory,
+                                string LocalizationDirectory, string IconDirectory);   // IconDirectory 추가
+```
+
+**생성자가 `internal`인 이유.** `OverlayView`는 XAML이 만드는 절반 때문에 `public`이고, `ItemIconSource`는 다른 `Shell` 타입과 같이 `internal`이다. `public` 생성자가 `internal` 매개변수를 받을 수 없으므로(CS0051) 생성자만 `internal`로 내린다 — 이 뷰를 만드는 것은 `OverlayHost` 하나뿐이라 잃는 것이 없다.
+
+**매니페스트 형식.** `Dictionary<string, string>` 하나 — 슬러그 → 파일명. `ko.json`과 같은 이유로 평평하다(`JsonSerializerContext` 소스 생성이 그대로 받는다). 값에 경로 구분자가 들어 있으면 **그 항목을 버린다** — 매니페스트는 `Icons/` 안의 파일 이름만 가리키며, `..`로 폴더를 벗어나는 값은 생성기의 결함이지 읽는 쪽이 따라야 할 지시가 아니다.
+
+**`ItemIconConverter`를 `Resources`에 넣는 시점.** `OverlayView` 생성자가 `InitializeComponent()` **뒤**, `DataContext` 대입 **앞**에 넣는다. `DataTemplate` 안의 `{StaticResource}`는 지연 해석이므로 이 순서면 행이 처음 만들어질 때 이미 있다. 정적 필드로 두지 않는다 — 뷰 하나에 캐시 하나가 붙으면 뷰가 사라질 때 비트맵도 같이 사라진다.
 
 **`Application.Run()`에 메인 창을 넘기지 않는다.** 넘길 `Window`가 없다. `ShutdownMode = OnExplicitShutdown`이므로 펌프는 트레이의 Exit가 `Shutdown()`을 부를 때까지 돈다(FR-08-4). 종료 순서(S3 3.3-a)에 `OverlayHost.Dispose()`가 추가된다 — 부모 HWND·클래스 등록·컬러키 브러시는 프레임워크가 아니라 이 프로세스의 자원이다.
 
@@ -2058,6 +2110,9 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | **서체(확정)** | `pack://application:,,,/Fonts/#Pretendard` — Regular + SemiBold, 어셈블리 동봉, 전 한글 커버리지, SIL OFL 1.1(`Fonts/OFL.txt` 동봉) | 신규 **D-SH22**(S3 §4.9). **크기와 달리 잠정이 아니다** — 서체는 여기서 닫히고, 아래 두 행(크기·팔레트)만 §14-12 실험에 남는다 |
 | 푸터 폰트 크기(잠정) | 12px | 신규, 잠정 — `00-shell-measurements.md` §8이 측정한 10/11/12/14px 중 중간값. `HasMinimumVisibleArea(..., Size footerSize)`의 실입력이 지금 필요하므로 임시로 확정한다. **결정 주체·시점(G3)**: 구현 담당자가 실물 1차 사용성 확인(S3 §14 항목12가 요구하는 체감 판독성 검증) 직후 교체 — 팔레트 확정과 같은 실험에 묶는다, 별도 절차를 새로 만들지 않는다 |
 | 오버레이 색 팔레트(컬러키 제외) | 잠정 — 흰색 주 텍스트/회색 보조/상승 녹색/하락 적색(시스템 기본 계열, 정확한 헥스값 미정) | 신규, 잠정 — 팔레트 값 자체는 여전히 §19.5가 의도적으로 열어 둔 자리다. 이 행은 "값이 아예 없다"는 지적(G3)에 대해 실험 전까지 쓸 수 있는 자리표시자를 준 것이지, §19.5의 유예를 철회한 것이 아니다 |
+| **아이콘 상자(잠정)** | **16 × 16 DIP**, 이름과의 간격 5 DIP, `Stretch=Uniform`, `BitmapScalingMode=HighQuality` | 신규 **D-DL27**(FR-04-6, S3 §4.10). **잠정** — 위의 폰트 크기 행과 **같은 이유로 같은 실험(§14-12)에 묶인다.** 12px 텍스트의 줄 상자와 이 상자 중 어느 쪽이 큰지 재지 못했고(`00-shell-measurements.md` §14.5), 그 답이 행 높이를 정한다. `Stretch`와 스케일링 모드는 잠정이 **아니다** — §14.4의 컬러키 논증이 볼록 커널을 전제하므로 바꾸려면 그 절을 먼저 다시 읽어야 한다 |
+| 아이콘 폴더 | exe 옆 `Icons/` (`AppContext.BaseDirectory`) + 매니페스트 `item-icons.json` | 신규 D-DL27, HLD D23·§9 |
+| 아이콘 원본 크기 | 대부분 48×48(675장 중 633장), 그 밖에 46×46·95×95·48×95·143×48 | 신규 — 【실측 2026-08-17】 `data/images/` 전수 |
 
 ### 15.2 폴링·주기
 
@@ -2270,6 +2325,17 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 **`FontFamily("pack://application:,,,/Fonts/#Pretendard")`로는 단언할 수 없다** 【측정】. 그 URI는 `Application.ResourceAssembly`를 기준으로 풀리고 그것은 **진입 어셈블리**인데, 테스트 호스트에서는 러너다. 세터는 1회성이며 테스트 본문이 도는 시점에는 이미 확정돼 있어 `InvalidOperationException`을 던진다. 따라서 테스트는 **리소스 바이트**를 검증하고, XAML이 실제로 그 URI를 해석하는지는 **실행 중 화면 캡처**로 확인한다(`00-shell-measurements.md` §13). 둘 중 하나만으로는 부족하다 — 전자는 XAML 오타를, 후자는 회귀를 놓친다.
 
 **함정 두 개** 【측정】. `GlyphTypeface`는 URI로만 열리므로 리소스를 파일로 풀어야 하는데, ① WPF는 **폴더의 목록을 첫 접근 시 캐시**한다 — 한 얼굴을 연 뒤 같은 폴더에 두 번째 파일을 쓰면 그것을 여는 순간 래스터라이저 내부에서 `NullReferenceException`이 난다. 전부 먼저 풀고 나서 열어야 한다. ② WPF는 파일을 **프로세스 수명 내내 매핑한 채로 둔다** — 테스트마다 지우거나 덮어쓰면 각각 `NullReferenceException`과 "매핑된 구역이 열린 파일" IOException이 된다. 어느 쪽도 원인을 말해 주지 않는다.
+
+### 16.11 Shell — 아이템 아이콘 (D-SH23 / D-DL27, 신규)
+
+| 파일 | 대응 절 | 내용 |
+|---|---|---|
+| Overlay/ItemIconSourceTests.cs | S3 4.10.2 | ① 매니페스트에 있고 파일도 있으면 **동결된 `ImageSource`**를 준다. ② 매니페스트에 없는 슬러그는 `null`. ③ 파일이 없는 항목은 `null`이며 **그 뒤 파일을 만들어 두고 다시 물어도 여전히 `null`**(실패 캐시가 실제로 캐시임을 관측 가능한 상태로 단언한다 — "한 번만 시도한다"를 호출 횟수 세기로 확인하면 S2 11절이 금지한 목 단언이 된다). ④ 매니페스트가 없으면 `MappedCount == 0`이고 모든 조회가 `null`이며 예외가 새지 않는다. ⑤ 깨진 JSON도 같다. ⑥ 값에 `/`·`\`·`..`가 든 항목은 **버려진다** |
+| Overlay/ItemIconManifestTests.cs | S3 4.10 / 계약 §6.6 | **출하된 출력물**을 읽어 ① 매니페스트가 가리키는 파일이 전부 `Icons/`에 복사돼 있고(= csproj의 와일드카드가 실제로 동작했고), ② 값이 전부 평평한 파일명이며, ③ 300개 넘는 슬러그가 공용 카드 아이콘을 가리키고, ④ **매니페스트의 슬러그 집합이 `ko.json`의 비-`ui.` 키 집합과 정확히 같은지** 단언한다. 생성기의 검사와 겹치지만 **다른 시점**을 지킨다 — 생성기는 쓸 때, 이 테스트는 손으로 고친 뒤·잘못 병합한 뒤를 잡는다 |
+
+**④가 이 표에서 가장 값어치 있는 단언이다.** 두 생성물은 같은 조인(계약 §6.3)에서 나오고 같은 계기(리그 교체)로 재생성된다. 현실적인 실수는 "매니페스트가 틀렸다"가 아니라 **"이름만 재생성하고 아이콘을 잊었다"** 이며, 어느 파일도 혼자서는 그것을 알 수 없다. 항목 수를 상수로 박지 않는 이유도 같다 — 968은 리그마다 바뀌는 값이라 매번 손대야 하고, 손대는 단언은 곧 지워진다.
+
+**컬러키 스캔은 여기 두지 않는다.** 픽셀 전수 검사는 생성기(`build-icon-manifest.py`)가 하며, 그 결과는 `00-shell-measurements.md` §14에 있다. 같은 검사를 C#으로 다시 쓰면 675장을 매 테스트 실행마다 디코드하게 되고, 정작 지켜야 할 시점(아이콘이 **새로 들어오는** 시점)은 생성기 쪽이다.
 
 ### 16.8 공통 규약
 

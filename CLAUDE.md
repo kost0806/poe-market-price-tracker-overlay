@@ -8,7 +8,7 @@ The chain, from authority downward:
 
 | Document | Role |
 |---|---|
-| `docs/REQUIREMENTS.md` | What the app must do. 42 requirement IDs. The authority for scope. |
+| `docs/REQUIREMENTS.md` | What the app must do. 43 requirement IDs. The authority for scope. |
 | `docs/design/00-api-contract.md` | The measured poe.ninja contract. **Binding.** |
 | `docs/design/00-shell-measurements.md` | Measured Win32/rendering facts. **Binding — outranks every design claim.** |
 | `docs/design/01-hld.md` | Architecture and settled decisions D1–D22. |

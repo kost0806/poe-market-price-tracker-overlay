@@ -63,15 +63,43 @@
                         <DataTemplate DataType="{x:Type rows:PriceRowViewModel}">
                             <Grid Margin="0,1">
                                 <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
                                     <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
-                                <TextBlock Grid.Column="0"
+
+                                <!-- The icon (FR-04-6, S3 4.10). The row carries a slug, not a
+                                     picture: the view picks the image from Id exactly as the
+                                     column beside it picks a brush from Change.Direction, so
+                                     PriceRowViewModel still carries no brush, no icon, no pixel.
+
+                                     Width and Height are fixed and the column is never collapsed.
+                                     An Image with a null Source still occupies its Width, which is
+                                     the point — roughly 40% of the catalogue (every divination
+                                     card bar the shared art, plus anything the manifest misses)
+                                     would otherwise start its name 21px further left than the row
+                                     above it.
+
+                                     BitmapScalingMode is not decoration. The colour-key argument in
+                                     00-shell-measurements.md 14.4 — that downscaling cannot invent
+                                     a #FF00FF pixel and therefore cannot punch a click-through
+                                     hole — holds because Fant and bilinear are convex kernels. A
+                                     sharpening filter would overshoot and void it. -->
+                                <Image Grid.Column="0"
+                                       Width="16"
+                                       Height="16"
+                                       Margin="0,0,5,0"
+                                       VerticalAlignment="Center"
+                                       Stretch="Uniform"
+                                       RenderOptions.BitmapScalingMode="HighQuality"
+                                       Source="{Binding Id, Mode=OneWay, Converter={StaticResource ItemIcon}}" />
+
+                                <TextBlock Grid.Column="1"
                                            Text="{Binding DisplayName}"
                                            Foreground="#FFEDEDED"
                                            TextTrimming="CharacterEllipsis" />
-                                <TextBlock Grid.Column="1"
+                                <TextBlock Grid.Column="2"
                                            Text="{Binding Price.Text}"
                                            Foreground="#FFEDEDED"
                                            Margin="8,0,0,0" />
@@ -85,7 +113,7 @@
                                      HLD 6.3 puts the glyph and the number in Pricing and the colour
                                      in the View for exactly this reason — telling Flat from Unknown
                                      by comparing text breaks on a language change. -->
-                                <TextBlock Grid.Column="2"
+                                <TextBlock Grid.Column="3"
                                            Text="{Binding Change.Text, Mode=OneWay}"
                                            Margin="8,0,0,0">
                                     <TextBlock.Style>

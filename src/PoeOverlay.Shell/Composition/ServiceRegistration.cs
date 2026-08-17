@@ -157,11 +157,18 @@ internal static class ServiceRegistration
         services.AddSingleton<MessageOnlyWindowFactory>();
         services.AddSingleton<LayeredHostWindowFactory>();
 
+        // The icon source reads nothing until the first row asks for a picture (S3 4.10.2), so it
+        // is not a hosted service and adds no step to the boot sequence.
+        services.AddSingleton(sp => new ItemIconSource(
+            paths.IconDirectory,
+            sp.GetRequiredService<ILogger<ItemIconSource>>()));
+
         services.AddSingleton(sp => new OverlayHost(
             sp.GetRequiredService<OverlayViewModel>(),
             sp.GetRequiredService<ExtendedStyleGate.Factory>(),
             sp.GetRequiredService<LayeredHostWindowFactory>(),
             sp.GetRequiredService<ISettingsSource>(),
+            sp.GetRequiredService<ItemIconSource>(),
             sp.GetRequiredService<ILogger<OverlayHost>>()));
 
         services.AddSingleton(sp => new OverlayModeService(

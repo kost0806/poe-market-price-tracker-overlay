@@ -8,6 +8,9 @@ with a league and the slugs listed in data/ko-items.meta.json stop being unresol
     python3 tools/fetch-ko-sources.py            # statics + ko-items.json
     python3 tools/fetch-ko-sources.py --icons    # also writes curl.cfg for the icon pull
 
+Then rebuild both committed artefacts: build-ko-dictionary.py (names) and
+build-icon-manifest.py (icons). They read what this script wrote and need no network.
+
 Two things about the endpoints, both measured (00-api-contract.md 6.1):
 
   * poe.game.daum.net is a 301. Follow it or you get 167 bytes of HTML. urllib follows
@@ -31,6 +34,9 @@ KO_STATIC = "https://poe.kakaogames.com/api/trade/data/static"
 NINJA_LEAGUES = "https://poe.ninja/poe1/api/economy/leagues"
 NINJA_OVERVIEW = "https://poe.ninja/poe1/api/economy/exchange/current/overview?league={league}&type={type}"
 CDN = "https://web.poecdn.com"
+# The shared divination card icon. Measured 2026-08-17: 200, 78x78 RGBA PNG.
+# The /gen/image/ form of the same art answers 404 (00-api-contract.md 6.6).
+CARD_ICON_URL = "https://web.poecdn.com/image/Art/2DItems/Divination/InventoryIcon.png"
 
 HEADERS = {
     "User-Agent": (
@@ -98,8 +104,13 @@ def icon_config(ko):
         name = base if counts[base] == 1 else f"{base[:-4]}__{segments[-2]}.png"
         lines.append(f'url = "{CDN}{path}"\noutput = "data/images/{name}"')
 
+    # The 676th. Divination cards carry no `image` at all -- they share one icon in game
+    # (00-api-contract.md 6.6) -- so this one comes from the raw art path rather than /gen/image,
+    # which 404s for it. Without it 392 of 968 slugs render with a blank slot.
+    lines.append(f'url = "{CARD_ICON_URL}"\noutput = "data/images/DivinationCard.png"')
+
     (ROOT / "curl.cfg").write_text("\n".join(lines) + "\n", encoding="utf-8")
-    print(f"wrote curl.cfg for {len(paths)} icons. Now run:")
+    print(f"wrote curl.cfg for {len(paths)} icons + the shared divination card icon. Now run:")
     print("  curl -sS --fail --create-dirs --retry 3 --connect-timeout 20 --max-time 60 \\")
     print('       --parallel --parallel-max 8 -A "Mozilla/5.0" -K curl.cfg')
 
@@ -169,6 +180,7 @@ def main():
         icon_config(ko)
 
     print("\nnow run: python3 tools/build-ko-dictionary.py")
+    print("then:    python3 tools/build-icon-manifest.py")
     return 0
 
 

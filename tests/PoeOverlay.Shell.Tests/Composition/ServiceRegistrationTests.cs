@@ -34,7 +34,11 @@ public sealed class ServiceRegistrationTests : IDisposable
     {
         var logs = Path.Combine(_root, "logs");
         _ = Directory.CreateDirectory(logs);
-        _paths = new AppPaths(_root, logs, Path.Combine(_root, "Localization"));
+        _paths = new AppPaths(
+            _root,
+            logs,
+            Path.Combine(_root, "Localization"),
+            Path.Combine(_root, "Icons"));
         _diagnostics = BootDiagnostics.Open(_paths);
     }
 

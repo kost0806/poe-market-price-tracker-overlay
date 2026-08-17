@@ -26,6 +26,25 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- FR-04-6 / HLD D23 — the item icons travel beside the exe, not inside it. 5.3 MB of art
+         that is regenerated whenever the league turns over, and a user who wants a newer set
+         should be able to drop the files into Icons/ rather than rebuild. That is the opposite
+         of the typeface decision above (D-SH22) because the consequence is the opposite: a
+         missing icon leaves a blank slot, a missing font silently changes every glyph.
+
+         The PNGs are referenced where the fetch tool writes them (data/images/, curl.cfg's
+         output paths) instead of being copied into this project. A copy here would put the same
+         5.3 MB into the repository a second time, and again at every league. Only the generated
+         manifest — the small file, the one build-icon-manifest.py produces — is committed under
+         this project, exactly as ko.json is committed under Core. -->
+    <Content Include="Icons\item-icons.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\data\images\*.png"
+             Link="Icons\%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest"
+             Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\PoeOverlay.Core\PoeOverlay.Core.csproj" />
   </ItemGroup>
 

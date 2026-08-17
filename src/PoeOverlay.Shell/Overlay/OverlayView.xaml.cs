@@ -38,12 +38,29 @@ public sealed partial class OverlayView : UserControl
 
     /// <summary>Builds the view and binds it.</summary>
     /// <param name="viewModel">The display state. Attached to the fan-out by the composition root.</param>
-    public OverlayView(OverlayViewModel viewModel)
+    /// <param name="icons">Resolves a row's slug to its picture (FR-04-6, S3 4.10).</param>
+    /// <remarks>
+    /// The icon converter goes into this view's resources after <c>InitializeComponent</c> — which
+    /// is what fills <see cref="System.Windows.FrameworkElement.Resources"/> from the XAML — and
+    /// before the <c>DataContext</c> that makes rows appear. A <c>{StaticResource}</c> inside a
+    /// <c>DataTemplate</c> is resolved when the template is instantiated, not when the file is
+    /// parsed, so by the time the first row asks for the key it is there.
+    /// </remarks>
+    /// <remarks>
+    /// <para>
+    /// <c>internal</c>, not <c>public</c>: <see cref="ItemIconSource"/> is internal like every other
+    /// Shell type, and a public constructor cannot take one. The class itself stays public because
+    /// the XAML-generated half is.
+    /// </para>
+    /// </remarks>
+    internal OverlayView(OverlayViewModel viewModel, ItemIconSource icons)
     {
         ArgumentNullException.ThrowIfNull(viewModel);
+        ArgumentNullException.ThrowIfNull(icons);
 
         _viewModel = viewModel;
         InitializeComponent();
+        Resources[ItemIconConverter.ResourceKey] = new ItemIconConverter(icons);
         DataContext = viewModel;
     }
 
