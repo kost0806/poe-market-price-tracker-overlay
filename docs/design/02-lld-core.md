@@ -1452,6 +1452,43 @@ match(id, apiName) := id.Value.Contains(q, OrdinalIgnoreCase)
 
 ---
 
+### 6.8 동봉 아이템 카탈로그 — `Store` 밖의 정적 표 (신규 D-C24, FR-01-1 / D7 개정)
+
+`ItemCatalog`는 `PoeOverlay.Core.Catalog`의 작은 타입이며 **`Store`의 일부가 아니다.** 6.7절의 교차 검색은 캐시를 그대로 뒤지고, 카탈로그는 `Presentation`이 따로 뒤져 병합한다(S3 §5.4.6). 그렇게 가르는 이유는 셋이고 전부 이미 있는 제약이다.
+
+| 이유 | |
+|---|---|
+| 매칭에 지역화 이름이 필요하다 | `Store`는 `Localization`을 참조하지 않는다(1.2절). 캐시 검색이 그 때문에 `SearchOptions.ExtraMatch`로 술어를 주입받고 있고, 카탈로그 매칭은 **그 술어가 하는 일 그 자체**다 |
+| 태그가 붙지 않는다 | `Store`의 두 슬롯은 `(league, dataEpoch)`로 태그되고 그 규율이 D7·D18-b의 근거다. 카탈로그는 리그와 무관한 파일이라 태그할 것이 없고, 태그 없는 세 번째 슬롯은 그 규율을 흐린다 |
+| 파일 I/O | `Store`에는 파일 I/O가 없다. 이 표 하나 때문에 생기게 할 이유가 없다 |
+
+```
+namespace PoeOverlay.Core.Catalog;
+
+public sealed record CatalogEntry(ItemId Id, ExchangeCategory Category, string EnglishName);
+
+public sealed class ItemCatalog
+{
+    public const string FileName = "item-catalog.json";
+
+    public ItemCatalog(string catalogDirectory, ILogger<ItemCatalog> logger);
+
+    public int Count { get; }                          // 로드 전에는 -1 (ItemIconSource와 같은 규약)
+    public IReadOnlyList<CatalogEntry> Entries { get; } // 첫 접근에 1회 로드. 실패하면 빈 목록
+    public bool TryGet(ItemId id, out CatalogEntry entry);
+}
+```
+
+| 규칙 | 이유 |
+|---|---|
+| **첫 접근에 지연 로드**한다. `IHostedService`가 아니다 | `ItemIconSource`와 같은 논거(S3 4.10.2): 기동 순서에 항목을 더할 이유가 없고, 검색 창을 한 번도 열지 않는 실행에서는 읽지 않는다 |
+| 파일이 없거나 깨졌으면 **빈 카탈로그**로 산다 | 관측 가능한 결과는 "검색이 개정 전처럼 캐시만 뒤진다"이며, 앱은 죽지 않는다. `Warning` 1줄(D15) |
+| 알 수 없는 `cat` 값은 **그 항목만 버린다** | 생성기가 이미 막지만(계약 §6.8.2), 사용자가 파일을 갈아 끼울 수 있는 자리다(D23과 같은 성질) |
+| 예외는 형식을 열거해 잡는다 — `IOException` · `JsonException` · `UnauthorizedAccessException` | `catch (Exception)`은 CA1031로 오류다(2.2절). `SettingsStore`·`ItemIconSource`와 같은 목록 |
+| `Count`는 `-1`에서 시작한다 | "아직 안 읽음"과 "읽었고 비었음"은 다른 상태이며, 지연 로드는 그 둘이 구별될 때만 관측 가능하다 |
+
+**카탈로그와 사전은 서로를 검증하지 않는다.** 두 생성물은 포획 시점이 다를 수 있다(계약 §6.8.1). 카탈로그에만 있는 슬러그는 이름 폴백이 **카탈로그의 영문 이름**을 쓰고, 사전에만 있는 슬러그는 검색에 나오지 않는다. 어느 쪽도 오류로 취급하지 않는다 — 리그가 움직이는 동안 정상적으로 생기는 상태다.
+
 ## 7. `Polling` — 라운드
 
 ### 7.1 소유 상태

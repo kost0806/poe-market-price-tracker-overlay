@@ -93,6 +93,11 @@ src/
       Localization/en.json               EmbeddedResource + 출력 복사
       Localization/ko.json               출력 복사만. 내장하지 않는다 — 체인 ③의 바닥은 en 전용이다(S2 3.3 D3)
                                          생성물이다. 정본 생성기는 tools/build-ko-dictionary.py (2.5절)
+    Catalog/
+      ItemCatalog.cs                     동봉 카탈로그. Store 밖의 정적 표다 (S2 6.8절, 신규 D-C24)
+      CatalogJsonContext.cs
+      Catalog/item-catalog.json          출력 복사만. 슬러그 → {cat, en}. 생성물이며 손으로 고치지 않는다
+                                         정본 생성기는 tools/build-item-catalog.py (2.5절)
     Pricing/
       PriceTemplates.cs
       NumberFormatter.cs                 Num, Pct
@@ -260,11 +265,15 @@ tools/
                              + tools/ko-ui.json  →  src/.../Localization/Localization/ko.json
   build-icon-manifest.py     data/statics.json + data/ko-items.json + data/images/
                              →  src/PoeOverlay.Shell/Icons/item-icons.json     (신규 D-DL27)
-  fetch-ko-sources.py        두 static 응답과 아이콘을 다시 받는다. 네트워크가 필요한 유일한 스크립트
+  build-item-catalog.py      data/ninja-items.json  →  src/.../Catalog/Catalog/item-catalog.json
+                             슬러그 → 카테고리·영문 이름 (신규 D-DL29, 계약 §6.8)
+  fetch-ko-sources.py        두 static 응답과 아이콘을 다시 받고, poe.ninja 오버뷰 18개에서
+                             data/ninja-items.json(슬러그 → {en, cat})을 쓴다. 네트워크가 필요한
+                             유일한 스크립트. --catalog-only는 오버뷰만 받아 static을 건드리지 않는다
   ko-ui.json                 ui.* 한글 문구의 정본. 손으로 쓴다 — 외부 출처가 없다
 ```
 
-**재생성 순서는 셋 다 한 줄로 이어진다**: `fetch-ko-sources.py --icons` → `curl -K curl.cfg` → `build-ko-dictionary.py` → `build-icon-manifest.py`. 앞의 둘이 `data/`를 채우고 뒤의 둘이 `src/` 안의 두 생성물을 쓴다.
+**재생성 순서는 넷 다 한 줄로 이어진다**: `fetch-ko-sources.py --icons` → `curl -K curl.cfg` → `build-ko-dictionary.py` → `build-icon-manifest.py` → `build-item-catalog.py`. 앞의 둘이 `data/`를 채우고 뒤의 둘이 `src/` 안의 두 생성물을 쓴다.
 
 **`build-icon-manifest.py`가 쓰기를 거부하는 조건** — `build-ko-dictionary.py`와 같은 성격이다. 아래 중 하나라도 걸리면 아무것도 쓰지 않고 그 목록을 낸다.
 
@@ -1294,7 +1303,9 @@ public sealed record BannerViewModel(AppConditionKind Kind, string Text, TimeSpa
 public enum BannerSeverity { Info, Warning, Error }
 
 public sealed record SearchRowViewModel(
-    ItemId Id, string DisplayName, ExchangeCategory Category, string CategoryLabel);   // 신규 D-DL24, CategoryLabel은 D-DL26
+    ItemId Id, string DisplayName, ExchangeCategory Category, string CategoryLabel,
+    string PriceText);          // 신규 D-DL24, CategoryLabel은 D-DL26, PriceText는 D-DL29
+                                // PriceText: 캐시 적중은 빈 문자열, 카탈로그 전용 적중은 ui.settings.search.noPrice
 
 public sealed record WatchlistRowViewModel(ItemId Id, string DisplayName);            // 신규 D-DL26
 public sealed record CategoryRowViewModel(ExchangeCategory Category, string Label);   // 신규 D-DL26
@@ -1336,7 +1347,7 @@ public delegate void FetchedListingSink(string league, int dataEpoch, ExchangeCa
 public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, IDisposable
 {
     public SettingsViewModel(
-        ISearchSource searchSource, IMarketClient marketClient, ISettingsSource settingsSource,
+        ISearchSource searchSource, ItemCatalog catalog, IMarketClient marketClient, ISettingsSource settingsSource,
         ILocalizer localizer, IOverlayModeService moveMode, IOverlayGeometryService geometry,
         RecentErrorRing errorRing, TimeProvider timeProvider, CancellationToken windowScopeToken,
         FetchedListingSink setFetchedListing, Func<CancellationToken, Task<bool>> retryTrayRegistration,
@@ -2080,6 +2091,7 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | ui.settings.search.found | Matches found. | Found |
 | ui.settings.search.notInCache | No match in the data fetched so far — try a category below. | NotInCache |
 | ui.settings.search.cacheEmpty | Waiting for the first refresh — nothing has been fetched yet. | CacheEmpty |
+| ui.settings.search.noPrice | no price yet | NoPrice |   신규 D-DL29. 카탈로그에만 있는 행의 값 자리
 
 리그 목록 상태 — `LeagueListStatus` 하나당 한 문장. `LeagueStatusText`가 고른다.
 
@@ -2363,6 +2375,15 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 **④가 이 표에서 가장 값어치 있는 단언이다.** 두 생성물은 같은 조인(계약 §6.3)에서 나오고 같은 계기(리그 교체)로 재생성된다. 현실적인 실수는 "매니페스트가 틀렸다"가 아니라 **"이름만 재생성하고 아이콘을 잊었다"** 이며, 어느 파일도 혼자서는 그것을 알 수 없다. 항목 수를 상수로 박지 않는 이유도 같다 — 968은 리그마다 바뀌는 값이라 매번 손대야 하고, 손대는 단언은 곧 지워진다.
 
 **컬러키 스캔은 여기 두지 않는다.** 픽셀 전수 검사는 생성기(`build-icon-manifest.py`)가 하며, 그 결과는 `00-shell-measurements.md` §14에 있다. 같은 검사를 C#으로 다시 쓰면 675장을 매 테스트 실행마다 디코드하게 되고, 정작 지켜야 할 시점(아이콘이 **새로 들어오는** 시점)은 생성기 쪽이다.
+
+### 16.12 Core — 동봉 아이템 카탈로그 (D-C24 / D-DL29, 신규)
+
+| 파일 | 대응 절 | 내용 |
+|---|---|---|
+| Catalog/ItemCatalogTests.cs | S2 6.8 | ① 첫 조회 전에는 `Count == -1`이고 조회 뒤 실제 행 수가 된다. ② 행이 카테고리와 영문 이름을 나른다. ③ 없는 슬러그는 `TryGet`이 `false`. ④ 파일이 없으면 빈 카탈로그 + 예외 없음. ⑤ 깨진 JSON도 같다. ⑥ 못 쓰는 행은 **그 행만 버려지고 나머지는 산다** — 알 수 없는 카테고리, 빈 영문 이름, 그리고 **대소문자가 다른 카테고리 이름**(생성물이므로 관대하게 읽지 않는다) |
+| Presentation/SettingsViewModelTests.cs | S3 5.4.6 | ⑦ 캐시가 비어 있어도 **카탈로그에만 있는 아이템이 결과로 나오고** `PriceText`가 `ui.settings.search.noPrice`이며 `SearchOutcome`이 `Found`다. ⑧ 캐시가 낸 항목을 카탈로그가 **다시 얹지 않는다**(중복 제거). ⑨ 카탈로그 적중을 관심목록에 넣으면 그 카테고리가 조회된다 — 이름만으로는 불가능했던 바로 그 동작 |
+
+**⑦과 ⑨는 되돌려서 실패를 확인했다.** `AppendCatalogueHits` 호출을 지우면 둘 다 "결과가 비었다"로 실패한다. ⑧은 그 상태에서도 통과하는데 **그것이 옳다** — ⑧이 지키는 것은 병합의 존재가 아니라 병합이 만들 수 있는 유일한 새 결함(같은 아이템이 두 줄로 나오는 것)이다.
 
 ### 16.8 공통 규약
 
