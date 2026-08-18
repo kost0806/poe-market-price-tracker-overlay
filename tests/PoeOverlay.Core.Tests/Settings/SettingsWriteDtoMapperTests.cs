@@ -139,7 +139,7 @@ public sealed class SettingsWriteDtoMapperTests
 
         Assert.Equal(1, defaults.SchemaVersion);
         Assert.Null(defaults.League);
-        Assert.Equal(5, defaults.RefreshIntervalMinutes);
+        Assert.Equal(15, defaults.RefreshIntervalMinutes);
         Assert.Equal("en", defaults.Language);
         Assert.Equal(DisplayCurrency.Auto, defaults.DefaultDisplayCurrency);
         Assert.Equal(new WindowSettings(100, 100, 420, 500, HeightMode.Auto, 0.87), defaults.Window);

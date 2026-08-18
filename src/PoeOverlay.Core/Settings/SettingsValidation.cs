@@ -19,8 +19,11 @@ public static partial class SettingsValidation
     /// <summary>The only schema version this build writes or fully trusts.</summary>
     public const int CurrentSchemaVersion = 1;
 
-    /// <summary>HLD 7 / D11.</summary>
-    public const int DefaultRefreshIntervalMinutes = 5;
+    /// <summary>
+    /// HLD 7 / D11, FR-03-1. Fifteen because that is how often poe.ninja's PoE 1 overviews are
+    /// rebuilt (contract 7.3); a five-minute default fetched the same numbers three times.
+    /// </summary>
+    public const int DefaultRefreshIntervalMinutes = 15;
 
     /// <summary>S2 8.2 — the closed interval the refresh interval is clamped into.</summary>
     public const int MinRefreshIntervalMinutes = 5;
