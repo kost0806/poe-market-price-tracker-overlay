@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | 문서 상태 | 실측 확정 |
-| 측정일 | 2026-08-15 |
+| 측정일 | 2026-08-15 (초판) · 2026-08-16 · 2026-08-17 · **2026-08-18 (4차 — §3.2 스파크라인 실측, §7 공식 문서·이용 정책)** |
 | 측정 리그 | `Allflame` (현재 챌린지 리그) |
 | 목적 | `docs/REQUIREMENTS.md` §6의 필드명이 **실제 raw API와 다르다**는 사실을 기록하고, 설계가 의존할 정확한 계약을 확정한다 |
 
@@ -56,6 +56,8 @@ exchange 카테고리 목록을 주는 엔드포인트는 없다. 리그 목록�
 
 따라서 18종 열거는 **코드에 상수로 두고 리그 교체 시 수동 확인**하는 수밖에 없다.
 새 리그가 새 카테고리를 추가하면 앱은 그것을 알 수 없다 (설계 §10 Q9).
+
+**다만 확인할 자리가 생겼다 (2026-08-18).** poe.ninja가 공식 API 문서(§7)를 내면서 `type=`에 허용되는 값을 표로 공개한다. **엔드포인트는 여전히 없다** — 목록은 문서에 사람이 읽는 표로만 있다. 2026-08-18 기준 그 표의 PoE 1 값 18개는 `ExchangeCategory`의 18개 멤버와 **순서·철자까지 일치**한다. 리그 교체 시 수동 확인은 이제 "브라우저 Network 탭 관찰"이 아니라 `https://poe.ninja/docs/api`의 표와 대조하는 절차다.
 
 ### 1.3 카테고리별 시세 — FR-02-1/2
 
@@ -152,7 +154,7 @@ GET https://poe.ninja/poe1/api/economy/exchange/current/overview?league={league}
 | `volume` | `lines[].volumePrimaryValue` | FR-04-1에 따라 미표시 |
 | `topPair.currency` | `lines[].maxVolumeCurrency` | **FR-04-3 `자동` 모드의 판단 근거** |
 | `topPair.rate` | `lines[].maxVolumeRate` | 검산용. 계산 입력으로는 쓰지 않는다 |
-| `changePercent` | `lines[].sparkline.totalChange` | FR-04의 변동률 |
+| `changePercent` | `lines[].sparkline.totalChange` | FR-04의 변동률. **창은 약 7일이고(§3.2.1), 기준 통화는 `core.primary`가 아니라 그 행의 `maxVolumeCurrency`다(§3.2.2).** 두 사실 모두 초판에는 없었다 |
 | (§6에 없음) | **최상위** `items[].image` | 아이콘. 상대 경로이므로 `https://poe.ninja` 접두 필요. **DivinationCard 전 항목에는 없다**(959개 중 576개만 보유). **읽지만 매핑하지 않는다** — FR-04-6은 아이콘을 쓰되 출처를 GGG static으로 잡았다(A7·§6.6). 두 출처의 결측 집합이 같은 것은 우연이 아니라 같은 사실이다 |
 | (§6에 없음) | `core.items[].category` | **`core.items`의** 것. 질의 `type`과 일치하므로 A6의 자기기술 검증에 쓴다 |
 | (§6에 없음) | **최상위** `items[].category` | **표시용 분류**이며 질의 `type`과 **다르다**(`Fragments`·`Cards`·`Essences`·`Catalysts`·`Ancestor`·`Delve`). **A6 검증에 쓰면 안 된다** — 상시 불일치 경고가 뜬다 |
@@ -201,7 +203,73 @@ GET https://poe.ninja/poe1/api/economy/exchange/current/overview?league={league}
 |---|---|
 | 1차 범위(D2 차트 없음)에는 영향 없음 | 범위 변경 없음 |
 | §11 "이력 차트 — poe.ninja 과거 데이터 엔드포인트 존재 여부 조사"에 대한 **부분적 답** | 스파크라인은 저장 없이 그릴 수 있다. 단 상대값이라 절대 가격 차트는 여전히 불가 |
-| 기준 시점·간격(일 단위? 시간 단위?)이 문서화돼 있지 않다 | 도입 시 추가 실측 필요 |
+| 점 간격과 창 길이 | **실측 확정(2026-08-18) — 점 간격 1일, 창 ≈ 7일.** §3.2.1 |
+| 변동률의 기준 통화 | **실측 확정(2026-08-18) — `core.primary`가 아니라 그 행의 `maxVolumeCurrency`.** §3.2.2 |
+
+#### 3.2.1 점 간격 — 두 포획을 겹쳐서 잰다 【실측 2026-08-18】
+
+초판은 *"기준 시점·간격이 문서화돼 있지 않다"* 고만 적고 넘어갔다. 공식 문서(§7)도 `sparkline`을 *"Recent price-trend samples"* 라고만 하고 간격을 말하지 않는다. **문서에 없으므로 재는 수밖에 없다.**
+
+포획 두 건을 겹친다.
+
+| | 포획 A | 포획 B |
+|---|---|---|
+| 시점 | 2026-08-15경 (`tests/PoeOverlay.Core.Tests/Market/Fixtures/currency-measured.json`, 커밋 2026-08-16 07:51 UTC) | 2026-08-18 23:08 UTC |
+| `divine.primaryValue` | 194.6 | 198.9 |
+| `divine.sparkline.data` | `[-0.25, -2.01, -7.08, -8.73, -10.11, -9.47, -9.18]` | `[-1.86, -1.31, -0.99, 0.95, 1.21, 0.93, 1.34]` |
+
+배열은 창 시작가 대비 누적 %이고 **마지막 점이 곧 현재가**이므로, 창 시작가를 복원해 절대 가격열로 되돌릴 수 있다: `p_i = primaryValue × (1 + d_i/100) ÷ (1 + d_6/100)`.
+
+```
+A: [213.7, 210.0, 199.1, 195.6, 192.6, 194.0, 194.6]
+B:                            [192.6, 193.7, 194.3, 198.1, 198.6, 198.1, 198.9]
+```
+
+A를 s칸 밀어 B와 겹친 뒤, 겹친 구간의 평균 상대오차를 본다.
+
+| 어긋냄 s | 겹친 점 | 평균 상대오차 |
+|---|---|---|
+| 0 | 7 | 4.34% |
+| 3 | 4 | 1.01% |
+| **4** | **3** | **0.097%** |
+| 5 | 2 | 0.59% |
+
+**s = 4에서 오차가 한 자릿수 아래로 떨어진다.** 두 포획이 같은 하나의 시계열을 보고 있고, 그 사이 배열이 4칸 밀렸다는 뜻이다. 두 포획 사이 경과가 약 3.7~4.0일이므로 **점 간격 ≈ 1일**, 7점이 덮는 창은 **≈ 7일**이다. poe.ninja 사이트가 같은 열을 `Last 7 days`로 적는 것과 일치한다.
+
+**이 실험이 무엇을 가르는가** (CLAUDE.md 「측정하기」의 자문이다).
+
+| 경쟁 가설 | 이 실험이 내놓는 예측 | 관측 |
+|---|---|---|
+| 시간 단위 (7점 = 7시간) | 4일 떨어진 두 포획의 창은 **겹치지 않는다.** 어떤 s에서도 0.1% 수준의 일치가 나올 수 없다 | s=4에서 0.097% — **기각** |
+| 주 단위 (7점 = 7주) | 4일 경과로는 한 칸도 밀리지 않는다 → s=0이 최소여야 한다 | s=0이 4.34%로 최악 — **기각** |
+| 일 단위 (7점 = 7일) | 4일 경과에 3~4칸 밀린다 | s=4가 최소이고 이웃 s=3·5와 자릿수가 다르다 — **채택** |
+
+**남은 한계.** 포획 A의 정확한 포획 시각이 기록돼 있지 않다(커밋 시각이 상한일 뿐이다). 그래서 간격은 `0.75~1.0일`까지만 좁혀지며, **정확히 24시간 간격인지 UTC 일 경계에 붙는지는 이 실험이 가르지 않는다.** 7일 창이라는 결론은 그 불확실성 안에서 흔들리지 않는다 — 세 가설 중 이웃한 것이 없다.
+
+#### 3.2.2 변동률의 기준 통화는 `maxVolumeCurrency`다 【실측 2026-08-18】
+
+응답 **한 건**으로 갈린다. `chaos` 행을 보라.
+
+```json
+{"id": "chaos",  "primaryValue": 1,     "maxVolumeCurrency": "divine", "maxVolumeRate": 198.9,
+ "sparkline": {"totalChange": -1.33, "data": [ 1.90,  1.33,  1.00, -0.94, -1.19, -0.93, -1.33]}}
+{"id": "divine", "primaryValue": 198.9, "maxVolumeCurrency": "chaos",  "maxVolumeRate": 0.005029,
+ "sparkline": {"totalChange":  1.34, "data": [-1.86, -1.31, -0.99,  0.95,  1.21,  0.93,  1.34]}}
+```
+
+`chaos`의 `primaryValue`는 **정의상 항상 1**이다 — 카오스를 카오스로 매긴 값이다. 스파크라인이 `primaryValue`의 시계열이라면 이 행은 **모든 점이 0**이어야 한다. 실제로는 −1.33%이고, 배열은 `divine` 행의 **역수열**이다 (`1/(1 − 0.0186) − 1 = +1.90%` = `chaos`의 첫 점, 일곱 점 모두 성립). 즉 `chaos` 행의 스파크라인은 **디바인 기준 카오스 시세**다.
+
+정답과 오답이 겹칠 수 없다는 점에서 안전한 실험이다 — 상수 1의 변동률은 어떤 창에서도 0이고, 관측값은 0이 아니다. 공식 문서(§7)의 `sparkline` 설명 *"Recent price-trend samples for the highest-volume pair"* 도 같은 말을 한다. **문서와 실측이 독립적으로 같은 결론에 닿는다.**
+
+**FR-04에 대한 함의.** 오버레이는 `primaryValue`(또는 FR-04-3으로 고른 표시 통화)로 가격을 그리고 그 **옆에** `totalChange`를 붙인다. `maxVolumeCurrency`가 표시 통화와 다른 행에서는 두 수가 서로 다른 것을 말한다.
+
+| 행 | 표시 가격 | 붙는 변동률 | 그 변동률이 실제로 말하는 것 |
+|---|---|---|---|
+| `divine` (`maxVolumeCurrency: chaos`) | `198.9c` | `▲1.34%` | 카오스 대비 — **일치** |
+| `vivid-lifeforce` (`maxVolumeCurrency: divine`) | `0.06944c` | `▲20.73%` | **디바인 대비.** 같은 창에서 카오스는 디바인 대비 −1.33% 움직였으므로, 카오스 기준 7일 변동은 이 수가 아니다 |
+| `mirror` (`maxVolumeCurrency: divine`) | `175,270c` | `▲9.78%` | 디바인 대비 |
+
+FR-04-3이 표시 통화를 `자동`(= `maxVolumeCurrency`)으로 두면 두 수의 기준이 우연히 맞는다. **`카오스`·`디바인`으로 고정하면 어긋난다.** 서식 문제가 아니라 표시가 사실이 아니게 되는 문제다.
 
 ---
 
@@ -217,6 +285,10 @@ GET https://poe.ninja/poe1/api/economy/exchange/current/overview?league={league}
 | A6 | `core.items[].category` 존재 | FR-01-1 카탈로그가 카테고리별 18회 호출을 하더라도, 각 응답이 자기 카테고리를 자기 기술(self-describing)한다 |
 | A7 | `image`가 상대 경로 | **닫힘 (2026-08-17).** 아이콘을 쓴다(FR-04-6). **다만 poe.ninja의 `image`는 쓰지 않는다** — 이름과 같은 이유로 출처는 GGG trade static이며(§6), 런타임에 CDN을 치지 않고 빌드 타임에 받아 동봉한다(A8과 같은 논거). 매핑·결측·컬러키는 §6.6 |
 | A8 | **이 API는 한글 이름을 어떤 매개변수로도 주지 않는다**(§2.0 말미) | 아이템 이름 사전은 **다른 출처(GGG trade static, §6)에서 빌드 타임에 생성**해 사전 파일로 동봉한다. 런타임에 이 API 밖으로 나가는 호출을 추가하지 않는다 — NFR-02와 어긋나고 앱을 제3의 가용성에 묶는다 |
+| A9 | **`totalChange`의 창은 약 7일이다**(§3.2.1) | FR-04의 변동률 칸이 "지금 오르는 중"이 아니라 "지난 7일 누적"을 말한다. **표시 여부·표기 자체가 재검토 대상이다** — §7.7의 미결 D-AC1 |
+| A10 | **`totalChange`의 기준 통화는 `maxVolumeCurrency`다**(§3.2.2) | 표시 통화를 `카오스`/`디바인`으로 고정한 행에서는 가격과 변동률의 기준이 어긋난다. 변동률을 계속 그린다면 **기준 통화를 함께 밝히거나, 기준이 어긋난 행에서는 그리지 않는다.** §7.7 미결 D-AC1 |
+| A11 | **poe.ninja가 economy 엔드포인트를 공식 문서화했다**(§7) | 우리가 쓰는 세 엔드포인트가 전부 **명시적으로 허용된 표면**이다 — 계약의 근거가 관찰에서 문서로 올라섰다. 대신 문서가 이용 지침을 함께 걸었고, **현재 구현이 그중 셋을 지키지 않는다**(§7.5) |
+| A12 | **조건부 요청이 304를 준다**(§7.4 실측) | `If-None-Match`로 갱신 없는 라운드의 본문 47KB × 카테고리 수를 0으로 만든다. 공식 지침이 명시적으로 요구하는 항목이기도 하다 |
 
 ---
 
@@ -386,3 +458,84 @@ https://web.poecdn.com/gen/image/...InventoryIcon.png (동일 아트의 gen 경�
 | Awakened PoE Trade `data/ko/items.ndjson` | 상류가 **비어 있다.** 메인 저장소는 `en`만 채워져 있고 한국어는 커뮤니티 포크 의존. 생성 스크립트가 저장소에 없다 |
 | RePoE / GGPK 추출 | 영문 전용. 한글을 얻으려면 **한국 클라이언트 Content.ggpk 수십 GB**가 필요하다 |
 | poedb.tw `/kr/` | HTML 스크래핑 + 2차 출처. GGG 공식 API가 있는데 쓸 이유가 없다 |
+
+---
+
+## 7. 공식 API 문서와 이용 정책 【확인 2026-08-18】
+
+### 7.1 문서가 생겼다
+
+`https://poe.ninja/docs/api` — 「API Reference」. 초판 조사 시점에는 이 문서가 없었고, 그래서 §0~§6 전체가 **관찰로 세운 계약**이다. 이제 economy 엔드포인트에 한해 **공표된 계약**이 있다.
+
+문서 스스로 그 성격을 이렇게 규정한다:
+
+> *"This API exists to run the poe.ninja website, not as a product. Public access to the economy endpoints is allowed but incidental. 'Supported public surface' means you are allowed to use it, not that it is stable. There is no versioning and no SLA, and breaking changes can happen to the economy endpoints without notice."*
+
+**따라서 이 문서(§0~§6)의 실측 계약은 폐기하지 않는다.** 공표된 것은 필드 목록과 허용 범위이고, 우리가 의존하는 세부(이름이 `lines`에 없다·`core.items`가 둘뿐이다·스파크라인의 간격과 기준 통화)는 여전히 문서에 없거나 한 줄 요약뿐이다. 공식 문서는 **허용 여부의 권위**이고, 이 문서는 **응답 형태의 권위**다.
+
+### 7.2 허용되는 것과 안 되는 것
+
+| 구분 | 내용 |
+|---|---|
+| **허용 (supported public surface)** | economy overview 엔드포인트 — `economy/leagues`, `exchange/current/overview`, `stash/current/item/overview`, `stash/current/currency/overview` |
+| **금지** | builds / profiles API와 **그 밖의 모든 비-economy 엔드포인트**(character, Path of Building, 인증). *"internal … not available for third-party use"* |
+| 금지 사유 | ① 서빙 비용이 economy보다 훨씬 크고 과부하가 실제 운영 사고로 이어진다 ② 프로필을 비공개로 돌린 플레이어의 선택을 제3자 배포가 우회하게 된다 |
+| 제재 | *"Clients that misbehave against these endpoints, or make excessive use of the economy endpoints, will be blocked."* |
+| 대안 | GGG 공식 API(신청제)를 문서가 직접 안내한다 |
+
+**우리가 쓰는 엔드포인트는 셋 다 허용 목록 안에 있다.** `/poe1/api/economy/leagues`(§1.1)와 `/poe1/api/economy/exchange/current/overview`(§1.3)뿐이며 비-economy 호출은 하나도 없다. `robots.txt`는 **존재하지 않는다**(HTTP 404, 2026-08-18 확인) — 크롤러 금지 지시도, 허용 지시도 없다. 정책은 전적으로 이 문서와 이용약관에 있다.
+
+### 7.3 이용 지침 — 원문과 우리 해석
+
+| 지침 (원문 요지) | 우리에게 무슨 뜻인가 |
+|---|---|
+| *"Desktop apps and other clients should proxy these requests through their own backend rather than calling the endpoints directly from end-user machines."* | **이 앱은 정확히 그 반대다.** 사용자 PC에서 직접 친다. 백엔드를 두는 것은 NFR-02(폴링 외 트래픽 없음)·D2(서버 없음)와 앱의 성격 자체를 바꾼다 → §7.7 |
+| *"Responses are HTTP-cached (roughly 5 minutes, ETag-based). Use conditional requests and respect the cache headers; do not bypass caching."* | `If-None-Match`를 보내야 한다. **현재 구현은 보내지 않는다** → §7.5 |
+| *"The underlying data refreshes infrequently (PoE 1 overviews roughly every 15 minutes) … polling faster than a few minutes wastes bandwidth for no fresher data."* | 갱신 주기 기본값 5분은 **원본이 바뀌지 않는 구간을 3번 친다** → §7.5 |
+| *"Send a descriptive User-Agent that identifies your app and a contact."* | 현재 UA `PoeOverlayPriceTracker/1.0`은 앱은 밝히지만 **연락처가 없다** → §7.5 |
+| *"Be reasonable with concurrency and volume; this is a community resource."* | `NinjaGateway`의 동시 2건 상한·최소 250ms 발사 간격이 이미 이 지침 안에 있다(초당 최대 4건, 라운드당 18건) |
+| *"Don't use the API to directly replicate the site. Use it to build something new and exciting."* | 관심목록 오버레이는 사이트 복제가 아니다. **다만 카탈로그 생성(`data/ninja-items.json`)은 18개 카테고리 전수 취득이다** — 빌드 타임 1회이고 배포물에 시세가 들어가지 않으므로 복제로 보지 않는다 |
+
+### 7.4 조건부 요청은 304를 준다 【실측 2026-08-18】
+
+```
+GET  /poe1/api/economy/exchange/current/overview?league=Allflame&type=Currency
+  → 200, 47,461 bytes, etag: W/ab89be242028f7941cde9c72d73db872, cache-control: no-cache
+
+GET  같은 URL + If-None-Match: W/ab89be242028f7941cde9c72d73db872
+  → 304, 0 bytes, 같은 etag
+```
+
+`cache-control: no-cache`는 "캐시하지 말라"가 아니라 **"쓰기 전에 재검증하라"** 이다. 서버가 재검증에 304로 답하므로 `If-None-Match` 왕복 비용은 헤더뿐이다.
+
+### 7.5 현재 구현의 준수 상태
+
+| 항목 | 지침 | 현재 | 판정 |
+|---|---|---|---|
+| 엔드포인트 범위 | economy만 | economy 둘 | ✅ |
+| 동시성·간격 | "reasonable" | 동시 2건, 최소 250ms 간격 | ✅ |
+| 사이트 복제 금지 | — | 관심목록만 표시 | ✅ |
+| User-Agent | 앱 + **연락처** | `PoeOverlayPriceTracker/1.0` | ⚠️ 연락처 없음 |
+| 조건부 요청 | `If-None-Match` 필수 | 보내지 않는다 (`MarketClient`에 ETag 저장소가 없다) | ❌ |
+| 폴링 주기 | 원본은 약 15분마다 갱신 | 기본 5분, 최소 5분 (`SettingsValidation`) | ⚠️ 3배 과다 |
+| 호출 위치 | 자체 백엔드 경유 **권고** | 사용자 PC에서 직접 | ❌ 구조적 충돌 → §7.7 |
+
+### 7.6 이용약관 — `https://poe.ninja/terms`
+
+> *"Permission is granted to temporarily download one copy of the materials … for personal, non-commercial transitory viewing only … you may not: … use the materials for any commercial purpose, or for any public display … or transfer the materials to another person or 'mirror' the materials on any other server."*
+
+| 조항 | 우리에게 |
+|---|---|
+| 개인·비상업적 | 개인용 오버레이이므로 충족. **유료화·광고 탑재는 이 조항에 걸린다** |
+| 미러링 금지 | 시세를 재배포하지 않는다. 배포물에 들어가는 것은 **이름·카테고리·아이콘 매니페스트**뿐이고 가격은 없다(§6.8) |
+| GGG 무관 | 사이트 각주 *"poe.ninja is not affiliated with or endorsed by Grinding Gear Games"* — 오버레이 푸터의 `자료 poe.ninja · GGG 무관`이 이미 같은 문장을 진다(HLD §6.3) |
+
+### 7.7 미결 — 설계 결정이 필요하다
+
+| # | 결정할 것 | 걸린 것 |
+|---|---|---|
+| **D-AC1** | 7일 창이고 기준 통화가 어긋날 수 있는 변동률을 **계속 표시할 것인가** | FR-04 표시 표의 `변동률` 행, HLD §6.3 레이아웃, `ChangeDisplay`·`PricingEngine.Change`·오버레이 XAML 변동률 칸 |
+| **D-AC2** | `If-None-Match` 저장·전송을 어느 층이 갖는가 | `MarketClient`(요청을 만드는 곳)와 `Store`(스냅샷을 아는 곳) 중 하나. 304는 "실패"가 아니라 **"직전 값 유지"** 라는 새 결과 종류다 — `FailureRecord`로 흘리면 연속 실패 카운터를 잘못 올린다 |
+| **D-AC3** | 폴링 기본값을 15분으로 올릴 것인가 | `SettingsValidation.DefaultRefreshIntervalMinutes` = 5, `MinRefreshIntervalMinutes` = 5. 원본이 15분마다 갱신되므로 5분 폴링은 같은 값을 세 번 받는다 |
+| **D-AC4** | UA에 연락처를 넣을 것인가, 넣는다면 무엇을 | 지침은 연락처를 요구한다. 개인 이메일을 배포물에 박는 것은 별개 문제다 — 저장소 URL이 대안이다 |
+| **D-AC5** | "백엔드 경유" 권고를 어떻게 다룰 것인가 | 권고를 따르면 서버가 필요해져 D2·NFR-02와 정면 충돌한다. 따르지 않는다면 **트래픽을 지침 이상으로 줄이는 것**(D-AC2·D-AC3)이 그 자리를 대신한다는 근거를 문서에 남겨야 한다 |
