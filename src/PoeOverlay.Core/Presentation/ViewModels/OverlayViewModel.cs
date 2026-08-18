@@ -212,7 +212,6 @@ public sealed partial class OverlayViewModel : ObservableObject, IRefreshable
             entry.Id,
             _localizer.ItemName(entry.Id, price.ApiName),
             display,
-            PricingEngine.Change(price.TotalChangePercent, _localizer),
             PricingEngine.Relative(categorySnapshot.FetchedAt, now, _localizer),
             display.RateInherited,
             DerivedConditions.IsRowStale(
@@ -245,7 +244,6 @@ public sealed partial class OverlayViewModel : ObservableObject, IRefreshable
             id,
             name,
             new PriceDisplay(PriceForm.Unavailable, text, at ?? now, false),
-            new ChangeDisplay(ChangeDirection.Unknown, string.Empty, string.Empty),
             at is { } shownAt ? PricingEngine.Relative(shownAt, now, _localizer) : string.Empty,
             false,
             false,

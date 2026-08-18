@@ -23,14 +23,6 @@ namespace PoeOverlay.Core.Pricing;
 /// </remarks>
 public static class PricingEngine
 {
-    /// <summary>The rise glyph, U+25B2 (S2 4.4.1).</summary>
-    private const string UpGlyph = "\u25B2";
-
-    /// <summary>The fall glyph, U+25BC (S2 4.4.1).</summary>
-    private const string DownGlyph = "\u25BC";
-
-    private const string NoGlyph = "";
-
     private static readonly TimeSpan JustNowWindow = TimeSpan.FromSeconds(10);
 
     // One entry per (argument count, template). Templates number in the dozens, so the render path
@@ -226,46 +218,6 @@ public static class PricingEngine
             Tmpl(templates, PriceKeys.PerDivine, PriceTemplates.PerDivine, NumberFormatter.Num(perDivine)),
             fetchedAt,
             usableRate);
-    }
-
-    /// <summary>
-    /// Direction, glyph and magnitude for a total change percentage (S2 4.4).
-    /// </summary>
-    /// <remarks>
-    /// The dead-zone verdict is taken <em>after</em> rounding, so the invariant "a glyph implies a
-    /// non-zero number, and no glyph implies <c>0.0%</c>" holds by construction rather than by
-    /// coincidence — <c>0.05</c> is not exactly representable as a double, so comparing against it
-    /// was already luck. The cost is that <c>-0.03</c> renders as <c>0.0%</c> with its sign gone,
-    /// which is intended: the dead zone is a finding of "no direction", not of "a small fall".
-    /// </remarks>
-    public static ChangeDisplay Change(double? totalChangePercent, ITemplateSource templates)
-    {
-        // The IsFinite guard is unreachable from JSON — the strict reader rejects NaN literals — and
-        // is kept for non-JSON paths. The real defence against 1e300 is that Pct stays in double.
-        if (totalChangePercent is null || !double.IsFinite(totalChangePercent.Value))
-        {
-            return new ChangeDisplay(ChangeDirection.Unknown, NoGlyph, string.Empty);
-        }
-
-        var x = totalChangePercent.Value;
-        var magnitude = NumberFormatter.Pct(x);
-        var rounded = Math.Round(Math.Abs(x), 1, MidpointRounding.AwayFromZero);
-
-        var direction = rounded == 0d
-            ? ChangeDirection.Flat
-            : x > 0d ? ChangeDirection.Up : ChangeDirection.Down;
-
-        var glyph = direction switch
-        {
-            ChangeDirection.Up => UpGlyph,
-            ChangeDirection.Down => DownGlyph,
-            _ => NoGlyph,
-        };
-
-        return new ChangeDisplay(
-            direction,
-            glyph,
-            Tmpl(templates, PriceKeys.Change, PriceTemplates.Change, glyph, magnitude));
     }
 
     /// <summary>

@@ -59,16 +59,4 @@ internal static class NumberFormatter
         return decimal.Round(x, 3, MidpointRounding.AwayFromZero)
             .ToString("N3", CultureInfo.InvariantCulture);
     }
-
-    /// <summary>
-    /// Formats a percentage magnitude, always as <c>double</c> (S2 4.4.2).
-    /// </summary>
-    /// <remarks>
-    /// The <c>decimal</c> cast that used to live here throws on <c>1e30</c> and <c>1e300</c>, both of
-    /// which pass the <see cref="double.IsFinite"/> guard. <see cref="Math.Round(double, int, MidpointRounding)"/>
-    /// does not throw. There is no band table — a change percentage's magnitude carries no meaning.
-    /// </remarks>
-    public static string Pct(double x)
-        => Math.Round(Math.Abs(x), 1, MidpointRounding.AwayFromZero)
-            .ToString("N1", CultureInfo.InvariantCulture);
 }

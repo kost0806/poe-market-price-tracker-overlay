@@ -45,14 +45,6 @@ public enum ResolvedCurrency
     Divine,
 }
 
-/// <summary>Direction of a price change. The glyph belongs to Pricing, the colour to the View (S2 2.14).</summary>
-public enum ChangeDirection
-{
-    Up,
-    Down,
-    Flat,
-    Unknown,
-}
 
 /// <summary>Row display state. Loading is not an absorbing state (S2 2.14, HLD 6.5).</summary>
 public enum DisplayState

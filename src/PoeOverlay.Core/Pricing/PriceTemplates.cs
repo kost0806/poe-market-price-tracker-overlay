@@ -46,9 +46,6 @@ internal static class PriceTemplates
     /// <summary>ui.price.unavailable, 0 arguments. Em dash, U+2014 (S4 14.1).</summary>
     public const string Unavailable = "\u2014";
 
-    /// <summary>ui.price.change, 2 arguments: glyph then absolute magnitude.</summary>
-    public const string Change = "{0}{1}%";
-
     /// <summary>ui.time.justNow, 0 arguments.</summary>
     public const string JustNow = "just now";
 
@@ -91,9 +88,6 @@ internal static class PriceKeys
 
     /// <summary>Key of <see cref="PriceTemplates.Unavailable"/>.</summary>
     public const string Unavailable = "ui.price.unavailable";
-
-    /// <summary>Key of <see cref="PriceTemplates.Change"/>.</summary>
-    public const string Change = "ui.price.change";
 
     /// <summary>Key of <see cref="PriceTemplates.JustNow"/>.</summary>
     public const string JustNow = "ui.time.justNow";

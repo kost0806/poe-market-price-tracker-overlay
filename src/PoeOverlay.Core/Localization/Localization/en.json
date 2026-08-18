@@ -9,7 +9,6 @@
   "ui.price.perDivine": "{0} per 1d",
   "ui.price.ratePending": "rate pending",
   "ui.price.unavailable": "—",
-  "ui.price.change": "{0}{1}%",
 
   "ui.time.justNow": "just now",
   "ui.time.secondsAgo": "{0}s ago",
