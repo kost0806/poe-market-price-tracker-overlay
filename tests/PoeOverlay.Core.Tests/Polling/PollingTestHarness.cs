@@ -47,6 +47,7 @@ internal sealed class FakeMarketClient : IMarketClient
 {
     private readonly Dictionary<ExchangeCategory, int> _callCounts = [];
     private readonly List<ExchangeCategory> _requested = [];
+    private readonly Dictionary<ExchangeCategory, CategorySnapshot?> _held = [];
     private readonly List<IReadOnlyList<ExchangeCategory>> _rounds = [];
     private readonly Dictionary<int, TaskCompletionSource<bool>> _entered = [];
     private readonly object _gate = new();
@@ -117,6 +118,15 @@ internal sealed class FakeMarketClient : IMarketClient
         }
     }
 
+    /// <summary>What the last fetch of each category was handed to revalidate against (D24).</summary>
+    public CategorySnapshot? HeldFor(ExchangeCategory category)
+    {
+        lock (_gate)
+        {
+            return _held.TryGetValue(category, out var held) ? held : null;
+        }
+    }
+
     /// <summary>The request set of each round, in order.</summary>
     public IReadOnlyList<IReadOnlyList<ExchangeCategory>> Rounds
     {
@@ -133,12 +143,14 @@ internal sealed class FakeMarketClient : IMarketClient
         string league,
         ExchangeCategory category,
         RequestPriority priority,
+        CategorySnapshot? held,
         CancellationToken ct)
     {
         int index;
         lock (_gate)
         {
             _requested.Add(category);
+            _held[category] = held;
             _callCounts.TryGetValue(category, out index);
             _callCounts[category] = index + 1;
 

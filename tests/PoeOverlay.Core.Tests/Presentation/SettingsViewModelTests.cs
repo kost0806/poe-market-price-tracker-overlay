@@ -652,8 +652,10 @@ public sealed class SettingsViewModelTests
             string league,
             ExchangeCategory category,
             RequestPriority priority,
+            CategorySnapshot? held,
             CancellationToken ct)
         {
+            Assert.Null(held);
             Fetches.Add((league, category, priority));
             return Task.FromResult<MarketResult<CategorySnapshot>>(
                 new MarketResult<CategorySnapshot>.Ok(

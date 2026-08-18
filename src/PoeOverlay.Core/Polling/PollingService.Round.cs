@@ -151,7 +151,7 @@ public sealed partial class PollingService
         var categories = ResolveCategorySet(settings.Watchlist, statuses, ctx.StartedAt);
 
         // Step 8.
-        var results = await FetchAllAsync(ctx.League, categories, ct).ConfigureAwait(false);
+        var results = await FetchAllAsync(ctx.League, categories, baseline, ct).ConfigureAwait(false);
 
         // Steps 9 – 11.
         return CommitResults(ctx, settings, results, baseline, statuses, previousRate);

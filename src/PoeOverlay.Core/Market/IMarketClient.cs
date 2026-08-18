@@ -21,10 +21,18 @@ public interface IMarketClient
     /// signature has no epoch parameter, and Market has no other way to learn one. The caller
     /// (Polling) must stamp the round's epoch before committing.
     /// </remarks>
+    /// <param name="held">
+    /// What the caller already has for this category, or null. Its <see cref="CategorySnapshot.ETag"/>
+    /// becomes the request's <c>If-None-Match</c> (D24), and a <c>304</c> returns it with its
+    /// <see cref="CategorySnapshot.FetchedAt"/> moved to now — the server has just said that copy is
+    /// still current. A <c>304</c> with nothing held is a failure: no validator was sent, so the
+    /// answer is not one we can act on.
+    /// </param>
     Task<MarketResult<CategorySnapshot>> FetchCategoryAsync(
         string league,
         ExchangeCategory category,
         RequestPriority priority,
+        CategorySnapshot? held,
         CancellationToken ct);
 
     /// <summary>

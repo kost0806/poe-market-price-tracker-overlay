@@ -86,6 +86,7 @@ public sealed partial class MarketClient : IMarketClient
         string league,
         ExchangeCategory category,
         RequestPriority priority,
+        CategorySnapshot? held,
         CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(league);
@@ -100,16 +101,26 @@ public sealed partial class MarketClient : IMarketClient
 #pragma warning disable CA1031 // S2 9.5 row 3 (D-MK4): the observable result is an Error entry plus Fail(MappingFault).
         try
         {
-            var transport = await SendAsync(NinjaEndpoints.OverviewUrl(league, category), priority, ct)
+            var transport = await SendAsync(
+                    NinjaEndpoints.OverviewUrl(league, category), priority, Validator(held, league), ct)
                 .ConfigureAwait(false);
 
-            if (transport is MarketResult<string>.Fail failed)
+            if (transport is MarketResult<NinjaResponse>.Fail failed)
             {
                 return new MarketResult<CategorySnapshot>.Fail(failed.Why);
             }
 
-            var body = ((MarketResult<string>.Ok)transport).Value;
-            return MapCategory(body, category, league);
+            var response = ((MarketResult<NinjaResponse>.Ok)transport).Value;
+
+            if (response.NotModified)
+            {
+                return Unchanged(held);
+            }
+
+            var mapped = MapCategory(response.Body, category, league);
+            return mapped is MarketResult<CategorySnapshot>.Ok ok
+                ? new MarketResult<CategorySnapshot>.Ok(ok.Value with { ETag = response.ETag })
+                : mapped;
         }
         catch (OperationCanceledException)
         {
@@ -124,6 +135,46 @@ public sealed partial class MarketClient : IMarketClient
 #pragma warning restore CA1031
     }
 
+    /// <summary>
+    /// The validator to revalidate <paramref name="held"/> with, or null to ask unconditionally.
+    /// </summary>
+    /// <remarks>
+    /// The league is checked because a validator only means anything for the URL it came from, and
+    /// the URL carries the league. Polling cannot hand over another league's snapshot today — a
+    /// league change empties its baseline — but the guard costs one comparison and removes the
+    /// question.
+    /// </remarks>
+    private static string? Validator(CategorySnapshot? held, string league)
+        => held is not null
+            && string.Equals(held.League, league, StringComparison.Ordinal)
+            && !string.IsNullOrEmpty(held.ETag)
+                ? held.ETag
+                : null;
+
+    /// <summary>
+    /// Answers a <c>304</c>: the held copy, re-dated to now (D24).
+    /// </summary>
+    /// <remarks>
+    /// Nothing is parsed, because nothing was sent — a 304 has no body. The new
+    /// <see cref="CategorySnapshot.FetchedAt"/> is not a pretence that the data was re-fetched; it
+    /// is when poe.ninja last confirmed these are still its current numbers, which is exactly what
+    /// the footer's "last updated" means.
+    /// </remarks>
+    private MarketResult<CategorySnapshot> Unchanged(CategorySnapshot? held)
+    {
+        if (held is null)
+        {
+            // Unreachable against a correct server: no If-None-Match was sent. Treating it as a
+            // quiet success would commit nothing at all while reporting a healthy round.
+            Log(LogLevel.Error, "UnexpectedNotModified", "poe.ninja answered 304 to an unconditional request.");
+            return new MarketResult<CategorySnapshot>.Fail(new FailureRecord(
+                FailureKind.MappingFault, "UnexpectedNotModified", _timeProvider.GetUtcNow(), 304, null, null));
+        }
+
+        Log(LogLevel.Debug, "CategoryNotModified", "poe.ninja confirmed the held copy is current (304).");
+        return new MarketResult<CategorySnapshot>.Ok(held with { FetchedAt = _timeProvider.GetUtcNow() });
+    }
+
     /// <inheritdoc />
     public async Task<MarketResult<LeagueList>> FetchLeaguesAsync(RequestPriority priority, CancellationToken ct)
     {
@@ -135,9 +186,10 @@ public sealed partial class MarketClient : IMarketClient
 #pragma warning disable CA1031 // S2 9.5 row 3 (D-MK4): the observable result is an Error entry plus Fail(MappingFault).
         try
         {
-            var transport = await SendAsync(NinjaEndpoints.LeaguesUrl, priority, ct).ConfigureAwait(false);
+            var transport = await SendAsync(NinjaEndpoints.LeaguesUrl, priority, ifNoneMatch: null, ct)
+                .ConfigureAwait(false);
 
-            if (transport is MarketResult<string>.Fail failed)
+            if (transport is MarketResult<NinjaResponse>.Fail failed)
             {
                 // S2 5.9: a transport failure is still a verdict on the list, carrying the S4 13.3
                 // code. Fail is reserved for the boundary catch below.
@@ -148,7 +200,7 @@ public sealed partial class MarketClient : IMarketClient
                     failed.Why.Code));
             }
 
-            var body = ((MarketResult<string>.Ok)transport).Value;
+            var body = ((MarketResult<NinjaResponse>.Ok)transport).Value.Body;
             return MapLeagues(body);
         }
         catch (OperationCanceledException)
@@ -183,7 +235,11 @@ public sealed partial class MarketClient : IMarketClient
         return exponential * (0.75 + jitter);
     }
 
-    private async Task<MarketResult<string>> SendAsync(string url, RequestPriority priority, CancellationToken ct)
+    private async Task<MarketResult<NinjaResponse>> SendAsync(
+        string url,
+        RequestPriority priority,
+        string? ifNoneMatch,
+        CancellationToken ct)
     {
         using var budget = new CancellationTokenSource(LogicalRequestTimeout, _timeProvider);
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, budget.Token);
@@ -193,8 +249,14 @@ public sealed partial class MarketClient : IMarketClient
         try
         {
             using var response = await _gateway
-                .SendAsync(token => SendWithRetriesAsync(http, url, token), priority, linked.Token)
+                .SendAsync(token => SendWithRetriesAsync(http, url, ifNoneMatch, token), priority, linked.Token)
                 .ConfigureAwait(false);
+
+            if (response.StatusCode == HttpStatusCode.NotModified)
+            {
+                return new MarketResult<NinjaResponse>.Ok(
+                    new NinjaResponse(string.Empty, ETagOf(response), NotModified: true));
+            }
 
             if (!response.IsSuccessStatusCode)
             {
@@ -210,7 +272,7 @@ public sealed partial class MarketClient : IMarketClient
             }
 
             var body = await response.Content.ReadAsStringAsync(linked.Token).ConfigureAwait(false);
-            return new MarketResult<string>.Ok(body);
+            return new MarketResult<NinjaResponse>.Ok(new NinjaResponse(body, ETagOf(response), NotModified: false));
         }
         catch (TimeoutException ex)
         {
@@ -230,7 +292,26 @@ public sealed partial class MarketClient : IMarketClient
         }
     }
 
-    private async Task<HttpResponseMessage> SendWithRetriesAsync(HttpClient http, string url, CancellationToken ct)
+    /// <summary>
+    /// The raw <c>ETag</c> header, untyped on purpose.
+    /// </summary>
+    /// <remarks>
+    /// 【measured 2026-08-18】 poe.ninja sends <c>ETag: W/ab89be24…</c> — a weak tag whose opaque part
+    /// is not quoted, which is not a valid entity-tag. <see cref="HttpResponseHeaders.ETag"/> refuses
+    /// to parse it and answers null, so reading the typed property would silently switch conditional
+    /// requests off against the one server this client talks to. The raw string round-trips: sending
+    /// it back verbatim was answered with 304.
+    /// </remarks>
+    private static string? ETagOf(HttpResponseMessage response)
+        => response.Headers.TryGetValues("ETag", out var values)
+            ? values.FirstOrDefault(v => !string.IsNullOrWhiteSpace(v))
+            : null;
+
+    private async Task<HttpResponseMessage> SendWithRetriesAsync(
+        HttpClient http,
+        string url,
+        string? ifNoneMatch,
+        CancellationToken ct)
     {
         // One logical request holds one slot; the retries live inside it. Re-acquiring per attempt
         // would make a slot holder queue for a slot.
@@ -244,6 +325,13 @@ public sealed partial class MarketClient : IMarketClient
                 using var attemptBudget = new CancellationTokenSource(AttemptTimeout, _timeProvider);
                 using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, attemptBudget.Token);
                 using var request = new HttpRequestMessage(HttpMethod.Get, url);
+
+                if (!string.IsNullOrEmpty(ifNoneMatch))
+                {
+                    // Without validation, for the reason in ETagOf: the value we are echoing is not
+                    // a well-formed entity-tag, and the typed collection would reject it.
+                    request.Headers.TryAddWithoutValidation("If-None-Match", ifNoneMatch);
+                }
 
                 response = await http.SendAsync(request, HttpCompletionOption.ResponseContentRead, linked.Token)
                     .ConfigureAwait(false);
@@ -282,13 +370,13 @@ public sealed partial class MarketClient : IMarketClient
         }
     }
 
-    private MarketResult<string> Fail(
+    private MarketResult<NinjaResponse> Fail(
         FailureKind kind,
         string code,
         int? httpStatus,
         string? detail,
         string? exceptionType)
-        => new MarketResult<string>.Fail(
+        => new MarketResult<NinjaResponse>.Fail(
             new FailureRecord(kind, code, _timeProvider.GetUtcNow(), httpStatus, detail, exceptionType));
 
     private void Log(LogLevel level, string code, string message, Exception? exception = null)

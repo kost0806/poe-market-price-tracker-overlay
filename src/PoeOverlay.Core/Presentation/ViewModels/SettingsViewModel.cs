@@ -626,6 +626,9 @@ public sealed partial class SettingsViewModel : ObservableObject, IRefreshable, 
             _dataLeague,
             category,
             RequestPriority.UserInitiated,
+            // Nothing held: "fetch this category now" is a fetch, not a revalidation, and this
+            // window does not own the store's copy anyway (D24).
+            held: null,
             _windowScope);
 
         if (result is MarketResult<CategorySnapshot>.Ok ok)

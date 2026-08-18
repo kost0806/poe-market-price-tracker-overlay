@@ -18,7 +18,7 @@ public sealed class CategoryFetchTests
 
         return await MarketTestHarness.RunAsync(
             time,
-            client.FetchCategoryAsync("Allflame", ExchangeCategory.Currency, RequestPriority.Polling, CancellationToken.None))
+            client.FetchCategoryAsync("Allflame", ExchangeCategory.Currency, RequestPriority.Polling, held: null, CancellationToken.None))
             .ConfigureAwait(false);
     }
 
