@@ -53,8 +53,9 @@ src/
       Ids.cs                    ItemId
       CategoryRef.cs
       Enums.cs                  ExchangeCategory, DisplayCurrency, ResolvedCurrency,
-                                 ChangeDirection, DisplayState, RequestPriority, PriceForm,
+                                 DisplayState, RequestPriority, PriceForm,
                                  AppConditionKind, HeightMode
+                                 (ChangeDirection 은 FR-04-1 로 삭제)
       WatchlistEntry.cs
       EquatableArray.cs
       ItemPrice.cs
@@ -100,11 +101,11 @@ src/
                                          정본 생성기는 tools/build-item-catalog.py (2.5절)
     Pricing/
       PriceTemplates.cs
-      NumberFormatter.cs                 Num, Pct
+      NumberFormatter.cs                 Num  (Pct 는 FR-04-1 로 삭제)
       StalenessPolicy.cs
       PriceDisplay.cs
-      ChangeDisplay.cs
-      PricingEngine.cs                   Format/Change/Relative/Resolve 정적 메서드
+      PricingEngine.cs                   Format/Relative/Resolve 정적 메서드
+                                         (ChangeDisplay.cs 는 FR-04-1 로 삭제)
     Market/
       Dtos/
         NinjaOverviewDto.cs
@@ -356,7 +357,6 @@ public enum ExchangeCategory : int
 }
 public enum DisplayCurrency  { Auto, Chaos, Divine }
 public enum ResolvedCurrency { Chaos, Divine }
-public enum ChangeDirection  { Up, Down, Flat, Unknown }
 public enum DisplayState     { Loading, Ready, Failed }
 public enum RequestPriority  { Polling, UserInitiated }
 public enum PriceForm
@@ -416,7 +416,8 @@ public sealed record CategorySnapshot(
     ExchangeCategory Category, IReadOnlyDictionary<ItemId, ItemPrice> Items,
     decimal MedianPrimaryValue, DateTimeOffset FetchedAt, string League, int DataEpoch,
     int RawLineCount, SkipCounts Skips, IReadOnlyList<ItemId> SkippedIds,
-    bool SkippedIdsTruncated, int JoinMissCount, bool ValidationBypassed);
+    bool SkippedIdsTruncated, int JoinMissCount, bool ValidationBypassed,
+    string? ETag = null);                    // D24. 이 사본의 검증자. 기본값이 있으므로 기존 생성 지점은 그대로 컴파일된다
 
 public sealed record CategoryStatus(
     ExchangeCategory Category, int ConsecutiveFailures, DateTimeOffset? LastAttemptAt,
@@ -708,12 +709,9 @@ public static class PricingEngine
         DateTimeOffset fetchedAt, DateTimeOffset now, TimeSpan rateMaxAge,
         ITemplateSource templates);
 
-    public static ChangeDisplay Change(double? totalChangePercent, ITemplateSource templates);
-
     public static string Relative(DateTimeOffset at, DateTimeOffset now, ITemplateSource templates);
 }
 public sealed record PriceDisplay(PriceForm Form, string Text, DateTimeOffset EffectiveAsOf, bool RateInherited);
-public sealed record ChangeDisplay(ChangeDirection Direction, string Glyph, string Text);
 ```
 `ITemplateSource`는 `Localization`이 구현한다(D-L4). `Pricing`은 그 인터페이스만 참조하며 `Localization`의 구체 타입을 모른다(S2 1.2 허용 의존 표 그대로).
 
@@ -725,7 +723,6 @@ internal static class NumberFormatter
     public const decimal MinPrice = 1e-9m;                       // D-PR8, 15절
 
     public static string Num(decimal x);                         // 정의역 [1, ∞), 4.3.1 하한 이탈 시 3자리 폴백
-    public static string Pct(double x);                           // Math.Round(Abs(x), 1, AwayFromZero).ToString("N1", Invariant)
 }
 ```
 `Num`의 대역표·반올림 규칙은 S2 4.3.2/4.3.3 그대로(4.3.4 InvariantCulture 고정). 시그니처만 이 절에서 확정한다 — 알고리즘은 이미 S2가 완전히 정의했다.
@@ -743,7 +740,6 @@ internal static class PriceTemplates
     public const string PerDivine        = "{0} per 1d";
     public const string RatePending      = "rate pending";
     public const string Unavailable      = "\u2014";              // em dash, 14.2절과 문자 단위 일치
-    public const string Change           = "{0}{1}%";
     public const string JustNow          = "just now";
     public const string SecondsAgo       = "{0}s ago";
     public const string MinutesAgo       = "{0}m ago";
@@ -847,8 +843,11 @@ public abstract record MarketResult<T>
 ```
 public interface IMarketClient
 {
+    // held: 호출자가 지금 들고 있는 그 카테고리의 스냅샷. If-None-Match 의 출처이며,
+    //       304 일 때 FetchedAt 만 갱신해 그대로 돌려준다 (S2 5.11, D24).
     Task<MarketResult<CategorySnapshot>> FetchCategoryAsync(
-        string league, ExchangeCategory category, RequestPriority priority, CancellationToken ct);
+        string league, ExchangeCategory category, RequestPriority priority,
+        CategorySnapshot? held, CancellationToken ct);
 
     Task<MarketResult<LeagueList>> FetchLeaguesAsync(RequestPriority priority, CancellationToken ct);
 }
@@ -859,7 +858,8 @@ public sealed class MarketClient : IMarketClient
         TimeProvider timeProvider, ILogger<MarketClient> logger);
 
     public Task<MarketResult<CategorySnapshot>> FetchCategoryAsync(
-        string league, ExchangeCategory category, RequestPriority priority, CancellationToken ct);
+        string league, ExchangeCategory category, RequestPriority priority,
+        CategorySnapshot? held, CancellationToken ct);
 
     public Task<MarketResult<LeagueList>> FetchLeaguesAsync(RequestPriority priority, CancellationToken ct);
 
@@ -1294,7 +1294,7 @@ OnSnapshotChanged와 OnTick은 둘 다 같은 Republish 경로로 합류한다(D
 
 ```
 public sealed record PriceRowViewModel(
-    ItemId Id, string DisplayName, PriceDisplay Price, ChangeDisplay Change,
+    ItemId Id, string DisplayName, PriceDisplay Price,
     string RelativeTime, bool IsRateInherited, bool IsStale, RowKind Kind);
 
 public enum RowKind { Normal, Loading, FetchFailed, ItemUnresolved, ItemDropped }
@@ -1856,7 +1856,7 @@ internal sealed record AppPaths(string AppDataDirectory, string LogDirectory,
 | DivineLineMissing | DivineLineMissing | Polling(D8-c, Currency에 divine 라인 없음) |
 | MedianJump | MedianJump | Polling(D8-e, 강제 수용되지 않은 급변) |
 | LeagueListInvalid | 13.3절의 하위 코드 중 하나를 그대로 옮겨 씀 | Polling(리그 목록 실패를 ErrorRecord로 승격할 때) |
-| MappingFault | MappingFault | Market(D-MK4 경계 catch, 예상 밖 예외) |
+| MappingFault | MappingFault | Market(D-MK4 경계 catch, 예상 밖 예외) 및 **`UnexpectedNotModified`** — 검증자를 보내지 않았는데 `304`가 온 경우(S2 5.11) |
 | FieldMissingRatio | 13.2절의 사유 분화 표 | Market(20% 임계 초과) |
 | ElementFault | ElementFault | **미사용 — 19.2절 발견 사항 참조** |
 
@@ -1970,7 +1970,6 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | ui.price.perDivine | 1 | {0} per 1d |
 | ui.price.ratePending | 0 | rate pending |
 | ui.price.unavailable | 0 | (em dash, U+2014) |
-| ui.price.change | 2 | {0}{1}% |
 
 ### 14.2 ui.time.*
 
@@ -2157,7 +2156,7 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 
 | 상수 | 값 | 출처 |
 |---|---|---|
-| refreshIntervalMinutes 기본값/클램프 | 5 / [5, 60] | HLD 7절, D11 |
+| refreshIntervalMinutes 기본값/클램프 | **15** / [5, 60] | HLD 7절, D11 (4판 FR-03-1 — 원본이 약 15분마다 갱신된다) |
 | RateMaxAge | max(30분, 3 x interval) | S2 4.5.3 |
 | RowStaleAfter | 2 x interval | S2 4.5.3 |
 | HeartbeatStaleAfter | 2 x interval + 1분 | S2 4.5.3 |
@@ -2181,6 +2180,8 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | 시도별 HTTP 타임아웃 | 10초 | S2 5.8 D13 |
 | 재시도 횟수/백오프 기준 | 3회, 지수 2초 기준 + 지터 | S2 5.8 |
 | Retry-After 클램프 | [0, 60초] | S2 5.8 |
+| 조건부 요청 헤더 | `If-None-Match: {held.ETag}` — `held`가 있고 그 `League`가 요청 리그와 같고 `ETag`가 비어 있지 않을 때만 | S2 5.11, HLD D24 |
+| `304` 처리 | 재시도 대상 아님, 실패 아님. `held`를 `FetchedAt`만 갱신해 반환. `held`가 없으면 `Fail(MappingFault, "UnexpectedNotModified")` | S2 5.11 |
 | MinPrice | 1e-9m | S2 4.2 D-PR8 |
 | User-Agent | `PoeOverlayPriceTracker/1.0` | 신규(§C) — S2 §5.8이 "식별 가능한 고정 문자열"만 요구했다. `IHttpClientFactory`의 명명 클라이언트 구성(Composition)에서 1회 설정 |
 | 리그 목록 엔드포인트 | `GET https://poe.ninja/poe1/api/economy/leagues` | 측정 — `00-api-contract.md` §1 |
@@ -2271,7 +2272,6 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | Pricing/PricingEngineFormatTests.cs | 11.1 | P1~P14 (FR-04-4 다섯 행 결정 절차, Theory로 묶는다) |
 | Pricing/NumberFormatterTests.cs | 11.2 | 대역표 7행(Theory, 이름 없는 행은 입력값을 메서드명에 새긴다. 예: Num_ZeroPointFive_FormatsAsZeroThreeDigits) |
 | Pricing/ResolveCurrencyTests.cs | 11.3 | R1~R7 |
-| Pricing/ChangeDisplayTests.cs | 11.4 | 8행(0.05 경계 포함, 1e300 포함) |
 | Pricing/RelativeTimeTests.cs | 11.5 | 5행 |
 
 ### 16.2 Localization
@@ -2295,6 +2295,7 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | Market/NinjaGatewayTests.cs | 11.7 | M19~M21, M20Prime |
 | Market/JsonContextOptionsTests.cs | 11.7 | **M22 — NinjaJsonContext.Default.Options의 다섯 값(7.2절)을 직접 단언, JsonSerializerDefaults.Web 혼입 회귀** |
 | Market/BoundaryCatchTests.cs | 11.7 | M23, D-MK4 |
+| Market/ConditionalRequestTests.cs | 11.7 | **M24~M28 (신규, D24)** — `If-None-Match` 를 실었는지(요청 헤더 관측), 다른 리그의 검증자를 쓰지 않는지, `304`+`held` 가 `FetchedAt` 만 갱신한 같은 스냅샷인지, `304`+`held == null` 이 `Fail(MappingFault, "UnexpectedNotModified")` 인지, `200` 의 `ETag` 헤더가 스냅샷에 실리는지. **헤더 관측과 반환값 단언을 한 테스트 안에서 함께 한다** — 반환값만 보면 「본문을 다시 받아 매핑한 구현」과 구별되지 않는다(S2 5.11) |
 
 ### 16.4 Store
 
