@@ -528,7 +528,6 @@ Domain/Ports/
 ### 2.14 나머지 열거
 
 ```
-enum ChangeDirection { Up, Down, Flat, Unknown }     // 글리프는 Pricing, 색은 View (HLD §6.3)
 enum DisplayState    { Loading, Ready, Failed }      // HLD §6.5. Loading 은 흡수 상태가 아니다
 enum RequestPriority { Polling, UserInitiated }      // D13
 enum PriceForm       { ChaosOnly, ChaosWithDivine, ChaosReciprocal, DivineOnly,
@@ -1924,7 +1923,6 @@ ILocalizer : ITemplateSource                     // S3 전용
 
 ```
 PriceDisplay   Format(ItemPrice, DivineRate?, ResolvedCurrency, DateTimeOffset now, TimeSpan rateMaxAge)
-ChangeDisplay  Change(double? totalChangePercent)
 string         Relative(DateTimeOffset at, DateTimeOffset now)
 ResolvedCurrency Resolve(DisplayCurrency?, DisplayCurrency, string? token)
 static class StalenessPolicy
@@ -2253,7 +2251,7 @@ IUiTicker { event EventHandler Tick;  void Start(TimeSpan period);  void Stop();
 | 15 | **`TrayUnavailable`의 생산자가 §3.4 슬롯 표에 없다** | 표의 누락 | §6.2에서 `Shell`을 포트 경유 생산자로 등재 |
 | 16 | **`Store` 등록 순서 제약이 §3.5에 없다** | 기동/종료 순서 | §6.1. 진짜 이유는 **역순 정지**이며 첫 렌더가 아니다 |
 | 17 | **로깅 자체가 실패했을 때의 상태가 없다** | 상태 누락 | §9.6. HLD §6.4에 `LoggingUnavailable` 행 필요 — 이 문서의 조용한 실패 방어 대부분이 로그에 기대고 있다 |
-| 18 | **HLD §6.3의 변동률 임계가 자기모순** | 규범 충돌 | D-PR5에서 괄호 주석 채택. 개정 시 부등호를 "반올림 후 0.0%가 아니면"으로 통일 |
+| 18 | **HLD §6.3의 변동률 임계가 자기모순** | 규범 충돌 | ~~D-PR5에서 괄호 주석 채택~~ → **대상 소멸(4판 FR-04-1).** 변동률을 그리지 않으므로 임계도 없다. 다시 그린다면 §4.4가 보관한 기록과 함께 되살아난다 |
 | 19 | **검색어 매칭 규칙 미정의** | 정책 공백 | **§6.7에서 확정했다**(`OrdinalIgnoreCase` 부분일치 + `ExtraMatch`). §2.1의 서수·대소문자 구분과 모순되지 않는다 — 동일성과 검색은 다른 연산이다. 초판은 이것을 S3로 미뤘는데, 미룬 상태에서는 `"Vivid"`가 아무것도 못 찾아도 **어떤 명시된 규칙도 위반하지 않았다** |
 | 20 | **"라운드 예산"이 정의된 적이 없다** | 미정의 용어 | §5.7의 논리 요청 총 타임아웃(90초)으로 대체 정의 |
 | 21 | **D8-b·D8-e의 임계값에 근거 데이터가 없다** | Q12와 같은 성격 | §5.5.4(20% + 사유 분화), §7.5(5배 + 래치 리셋). 실사용 조정 |

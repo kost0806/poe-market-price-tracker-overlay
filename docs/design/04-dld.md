@@ -2318,6 +2318,7 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | Polling/CooldownTests.cs | 11.9 | PL13, PL14 |
 | Polling/RepollDebounceTests.cs | 11.9 | PL15~PL17 |
 | Polling/PeriodChangeTests.cs | 11.9 | PL18 |
+| Polling/ConditionalRoundTests.cs | 7.3 8단계 | **신규(D24)** — 두 번째 라운드가 `Market`에 **저장소가 들고 있는 그 스냅샷 자체**를 넘기는지(`Assert.Same`), 리그 교체 뒤 라운드는 아무것도 넘기지 않는지 |
 | Polling/LeagueTransitionTests.cs | 11.9 | PL19, PL24 |
 | Polling/TriggerChannelTests.cs | 11.9 | **PL20 — 틱이 이긴 라운드 직후 재폴링 요청이 유실 없이 실행됨을 단언, B7 회귀** |
 | Polling/CancellationTests.cs | 11.9 | PL21~PL23, PL25 |
@@ -2374,6 +2375,8 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | Overlay/ItemIconManifestTests.cs | S3 4.10 / 계약 §6.6 | **출하된 출력물**을 읽어 ① 매니페스트가 가리키는 파일이 전부 `Icons/`에 복사돼 있고(= csproj의 와일드카드가 실제로 동작했고), ② 값이 전부 평평한 파일명이며, ③ 300개 넘는 슬러그가 공용 카드 아이콘을 가리키고, ④ **매니페스트의 슬러그 집합이 `ko.json`의 비-`ui.` 키 집합과 정확히 같은지** 단언한다. 생성기의 검사와 겹치지만 **다른 시점**을 지킨다 — 생성기는 쓸 때, 이 테스트는 손으로 고친 뒤·잘못 병합한 뒤를 잡는다 |
 
 **④가 이 표에서 가장 값어치 있는 단언이다.** 두 생성물은 같은 조인(계약 §6.3)에서 나오고 같은 계기(리그 교체)로 재생성된다. 현실적인 실수는 "매니페스트가 틀렸다"가 아니라 **"이름만 재생성하고 아이콘을 잊었다"** 이며, 어느 파일도 혼자서는 그것을 알 수 없다. 항목 수를 상수로 박지 않는 이유도 같다 — 968은 리그마다 바뀌는 값이라 매번 손대야 하고, 손대는 단언은 곧 지워진다.
+
+**시세 행 템플릿 자체는 `Overlay/OverlayViewTemplateTests.cs`가 지킨다** — 아이콘 칸이 붙던 자리이고, 4판에서 **칸 수 단언**이 더해졌다(FR-04-1로 변동률 칸이 사라졌다). 남은 두 칸의 문자열을 단언하는 방식은 **네 번째 칸이 빈 채로 되살아나도 그대로 통과**하므로, `ColumnDefinitions.Count == 3`과 「`%`를 담은 `TextBlock`이 없다」를 함께 본다.
 
 **컬러키 스캔은 여기 두지 않는다.** 픽셀 전수 검사는 생성기(`build-icon-manifest.py`)가 하며, 그 결과는 `00-shell-measurements.md` §14에 있다. 같은 검사를 C#으로 다시 쓰면 675장을 매 테스트 실행마다 디코드하게 되고, 정작 지켜야 할 시점(아이콘이 **새로 들어오는** 시점)은 생성기 쪽이다.
 
