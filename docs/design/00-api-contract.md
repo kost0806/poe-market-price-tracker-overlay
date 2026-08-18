@@ -508,6 +508,8 @@ GET  같은 URL + If-None-Match: W/ab89be242028f7941cde9c72d73db872
 
 `cache-control: no-cache`는 "캐시하지 말라"가 아니라 **"쓰기 전에 재검증하라"** 이다. 서버가 재검증에 304로 답하므로 `If-None-Match` 왕복 비용은 헤더뿐이다.
 
+**검증자가 규격에 맞지 않는다 — 구현이 여기에 걸린다.** 헤더 값은 `W/ab89be242028f7941cde9c72d73db872`이며 **불투명부에 따옴표가 없다.** RFC 9110의 entity-tag는 `W/"…"` 형태를 요구하므로 이 값은 유효한 entity-tag가 아니고, .NET의 `HttpResponseHeaders.ETag`는 **파싱에 실패해 `null`을 돌려준다**. 타입 있는 속성을 읽는 구현은 조건부 요청이 **한 번도 나가지 않는데 아무 신호도 없다.** 원문 문자열을 그대로 읽어 그대로 되돌려보내면 위와 같이 304가 온다 — 실측으로 확인한 경로가 이것이다.
+
 ### 7.5 현재 구현의 준수 상태
 
 | 항목 | 지침 | 현재 | 판정 |
@@ -515,10 +517,10 @@ GET  같은 URL + If-None-Match: W/ab89be242028f7941cde9c72d73db872
 | 엔드포인트 범위 | economy만 | economy 둘 | ✅ |
 | 동시성·간격 | "reasonable" | 동시 2건, 최소 250ms 간격 | ✅ |
 | 사이트 복제 금지 | — | 관심목록만 표시 | ✅ |
-| User-Agent | 앱 + **연락처** | `PoeOverlayPriceTracker/1.0` | ⚠️ 연락처 없음 |
-| 조건부 요청 | `If-None-Match` 필수 | 보내지 않는다 (`MarketClient`에 ETag 저장소가 없다) | ❌ |
-| 폴링 주기 | 원본은 약 15분마다 갱신 | 기본 5분, 최소 5분 (`SettingsValidation`) | ⚠️ 3배 과다 |
-| 호출 위치 | 자체 백엔드 경유 **권고** | 사용자 PC에서 직접 | ❌ 구조적 충돌 → §7.7 |
+| User-Agent | 앱 + **연락처** | `PoeOverlayPriceTracker/1.0` | ⚠️ 연락처 없음 — D-AC4에서 **보류**로 결정 |
+| 조건부 요청 | `If-None-Match` 필수 | **보낸다** — 검증자는 `CategorySnapshot.ETag`, 304는 「직전 값 유지」(D24) | ✅ (2026-08-18 구현) |
+| 폴링 주기 | 원본은 약 15분마다 갱신 | **기본 15분**, 최소 5분 (`SettingsValidation`) | ✅ (2026-08-18) |
+| 호출 위치 | 자체 백엔드 경유 **권고** | 사용자 PC에서 직접 | ❌ 구조적 충돌 — D-AC5에서 **따르지 않기로** 결정 |
 
 ### 7.6 이용약관 — `https://poe.ninja/terms`
 
