@@ -1,4 +1,5 @@
 using System.IO;
+using System.Net.Http;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -94,6 +95,25 @@ public sealed class ServiceRegistrationTests : IDisposable
         // view model cannot be constructed and FR-01-1 dies silently (S3 3.1 B3).
         Assert.Same(store, provider.GetRequiredService<ISearchSource>());
         Assert.Contains(store, provider.GetServices<IHostedService>());
+    }
+
+    [Fact]
+    public void TheNamedHttpClient_CarriesAnIdentityAndAContact()
+    {
+        using var provider = BuildProvider();
+
+        var client = provider.GetRequiredService<IHttpClientFactory>().CreateClient(ShellConstants.HttpClientName);
+        var userAgent = client.DefaultRequestHeaders.UserAgent.ToString();
+
+        // ParseAdd throws on a malformed value, and it runs inside the registration callback — so a
+        // User-Agent that does not parse takes the whole client down at first use rather than
+        // falling back to no header. Resolving the client is what proves it parsed.
+        Assert.Equal(ShellConstants.UserAgent, userAgent);
+
+        // poe.ninja's guidelines ask for an app and a contact; the second half is the part a
+        // rename or a tidy-up would quietly drop (D-AC4).
+        Assert.StartsWith("PoeOverlayPriceTracker/", userAgent, StringComparison.Ordinal);
+        Assert.Contains("github.com/kost0806/poe-market-price-tracker-overlay", userAgent, StringComparison.Ordinal);
     }
 
     [Fact]

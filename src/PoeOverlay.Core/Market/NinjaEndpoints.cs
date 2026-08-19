@@ -13,10 +13,12 @@ namespace PoeOverlay.Core.Market;
 internal static class NinjaEndpoints
 {
     /// <summary>Named <c>IHttpClientFactory</c> client. Composition sets User-Agent and an infinite timeout on it.</summary>
+    /// <remarks>
+    /// There is no User-Agent constant beside this one. Market never sets the header — Composition
+    /// configures the named client (S4 15.3) — so a copy here would be a second string nothing reads
+    /// and nothing keeps in step with the one that ships.
+    /// </remarks>
     internal const string HttpClientName = "poe.ninja";
-
-    /// <summary>S4 15.3 — identifiable fixed User-Agent.</summary>
-    internal const string UserAgent = "PoeOverlayPriceTracker/1.0";
 
     /// <summary>Measured in 00-api-contract.md 1.1.</summary>
     internal const string LeaguesUrl = "https://poe.ninja/poe1/api/economy/leagues";

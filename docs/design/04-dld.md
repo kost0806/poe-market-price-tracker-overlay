@@ -2183,7 +2183,7 @@ Apply가 예외를 던지면 `SetLastErrorCmd(new ErrorRecord(now, "Store", "App
 | 조건부 요청 헤더 | `If-None-Match: {held.ETag}` — `held`가 있고 그 `League`가 요청 리그와 같고 `ETag`가 비어 있지 않을 때만 | S2 5.11, HLD D24 |
 | `304` 처리 | 재시도 대상 아님, 실패 아님. `held`를 `FetchedAt`만 갱신해 반환. `held`가 없으면 `Fail(MappingFault, "UnexpectedNotModified")` | S2 5.11 |
 | MinPrice | 1e-9m | S2 4.2 D-PR8 |
-| User-Agent | `PoeOverlayPriceTracker/1.0` | 신규(§C) — S2 §5.8이 "식별 가능한 고정 문자열"만 요구했다. `IHttpClientFactory`의 명명 클라이언트 구성(Composition)에서 1회 설정 |
+| User-Agent | `PoeOverlayPriceTracker/1.0 (+https://github.com/kost0806/poe-market-price-tracker-overlay)` | S2 §5.8이 "식별 가능한 고정 문자열"만 요구했고, poe.ninja 지침이 **앱 + 연락처**를 요구한다(계약 §7.3, D-AC4). 연락처는 개인 주소가 아니라 저장소다. `IHttpClientFactory`의 명명 클라이언트 구성(Composition)에서 1회 설정하며, **상수는 `ShellConstants` 한 곳에만 둔다** — Core에도 같은 문자열이 있었으나 읽는 곳이 없어 지웠다(짝이 어긋나도 아무도 모르는 사본이었다) |
 | 리그 목록 엔드포인트 | `GET https://poe.ninja/poe1/api/economy/leagues` | 측정 — `00-api-contract.md` §1 |
 | 카테고리 개요 엔드포인트 | `GET https://poe.ninja/poe1/api/economy/exchange/current/overview?league={league}&type={category}` | 측정 — `00-api-contract.md` §1. `{category}` = `ExchangeCategory.ToString()`(7.4절 D-DL23, S2 §2.2) |
 

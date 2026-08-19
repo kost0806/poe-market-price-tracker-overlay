@@ -517,7 +517,7 @@ GET  같은 URL + If-None-Match: W/ab89be242028f7941cde9c72d73db872
 | 엔드포인트 범위 | economy만 | economy 둘 | ✅ |
 | 동시성·간격 | "reasonable" | 동시 2건, 최소 250ms 간격 | ✅ |
 | 사이트 복제 금지 | — | 관심목록만 표시 | ✅ |
-| User-Agent | 앱 + **연락처** | `PoeOverlayPriceTracker/1.0` | ⚠️ 연락처 없음 — D-AC4에서 **보류**로 결정 |
+| User-Agent | 앱 + **연락처** | `PoeOverlayPriceTracker/1.0 (+https://github.com/…)` | ✅ (2026-08-18) — 연락처는 저장소 URL |
 | 조건부 요청 | `If-None-Match` 필수 | **보낸다** — 검증자는 `CategorySnapshot.ETag`, 304는 「직전 값 유지」(D24) | ✅ (2026-08-18 구현) |
 | 폴링 주기 | 원본은 약 15분마다 갱신 | **기본 15분**, 최소 5분 (`SettingsValidation`) | ✅ (2026-08-18) |
 | 호출 위치 | 자체 백엔드 경유 **권고** | 사용자 PC에서 직접 | ❌ 구조적 충돌 — D-AC5에서 **따르지 않기로** 결정 |
@@ -539,5 +539,5 @@ GET  같은 URL + If-None-Match: W/ab89be242028f7941cde9c72d73db872
 | **D-AC1** | 7일 창이고 기준 통화가 어긋날 수 있는 변동률을 계속 표시할 것인가 | **제거한다.** REQUIREMENTS 4판 FR-04-1 · HLD D25 · S2 §4.4 · S3 §4.8 · S4 §6.1/§11.3에 반영. `Domain`의 `TotalChangePercent`와 파싱은 남는다(거래량과 같은 취급) |
 | **D-AC2** | `If-None-Match` 저장·전송을 어느 층이 갖는가 | **구현한다.** `ETag`는 `CategorySnapshot`이 들고 `Polling`이 그 스냅샷을 `Market`에 넘긴다 — HLD D24, S2 §5.11. 사전을 따로 두지 않는 이유는 무효화할 상태를 둘로 가르지 않기 위해서다 |
 | **D-AC3** | 폴링 기본값을 15분으로 올릴 것인가 | **올린다.** 기본 15분, 하한 5분 유지 — FR-03-1, S4 §15.2 |
-| **D-AC4** | UA에 연락처를 넣을 것인가 | **보류.** 지침이 요구하지만 이번 범위 밖으로 두었다. UA는 `PoeOverlayPriceTracker/1.0` 그대로이며, §7.5의 ⚠️는 살아 있다 |
+| **D-AC4** | UA에 연락처를 넣을 것인가 | **넣는다.** `PoeOverlayPriceTracker/1.0 (+https://github.com/kost0806/poe-market-price-tracker-overlay)`. 개인 메일 대신 저장소 URL — poe.ninja 쪽에서 이 클라이언트가 무엇을 하는지 보고 이슈를 열 수 있는 자리이면 족하고, 요청마다 개인 주소를 실어 보낼 이유는 없다. **실측**: `ParseAdd`가 문자 그대로 통과시키고, 이 UA로 보낸 요청에 poe.ninja가 200으로 답한다 |
 | **D-AC5** | "백엔드 경유" 권고를 어떻게 다룰 것인가 | **따르지 않는다.** 백엔드를 두면 D2·NFR-02·G1(본인 전용 로컬 빌드)이 함께 무너진다. 대신 D-AC2·D-AC3으로 실제 트래픽을 지침 이상으로 줄인다 — 갱신이 없는 회차는 본문 0바이트이고, 라운드 자체가 1/3로 준다. 이 판단은 NFR-02 본문에 기록했다 |

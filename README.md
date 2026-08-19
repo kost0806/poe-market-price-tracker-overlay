@@ -8,8 +8,18 @@ Path of Exile 1을 하는 동안, 관심 있는 통화성 아이템(갑충석·�
 | 대상 게임 | Path of Exile **1** |
 | 플랫폼 | Windows 10/11 · .NET 8 (`net8.0-windows`) · WPF |
 | 데이터 소스 | poe.ninja exchange API 단독 (인증 불필요) |
-| 상태 | 로컬 빌드로 동작. 테스트 638개(Core 552 · Shell 86) 통과 |
+| 상태 | 로컬 빌드로 동작. 테스트 639개(Core 552 · Shell 87) 통과 |
 | 용도 | 본인 전용 로컬 빌드 — 설치 관리자·자동 업데이트는 범위 밖이다 |
+
+> **Personal, non-commercial project.** This is a hobby overlay one person built for their own use.
+> It is not a product, not a service, and nothing is sold, hosted or redistributed. It reads
+> poe.ninja's public economy endpoints only — the ones documented as a supported public surface —
+> revalidating with `If-None-Match` and polling every fifteen minutes by default, which is how often
+> poe.ninja rebuilds those overviews. Prices are shown to the person running it and are never
+> republished. If anything here looks like it is misbehaving against poe.ninja, please open an issue
+> on this repository; that URL is the contact in the client's `User-Agent`.
+>
+> Not affiliated with or endorsed by Grinding Gear Games, and not affiliated with poe.ninja.
 
 ---
 
