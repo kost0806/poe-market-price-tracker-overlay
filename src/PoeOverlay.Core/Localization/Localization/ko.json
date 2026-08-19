@@ -939,7 +939,6 @@
   "ui.language.selfName": "한국어",
   "ui.overlay.moreRows": "외 {0}개",
   "ui.overlay.moreRowsExplicit": "외 {0}개 — 설정에서 높이를 조절하세요",
-  "ui.price.change": "{0}{1}%",
   "ui.price.chaos": "{0}c",
   "ui.price.chaosRatePending": "{0}c (환율 대기)",
   "ui.price.chaosWithDivine": "{0}c ({1}d)",

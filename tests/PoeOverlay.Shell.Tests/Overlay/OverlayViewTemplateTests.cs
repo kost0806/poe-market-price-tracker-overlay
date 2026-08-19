@@ -65,6 +65,22 @@ public sealed class OverlayViewTemplateTests : IDisposable
         });
 
     [Fact]
+    public void ThePriceRowHasThreeColumnsAndNoChangeCell()
+        => Sta(() =>
+        {
+            var view = Realize(BuildView());
+
+            // FR-04-1: the change column went with the seven-day percentage. Counting the columns
+            // is what catches a re-added cell; asserting on the two remaining texts would pass
+            // just as well with a fourth column sitting empty beside them.
+            var row = FirstVisual<Grid>(view, g => g.ColumnDefinitions.Count > 1);
+            Assert.NotNull(row);
+            Assert.Equal(3, row!.ColumnDefinitions.Count);
+
+            Assert.Null(FirstVisual<TextBlock>(view, t => t.Text.Contains('%', StringComparison.Ordinal)));
+        });
+
+    [Fact]
     public void TheRowNameIsDrawnBesideTheIcon()
         => Sta(() =>
         {
@@ -88,7 +104,6 @@ public sealed class OverlayViewTemplateTests : IDisposable
                     new ItemId("chaos"),
                     "Chaos Orb",
                     new PriceDisplay(PriceForm.ChaosOnly, "1.0c", DateTimeOffset.UnixEpoch, false),
-                    new ChangeDisplay(ChangeDirection.Up, "▲", "▲2.0%"),
                     "3m ago",
                     false,
                     false,

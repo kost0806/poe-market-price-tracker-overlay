@@ -74,7 +74,7 @@ public sealed class RetryAfterTests
 
         var result = await MarketTestHarness.RunAsync(
             time,
-            client.FetchCategoryAsync("Allflame", ExchangeCategory.Currency, RequestPriority.Polling, CancellationToken.None))
+            client.FetchCategoryAsync("Allflame", ExchangeCategory.Currency, RequestPriority.Polling, held: null, CancellationToken.None))
             .ConfigureAwait(false);
 
         var why = CategoryFetchTests.Why(result);
@@ -97,7 +97,7 @@ public sealed class RetryAfterTests
 
         var result = await MarketTestHarness.RunAsync(
             time,
-            client.FetchCategoryAsync("Allflame", ExchangeCategory.Currency, RequestPriority.Polling, CancellationToken.None))
+            client.FetchCategoryAsync("Allflame", ExchangeCategory.Currency, RequestPriority.Polling, held: null, CancellationToken.None))
             .ConfigureAwait(false);
 
         Assert.Equal(2, CategoryFetchTests.Value(result).Items.Count);
@@ -112,7 +112,7 @@ public sealed class RetryAfterTests
 
         var result = await MarketTestHarness.RunAsync(
             time,
-            client.FetchCategoryAsync("Allflame", ExchangeCategory.Currency, RequestPriority.Polling, CancellationToken.None))
+            client.FetchCategoryAsync("Allflame", ExchangeCategory.Currency, RequestPriority.Polling, held: null, CancellationToken.None))
             .ConfigureAwait(false);
 
         var why = CategoryFetchTests.Why(result);
@@ -129,7 +129,7 @@ public sealed class RetryAfterTests
 
         var result = await MarketTestHarness.RunAsync(
             time,
-            client.FetchCategoryAsync("Allflame", ExchangeCategory.Currency, RequestPriority.Polling, CancellationToken.None))
+            client.FetchCategoryAsync("Allflame", ExchangeCategory.Currency, RequestPriority.Polling, held: null, CancellationToken.None))
             .ConfigureAwait(false);
 
         Assert.Equal(FailureKind.Network, CategoryFetchTests.Why(result).Kind);

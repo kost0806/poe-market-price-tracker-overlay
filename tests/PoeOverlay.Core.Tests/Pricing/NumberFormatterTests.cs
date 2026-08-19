@@ -49,26 +49,6 @@ public sealed class NumberFormatterTests
         Assert.Equal("1,000", NumberFormatter.Num(1000m));
     }
 
-    [Theory]
-    [InlineData(30.46, "30.5")]
-    [InlineData(-6.2, "6.2")]              // magnitude only; the sign is the glyph's job
-    [InlineData(0.049, "0.0")]
-    [InlineData(0.05, "0.1")]
-    [InlineData(1204.5, "1,204.5")]        // grouped, no band rule
-    public void Pct_RoundsAwayFromZeroAndFormatsInvariant(double input, string expected)
-        => Assert.Equal(expected, NumberFormatter.Pct(input));
-
-    [Fact]
-    public void Pct_StaysInDoubleSoAnEnormousChangeDoesNotThrow()
-    {
-        // Both (decimal)1e30 and (decimal)1e300 throw OverflowException, and both pass the
-        // double.IsFinite guard — which is why this must never become a decimal.
-        var text = NumberFormatter.Pct(1e300);
-
-        Assert.StartsWith("1,000,000,000", text, StringComparison.Ordinal);
-        Assert.EndsWith(".0", text, StringComparison.Ordinal);
-    }
-
     [Fact]
     public void MinPrice_IsTheDocumentedFloor()
         => Assert.Equal(1e-9m, NumberFormatter.MinPrice);

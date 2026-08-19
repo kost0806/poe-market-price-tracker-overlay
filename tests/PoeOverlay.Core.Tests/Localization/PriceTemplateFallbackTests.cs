@@ -32,7 +32,6 @@ public sealed class PriceTemplateFallbackTests
         ["ui.price.perDivine"] = (nameof(PriceTemplates.PerDivine), "{0} per 1d"),
         ["ui.price.ratePending"] = (nameof(PriceTemplates.RatePending), "rate pending"),
         ["ui.price.unavailable"] = (nameof(PriceTemplates.Unavailable), "—"),
-        ["ui.price.change"] = (nameof(PriceTemplates.Change), "{0}{1}%"),
         ["ui.time.justNow"] = (nameof(PriceTemplates.JustNow), "just now"),
         ["ui.time.secondsAgo"] = (nameof(PriceTemplates.SecondsAgo), "{0}s ago"),
         ["ui.time.minutesAgo"] = (nameof(PriceTemplates.MinutesAgo), "{0}m ago"),
@@ -148,23 +147,21 @@ public sealed class PriceTemplateFallbackTests
     [Fact]
     public void C5_TemplateWithTooManySlots_FallsBackWithoutLeakingAFormatException()
     {
+        // The two-argument template used to be ui.price.change; it went with FR-04-1, and
+        // chaosWithDivine is now the only two-slot price template left to exercise the arity net.
         var templates = MutableTemplateSource.FromEmbedded();
-        templates.Set("ui.price.change", "{0}{1}{2}%");
+        templates.Set("ui.price.chaosWithDivine", "{0}c ({1}d) {2}");
 
-        var change = PricingEngine.Change(30.46, templates);
-
-        Assert.Equal("▲30.5%", change.Text);
+        Assert.Equal("359.7c (1.85d)", Chaos(359.7m, templates));
     }
 
     [Fact]
     public void C6_TemplateWithTooFewSlots_FallsBackToTheConstant()
     {
         var templates = MutableTemplateSource.FromEmbedded();
-        templates.Set("ui.price.change", "{0}%");
+        templates.Set("ui.price.chaosWithDivine", "{0}c");
 
-        var change = PricingEngine.Change(30.46, templates);
-
-        Assert.Equal("▲30.5%", change.Text);
+        Assert.Equal("359.7c (1.85d)", Chaos(359.7m, templates));
     }
 
     [Fact]
@@ -218,8 +215,6 @@ public sealed class PriceTemplateFallbackTests
             yield return display.Text;
         }
 
-        yield return PricingEngine.Change(30.46, templates).Text;
-        yield return PricingEngine.Change(0d, templates).Text;
         yield return PricingEngine.Relative(Now, Now, templates);
         yield return PricingEngine.Relative(Now - TimeSpan.FromSeconds(30), Now, templates);
         yield return PricingEngine.Relative(Now - TimeSpan.FromMinutes(30), Now, templates);

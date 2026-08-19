@@ -39,7 +39,6 @@ internal static class UiKeyCatalog
             ["ui.price.perDivine"] = 1,
             ["ui.price.ratePending"] = 0,
             ["ui.price.unavailable"] = 0,
-            ["ui.price.change"] = 2,
 
             // 14.2 ui.time.*
             ["ui.time.justNow"] = 0,

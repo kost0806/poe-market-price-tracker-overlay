@@ -16,6 +16,7 @@ public sealed partial class PollingService
     private async Task<IReadOnlyList<(ExchangeCategory Category, MarketResult<CategorySnapshot> Result)>> FetchAllAsync(
         string league,
         IReadOnlyList<ExchangeCategory> categories,
+        IReadOnlyDictionary<ExchangeCategory, CategorySnapshot> baseline,
         CancellationToken ct)
     {
         using var samplerCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -26,7 +27,14 @@ public sealed partial class PollingService
             var tasks = new List<Task<(ExchangeCategory, MarketResult<CategorySnapshot>)>>(categories.Count);
             foreach (var category in categories)
             {
-                tasks.Add(FetchOneAsync(league, category, ct));
+                // What we already hold is what makes the request conditional (D24). On a league
+                // change the baseline is empty, so every request that round is unconditional
+                // without anyone having to remember to clear anything.
+                tasks.Add(FetchOneAsync(
+                    league,
+                    category,
+                    baseline.TryGetValue(category, out var held) ? held : null,
+                    ct));
             }
 
             // Concurrency is the gateway's business, not this loop's: NFR-02 constrains total
@@ -43,10 +51,11 @@ public sealed partial class PollingService
     private async Task<(ExchangeCategory, MarketResult<CategorySnapshot>)> FetchOneAsync(
         string league,
         ExchangeCategory category,
+        CategorySnapshot? held,
         CancellationToken ct)
     {
         var result = await _market
-            .FetchCategoryAsync(league, category, RequestPriority.Polling, ct)
+            .FetchCategoryAsync(league, category, RequestPriority.Polling, held, ct)
             .ConfigureAwait(false);
 
         return (category, result);

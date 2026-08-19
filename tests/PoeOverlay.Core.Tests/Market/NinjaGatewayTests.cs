@@ -279,7 +279,7 @@ public sealed class NinjaGatewayTests
         await cancelled.CancelAsync().ConfigureAwait(false);
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => client.FetchCategoryAsync("Allflame", ExchangeCategory.Currency, RequestPriority.Polling, cancelled.Token))
+            () => client.FetchCategoryAsync("Allflame", ExchangeCategory.Currency, RequestPriority.Polling, held: null, cancelled.Token))
             .ConfigureAwait(false);
 
         Assert.Equal(0, handler.Calls);

@@ -31,7 +31,7 @@ public sealed class BoundaryCatchTests
         var client = CreateFaultingClient(out var logger);
 
         var result = await client
-            .FetchCategoryAsync("Allflame", ExchangeCategory.Currency, RequestPriority.Polling, CancellationToken.None)
+            .FetchCategoryAsync("Allflame", ExchangeCategory.Currency, RequestPriority.Polling, held: null, CancellationToken.None)
             .ConfigureAwait(false);
 
         var why = CategoryFetchTests.Why(result);

@@ -189,7 +189,11 @@ public sealed class OverlayViewModelTests
     public void RowsMarkStaleness_FromTheRawAgeNotTheFormattedText()
     {
         var (vm, _) = Build(Watchlist(("divine", ExchangeCategory.Currency)));
-        var old = Now - Core.Pricing.StalenessPolicy.RowStaleAfter(5) - TimeSpan.FromMinutes(1);
+        // The threshold follows the interval the view model is actually configured with, so this
+        // reads the same constant the settings do rather than restating a number.
+        var old = Now
+            - Core.Pricing.StalenessPolicy.RowStaleAfter(SettingsValidation.DefaultRefreshIntervalMinutes)
+            - TimeSpan.FromMinutes(1);
 
         vm.Refresh(
             WithCategory(SnapshotBuilder.Category(

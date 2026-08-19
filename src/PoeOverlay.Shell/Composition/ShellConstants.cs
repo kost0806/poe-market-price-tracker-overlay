@@ -116,8 +116,18 @@ internal static class ShellConstants
     /// <remarks>Duplicated from Core's <c>internal NinjaEndpoints.HttpClientName</c>, which the Shell cannot see.</remarks>
     internal const string HttpClientName = "poe.ninja";
 
-    /// <summary>S4 15.3 — the identifiable fixed User-Agent.</summary>
-    internal const string UserAgent = "PoeOverlayPriceTracker/1.0";
+    /// <summary>
+    /// S4 15.3 — the identifiable fixed User-Agent, app and contact (D-AC4).
+    /// </summary>
+    /// <remarks>
+    /// poe.ninja's usage guidelines ask for "a descriptive User-Agent that identifies your app and a
+    /// contact" (contract 7.3). The contact is the repository rather than an address: it is where
+    /// someone at poe.ninja can see what this client does and open an issue, and it does not put a
+    /// personal mailbox in every request. 【measured 2026-08-18】 The string parses through
+    /// <c>ParseAdd</c> unchanged, and poe.ninja answers it with 200.
+    /// </remarks>
+    internal const string UserAgent =
+        "PoeOverlayPriceTracker/1.0 (+https://github.com/kost0806/poe-market-price-tracker-overlay)";
 
     /// <summary>Folder under <c>%APPDATA%</c> holding settings and logs.</summary>
     internal const string AppDataFolderName = "PoeOverlay";

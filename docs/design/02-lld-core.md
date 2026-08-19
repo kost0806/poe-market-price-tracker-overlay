@@ -528,7 +528,6 @@ Domain/Ports/
 ### 2.14 나머지 열거
 
 ```
-enum ChangeDirection { Up, Down, Flat, Unknown }     // 글리프는 Pricing, 색은 View (HLD §6.3)
 enum DisplayState    { Loading, Ready, Failed }      // HLD §6.5. Loading 은 흡수 상태가 아니다
 enum RequestPriority { Polling, UserInitiated }      // D13
 enum PriceForm       { ChaosOnly, ChaosWithDivine, ChaosReciprocal, DivineOnly,
@@ -813,59 +812,22 @@ display == Divine:
 >
 > **주의**: 행 5의 정답 `3040`은 응답의 `maxVolumeRate` 필드와 **문자 단위로 같다.** 그 필드를 그대로 인쇄하는 지름길이 매력적이고, **§11의 P5는 그 지름길을 잡아내지 못한다** — 둘의 출력이 같기 때문이다. → §12-28
 
-### 4.4 변동 방향과 글리프 (HLD §6.3)
+### 4.4 ~~변동 방향과 글리프~~ — **삭제** (REQUIREMENTS 4판 FR-04-1, HLD D25)
 
-#### 4.4.1 반환 형태
+이 절에는 `ChangeDisplay`의 반환 형태, 백분율 서식 `Pct`, 데드존 판정(D-PR5), 「값 없음」의 정의가 있었다. **전부 삭제한다 — `Pricing`은 변동률을 계산하지 않는다.**
 
-```
-record ChangeDisplay(ChangeDirection Direction, string Glyph, string Text)
-```
+근거는 `00-api-contract.md` §3.2의 실측 둘이다.
 
-`Pricing`이 방향·글리프·문자열을, **View가 브러시**를 소유한다. 글리프 `▲`/`▼`는 **`Pricing`의 컴파일 시점 상수**이며 사전 키가 아니다 — 사전이 글리프를 공급하면 번역자가 깨진 문자를 넣어 방향 표시가 사라질 수 있고, 그것은 번역이 아니라 의미의 파괴다.
+1. **창이 약 7일이다**(§3.2.1). 상시 감시 화면에서 세션 내내 움직이지 않는 수다.
+2. **기준 통화가 `core.primary`가 아니라 그 행의 `maxVolumeCurrency`다**(§3.2.2). 표시 통화를 `Chaos`·`Divine`으로 고정한 행에서는 가격과 변동률의 기준이 달라지고, 두 통화가 반대로 움직인 창에서는 **부호까지 갈린다.** §4.1이 고른 표시 통화와 이 수는 서로를 모른다.
 
-| 상태 | `Direction` | `Glyph` | `Text` |
-|---|---|---|---|
-| 상승 | `Up` | `▲` | `▲30.5%` |
-| 하락 | `Down` | `▼` | `▼6.2%` — **절대값**. 부호는 글리프가 나른다 |
-| 데드존 | `Flat` | `""` | `0.0%` |
-| 값 없음 | `Unknown` | `""` | **`""`** |
+함께 사라지는 것: `ChangeDisplay` · `ChangeDirection` · `PricingEngine.Change` · `Pct` · 사전 항목 `ui.price.change` · 행 뷰모델의 변동 필드 · 오버레이의 변동률 칸.
+**남는 것**: `ItemPrice.TotalChangePercent`와 `Market`의 파싱. 거래량과 같은 취급이며(FR-04-1), 파싱을 지우면 응답 형식 변화 감지가 함께 사라진다.
 
-View는 `Direction`으로 브러시와 가시성을 고른다. `Flat`과 `Unknown`을 문자열로 구별하려 하면 트리거가 문자열 비교가 되어 언어를 바꿀 때 깨진다.
+**되살릴 때를 위해 남기는 두 기록.**
 
-#### 4.4.2 백분율 서식 `Pct` — **`double`로 계산한다**
-
-```
-Pct(x: double) := Math.Round(Math.Abs(x), 1, MidpointRounding.AwayFromZero)
-                      .ToString("N1", InvariantCulture)
-```
-
-**【측정】 `decimal` 캐스트는 던진다.** `(decimal)1e30`과 `(decimal)1e300` 모두 `OverflowException`이며 **둘 다 `IsFinite`가 참**이므로 §4.4.4의 가드가 통과시킨다. `Math.Round(double)`은 던지지 않는다. 1000 이상이면 그룹 구분이 붙는다(`1,204.5%`). 대역 분기 없음 — 변동률은 크기 대역이 의미를 갖지 않는다.
-
-#### 4.4.3 반올림과 데드존 — **판정은 반올림 후에 한다** 【신규 D-PR5】
-
-HLD §6.3은 같은 표에서 두 가지를 말한다: 임계는 `x > +0.05` / `x < -0.05`이고, 데드존 행의 설명은 「그 외 (**0.0%로 반올림**)」이다. 경계에서 어긋난다.
-
-| `x` | 부등호 그대로 | 「0.0%로 반올림」 그대로 |
-|---|---|---|
-| `0.05` | `Flat` + `0.1%` ← **글리프 없이 0이 아닌 숫자** | `Up` + `▲0.1%` |
-| `0.049` | `Flat` + `0.0%` | 같음 |
-
-**괄호 주석을 채택한다.**
-
-```
-p = Math.Round(Math.Abs(x), 1, AwayFromZero)
-Direction = p == 0 -> Flat : x > 0 -> Up : Down
-```
-
-근거 셋. ① **불변식이 구성적으로 성립한다** — "글리프가 있으면 숫자가 `0.0%`가 아니고, 없으면 `0.0%`이다". ② `x`는 `double`이고 `0.05`는 이진 부동소수로 정확히 표현되지 않으므로(`0.05000000000000000277…`) 부등호 판정은 이미 우연에 기대고 있다. ③ 두 규칙이 **같은 한 번의 반올림**을 공유한다.
-
-부작용 하나: `x = -0.03`은 `Flat` + `0.0%`로 렌더되어 **부호가 사라진다.** 의도된 것이다 — 데드존은 "방향이 없다"는 판정이지 "작은 하락"이라는 판정이 아니다. → §12-18
-
-#### 4.4.4 값 없음의 정의
-
-`TotalChangePercent`가 `null`이거나 **`double.IsFinite`가 거짓**이면 `Unknown`.
-
-**【측정】 이 가드는 JSON 경로에서 도달 불가능하다.** 엄격 판독기가 `NaN` 리터럴을 이미 거부하기 때문이다. 반대로 **진짜 위협이었던 `1e300`은 `IsFinite`가 참이라 이 가드를 통과했고**, `Pct`의 캐스트에서 터졌다. 가드는 방어적으로 유지하되(비-JSON 경로가 생길 수 있다) **실질 방어는 §4.4.2의 `double` 유지**임을 기록한다.
+- 【측정】 `Pct`를 `decimal`로 캐스트하면 `(decimal)1e30`·`(decimal)1e300` 둘 다 `OverflowException`이고, **둘 다 `double.IsFinite`가 참**이라 「값 없음」 가드를 통과한다. 백분율은 `double`로 유지해야 던지지 않는다.
+- D-PR5(데드존 판정을 **반올림 후에** 한다)는 **틀려서 사라지는 것이 아니라 적용 대상이 사라진 것**이다. 다시 그린다면 이 결정과 §12-18의 지적이 함께 되살아난다. 그리고 그때는 **창(7일)과 기준 통화를 화면에서 밝히는 것**이 선결 조건이다.
 
 ### 4.5 Vintage와 나이 (D16)
 
@@ -1004,7 +966,7 @@ SentinelOk(template, n):
 
 | | |
 |---|---|
-| 책임 | HTTP 발행, 역직렬화, `core.items` 조인, 매핑, **구조 유효성 검사(D8-a/b/d)**, `NinjaGateway`, 리그 목록 판정 |
+| 책임 | HTTP 발행, **조건부 요청과 `304` 처리(§5.11, D24)**, 역직렬화, `core.items` 조인, 매핑, **구조 유효성 검사(D8-a/b/d)**, `NinjaGateway`, 리그 목록 판정 |
 | 하지 않는 것 | 문맥 검사(D8-c/e), 커밋 판정, epoch 관리, `Suspicious → LeagueUnresolved` 전이 |
 | 실패 표현 | **반환값** `MarketResult<T>` (§5.6). 예외는 프로그래밍 오류와 취소뿐 |
 | **경계 catch** | 카테고리 진입점에 `catch (Exception)` 하나 (§5.10) |
@@ -1204,6 +1166,8 @@ abstract record MarketResult<T>
 | `HttpClient.Timeout` | `InfiniteTimeSpan` — 두 타임아웃이 겹치면 어느 쪽이 발동했는지 로그로 구별할 수 없다 |
 | 압축 | `AutomaticDecompression` 허용 |
 | User-Agent | 식별 가능한 고정 문자열 |
+| **조건부 요청** | 카테고리 조회에 `If-None-Match`. 검증자는 호출자가 넘긴 스냅샷에서 온다(§5.11) |
+| **`304`** | 재시도 대상이 **아니다**(`IsRetriableStatus`가 거짓). 실패도 아니다 — §5.11 |
 
 **429 / `Retry-After`**
 
@@ -1242,6 +1206,26 @@ Judge: HTTP·역직렬화 실패 -> Failed(코드)
 | 왜 필요한가 | 【측정】 `required`가 JSON `null`을 막지 못해 `NullReferenceException`이 나오고, 그것은 `JsonException`이 아니므로 §1.5의 "실패는 값" 규약을 뚫는다. 2′단계가 알려진 구멍을 막지만 **알려지지 않은 구멍**이 남는다 |
 | 왜 초판에 없었나 | §9.5의 허용 목록에 **`Market` 행이 아예 없었다.** 목록에 없으면 그 catch를 쓸 수 없고, 쓸 수 없으면 예외가 새어 나간다. 목록의 부재가 결함의 구조적 원인이었다 |
 | 결과 | Error 기록 + 실패값. §9.5에 등재됨 |
+
+### 5.11 조건부 요청과 `304` 【신설, HLD D24 / NFR-02】
+
+```
+FetchCategory(league, category, priority, held: CategorySnapshot?, ct) -> MarketResult<CategorySnapshot>
+```
+
+**`held`는 「호출자가 지금 화면에 두고 있는 그 카테고리의 스냅샷」이다.** `Market`은 그것을 세 가지로만 쓴다: `ETag`를 꺼내고, `304`일 때 돌려주고, 리그가 다르면 무시한다.
+
+| 단계 | 규칙 |
+|---|---|
+| 검증자 선택 | `held?.League == league`이고 `held.ETag`가 비어 있지 않으면 그 값을 `If-None-Match`에 싣는다. 그 외에는 **헤더를 붙이지 않는다** — 빈 값을 보내지 않는다 |
+| `200` | 평소대로 매핑한다. 응답의 `ETag` 헤더를 **새 스냅샷에 실어** 돌려준다. 헤더가 없으면 `null`이며 다음 라운드는 무조건부 요청이 된다 |
+| `304` + `held` 있음 | `Ok(held with { FetchedAt = now })`. **본문을 읽지 않는다**(0바이트다). 매핑·유효성 검사·조인 어느 것도 돌지 않는다 — 검사할 것이 없다 |
+| `304` + `held` 없음 | `Fail(MappingFault, "UnexpectedNotModified")`. 헤더를 보내지 않았는데 온 `304`는 계약 위반이며, 조용히 넘기면 **값 없는 성공**이 된다 |
+| 관측 | `304`는 카테고리마다 Debug 1건(`CategoryNotModified`). 침묵하면 조건부 요청이 실제로 동작하는지 밖에서 알 방법이 없다 |
+
+**왜 결과 종류를 새로 만들지 않는가.** `MarketResult<T>`에 세 번째 경우를 더하면 리그 목록 경로까지 «일어날 수 없는 분기»를 갖게 되고, `Polling`의 커밋 표(§7.3의 11단계)가 두 갈래로 갈라진다. `304`가 실제로 뜻하는 것은 **「같은 값을, 지금 확인했다」** 이며, 그것은 `FetchedAt`만 다른 같은 스냅샷과 정확히 같은 말이다. 커밋 경로는 아무것도 몰라도 된다 — 중앙값은 같으므로 D8-e를 통과하고, 리그도 같으므로 INV-1 가드를 통과하며, `Currency`라면 divine 라인이 그대로 있으므로 D8-c도 통과한다. **세 검사가 우연히 통과하는 것이 아니라, 통과해야 마땅한 값이기 때문에 통과한다.**
+
+**주의 — 이 값들이 서로를 가릴 수 있다.** `304` 경로의 반환은 입력으로 받은 스냅샷이므로, 「`held`를 그대로 돌려주는 구현」과 「본문을 받아 다시 매핑한 구현」은 **가격이 안 변한 회차에서 출력이 같다.** 테스트는 반드시 ① 요청 헤더에 `If-None-Match`가 실렸는지와 ② `FetchedAt`이 갱신됐는지를 **함께** 본다(§11.7 M24~M27).
 
 ---
 
@@ -1537,7 +1521,7 @@ await foreach (var t in triggers.Reader.ReadAllAsync(stop).ConfigureAwait(false)
 | 5 | 세대 처리 | 확정 리그가 **`DataLeague`와 다르면**(기동 직후에는 `null`이므로 항상 다르다) `dataEpoch++`, `roundGeneration++`, **`BeginNewLeague` 커밋** |
 | 6 | `RoundContext` 생성 | |
 | 7 | 카테고리 집합 도출 | §7.4 |
-| 8 | 게이트웨이 경유 병렬 조회 | 결과는 `MarketResult`이므로 예외가 아니다 |
+| 8 | 게이트웨이 경유 병렬 조회 | 결과는 `MarketResult`이므로 예외가 아니다. **각 카테고리의 기준 스냅샷(`baseline`)을 함께 넘긴다** — 조건부 요청의 검증자다(§5.11, D24). 리그가 바뀐 라운드는 `baseline`이 비어 있으므로 자동으로 무조건부 조회가 된다 |
 | 9 | 문맥 검사 D8-c/e | §7.5 |
 | 10 | rate 추출·승계 | §7.6 |
 | 11 | 카테고리별 커밋 | **개별 명령**이므로 부분 커밋이 구조적으로 성립 |
@@ -1939,7 +1923,6 @@ ILocalizer : ITemplateSource                     // S3 전용
 
 ```
 PriceDisplay   Format(ItemPrice, DivineRate?, ResolvedCurrency, DateTimeOffset now, TimeSpan rateMaxAge)
-ChangeDisplay  Change(double? totalChangePercent)
 string         Relative(DateTimeOffset at, DateTimeOffset now)
 ResolvedCurrency Resolve(DisplayCurrency?, DisplayCurrency, string? token)
 static class StalenessPolicy
@@ -2068,18 +2051,9 @@ IUiTicker { event EventHandler Tick;  void Start(TimeSpan period);  void Stop();
 | R6 | `null` | `Auto` | `"exalted"` | `Chaos` — 미지 토큰 폴백 |
 | R7 | `null` | `Auto` | `null` / `"  "` | `Chaos` |
 
-### 11.4 변동 방향
+### 11.4 ~~변동 방향~~ — **삭제** (§4.4와 함께)
 
-| `x` | 기대 |
-|---|---|
-| 30.46 | `Up`, `▲30.5%` |
-| −6.2 | `Down`, `▼6.2%` |
-| 0.049 | `Flat`, `0.0%` |
-| **0.05** | **`Up`, `▲0.1%`** — D-PR5 |
-| −0.03 | `Flat`, `0.0%` — 부호 소실은 의도 |
-| `null` | `Unknown`, `""` |
-| **1e300** | **던지지 않는다** 【측정】 — `Up`, `▲1,000,000,…%` 형태. `decimal` 캐스트였다면 `OverflowException` |
-| `NaN` | `Unknown`, `""` (JSON 경로에서는 도달 불가) |
+여덟 경우(`0.05` 경계 · `1e300` · `NaN` 포함)로 `PricingEngine.Change`를 고정하던 표였다. 대상 메서드가 없으므로 테스트도 없다. 표가 지키던 사실 중 되살릴 때 필요한 것(`1e300`이 던지지 않는다는 【측정】)은 §4.4가 기록으로 보관한다.
 
 ### 11.5 상대 시각
 
@@ -2138,6 +2112,11 @@ IUiTicker { event EventHandler Tick;  void Start(TimeSpan period);  void Stop();
 | M21 | 창 범위 토큰 취소 | `OperationCanceledException` 전파 — 실패값이 아니다 |
 | **M22** | 생성된 `NinjaJsonContext`의 옵션 | 다섯 값 단언(§5.3). `JsonSerializerDefaults.Web`이 스며들면 실패한다 |
 | **M23** | 예상 밖 예외 주입 (매퍼) | `Fail(MappingFault)` — D-MK4 경계 catch |
+| **M24** | `held`에 `ETag`가 있다 | 요청에 `If-None-Match: <그 값>`이 실린다. `held`가 `null`이면 **헤더가 없다** |
+| **M25** | `held.League != league` | 헤더 없음 — 다른 리그의 검증자는 쓰지 않는다 |
+| **M26** | `304` + `held` 있음 | `Ok`, `Items`는 `held`와 같고 **`FetchedAt`은 갱신**된다. 서버 본문을 읽지 않는다(본문 없음) |
+| **M27** | `304` + `held` `null` | `Fail(MappingFault, "UnexpectedNotModified")` |
+| **M28** | `200` 응답에 `ETag` 헤더 | 반환 스냅샷의 `ETag`가 그 값. 헤더가 없으면 `null` |
 
 ### 11.8 `Store`
 
@@ -2272,7 +2251,7 @@ IUiTicker { event EventHandler Tick;  void Start(TimeSpan period);  void Stop();
 | 15 | **`TrayUnavailable`의 생산자가 §3.4 슬롯 표에 없다** | 표의 누락 | §6.2에서 `Shell`을 포트 경유 생산자로 등재 |
 | 16 | **`Store` 등록 순서 제약이 §3.5에 없다** | 기동/종료 순서 | §6.1. 진짜 이유는 **역순 정지**이며 첫 렌더가 아니다 |
 | 17 | **로깅 자체가 실패했을 때의 상태가 없다** | 상태 누락 | §9.6. HLD §6.4에 `LoggingUnavailable` 행 필요 — 이 문서의 조용한 실패 방어 대부분이 로그에 기대고 있다 |
-| 18 | **HLD §6.3의 변동률 임계가 자기모순** | 규범 충돌 | D-PR5에서 괄호 주석 채택. 개정 시 부등호를 "반올림 후 0.0%가 아니면"으로 통일 |
+| 18 | **HLD §6.3의 변동률 임계가 자기모순** | 규범 충돌 | ~~D-PR5에서 괄호 주석 채택~~ → **대상 소멸(4판 FR-04-1).** 변동률을 그리지 않으므로 임계도 없다. 다시 그린다면 §4.4가 보관한 기록과 함께 되살아난다 |
 | 19 | **검색어 매칭 규칙 미정의** | 정책 공백 | **§6.7에서 확정했다**(`OrdinalIgnoreCase` 부분일치 + `ExtraMatch`). §2.1의 서수·대소문자 구분과 모순되지 않는다 — 동일성과 검색은 다른 연산이다. 초판은 이것을 S3로 미뤘는데, 미룬 상태에서는 `"Vivid"`가 아무것도 못 찾아도 **어떤 명시된 규칙도 위반하지 않았다** |
 | 20 | **"라운드 예산"이 정의된 적이 없다** | 미정의 용어 | §5.7의 논리 요청 총 타임아웃(90초)으로 대체 정의 |
 | 21 | **D8-b·D8-e의 임계값에 근거 데이터가 없다** | Q12와 같은 성격 | §5.5.4(20% + 사유 분화), §7.5(5배 + 래치 리셋). 실사용 조정 |

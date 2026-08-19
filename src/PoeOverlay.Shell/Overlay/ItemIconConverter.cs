@@ -8,9 +8,8 @@ namespace PoeOverlay.Overlay;
 /// Binds a row's <see cref="ItemId"/> to its picture (S3 4.10 / S4 12.7).
 /// </summary>
 /// <remarks>
-/// The row carries the slug and nothing else — the view picks the icon, exactly as it picks the
-/// change column's brush from <c>ChangeDirection</c> rather than being handed one (S3 4.8). That is
-/// why <c>PriceRowViewModel</c> did not have to change for FR-04-6.
+/// The row carries the slug and nothing else — the view picks the icon rather than being handed
+/// one, which is why <c>PriceRowViewModel</c> did not have to change for FR-04-6.
 /// <para>
 /// One instance per <see cref="OverlayView"/>: <c>OverlayView.xaml</c> declares it in that view's
 /// resources and the constructor hands it the source. Not a static — the cache's lifetime is the

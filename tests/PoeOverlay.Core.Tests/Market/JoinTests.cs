@@ -74,7 +74,7 @@ public sealed class JoinTests
 
         var result = await MarketTestHarness.RunAsync(
             time,
-            client.FetchCategoryAsync("Allflame", ExchangeCategory.Currency, RequestPriority.Polling, CancellationToken.None))
+            client.FetchCategoryAsync("Allflame", ExchangeCategory.Currency, RequestPriority.Polling, held: null, CancellationToken.None))
             .ConfigureAwait(false);
 
         var snapshot = CategoryFetchTests.Value(result);
@@ -109,7 +109,7 @@ public sealed class JoinTests
 
         var result = await MarketTestHarness.RunAsync(
             time,
-            client.FetchCategoryAsync("Allflame", ExchangeCategory.Currency, RequestPriority.Polling, CancellationToken.None))
+            client.FetchCategoryAsync("Allflame", ExchangeCategory.Currency, RequestPriority.Polling, held: null, CancellationToken.None))
             .ConfigureAwait(false);
 
         Assert.Equal(500, CategoryFetchTests.Value(result).Items.Count);
@@ -160,7 +160,7 @@ public sealed class JoinTests
 
         var result = await MarketTestHarness.RunAsync(
             time,
-            client.FetchCategoryAsync("Allflame", ExchangeCategory.Currency, RequestPriority.Polling, CancellationToken.None))
+            client.FetchCategoryAsync("Allflame", ExchangeCategory.Currency, RequestPriority.Polling, held: null, CancellationToken.None))
             .ConfigureAwait(false);
 
         var snapshot = CategoryFetchTests.Value(result);
@@ -183,7 +183,7 @@ public sealed class JoinTests
 
         await MarketTestHarness.RunAsync(
             time,
-            client.FetchCategoryAsync("Allflame", ExchangeCategory.Currency, RequestPriority.Polling, CancellationToken.None))
+            client.FetchCategoryAsync("Allflame", ExchangeCategory.Currency, RequestPriority.Polling, held: null, CancellationToken.None))
             .ConfigureAwait(false);
 
         // Trim + OrdinalIgnoreCase, the same predicate Pricing resolves with (D-C4): "mirror" and

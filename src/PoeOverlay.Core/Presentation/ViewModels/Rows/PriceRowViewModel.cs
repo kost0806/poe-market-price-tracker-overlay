@@ -28,8 +28,10 @@ public enum RowKind
 /// <remarks>
 /// A record, so a pass that produces an equal row produces an equal value and the view has nothing
 /// to redraw. The row carries no brush, no icon and no pixel: colour is the view's decision from
-/// <see cref="ChangeDisplay.Direction"/> and <see cref="Kind"/>, and geometry never reaches this
-/// layer at all (S2 10.7).
+/// <see cref="Kind"/>, and geometry never reaches this layer at all (S2 10.7).
+///
+/// There is no change percentage here. The API's is a seven-day figure denominated in the row's
+/// max-volume currency, so it says nothing about the price beside it (FR-04-1, contract 3.2).
 /// </remarks>
 /// <param name="RelativeTime">Already formatted ("3m ago"), because the verdict below is not.</param>
 /// <param name="IsStale">A raw <see cref="TimeSpan"/> verdict, not a reading of <paramref name="RelativeTime"/>.</param>
@@ -37,7 +39,6 @@ public sealed record PriceRowViewModel(
     ItemId Id,
     string DisplayName,
     PriceDisplay Price,
-    ChangeDisplay Change,
     string RelativeTime,
     bool IsRateInherited,
     bool IsStale,
